@@ -48,6 +48,6 @@ O autor não assume qualquer responsabilidade pela precisão absoluta, integrida
 
 ## Direitos Autorais
 
-Copyright (c) 2026 Vitor Lucas Nunes - LKS MILITAR.
+Copyright (c) 2026 - LKS MILITAR.
 
 Todos os direitos reservados. A utilização, estudo e distribuição deste simulador são permitidos de forma gratuita, desde que mantidos explicitamente os créditos originais de autoria e a menção ao projeto LKS MILITAR.
