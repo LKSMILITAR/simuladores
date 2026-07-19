@@ -216,6 +216,19 @@ function calcularFisica() {
 
 calcularFisica();
 </script>
-
+    
+<div class="disclaimer-panel">
+    <h4>Nota Técnica: Limitações e Aproximações do Modelo</h4>
+    <p>
+        Este motor de cálculo é uma simplificação analítica focada na propagação do lóbulo principal. 
+        Não foram computados nesta versão: 
+        <strong>(1) Difração de Borda (Cones de Keller)</strong> nas estruturas da antena; 
+        <strong>(2) Refração atmosférica complexa (Modelo de Faragher)</strong>; 
+        <strong>(3) Perdas de eficiência de abertura</strong>. 
+        A propagação assume expansão geométrica cônica e dispersão pelo inverso do quadrado da distância (1/R²). 
+        A precisão dos resultados depende da validade dos parâmetros de entrada frente às condições operacionais reais.
+    </p>
+</div>
+    
 </body>
 </html>
