@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKS MILITAR | Simulador de Equação de Radar Eletromagnético</title>
+    <style>
+        :root {
+            --bg-main: #0a0d14;
+            --bg-panel: #131824;
+            --bg-input: #1b2333;
+            --border-color: #27344d;
+            --accent-orange: #ff5500;
+            --accent-blue: #00ccff;
+            --accent-green: #00ff66;
+            --text-primary: #e2e8f0;
+            --text-muted: #8492a6;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            padding: 30px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .wrapper {
+            width: 100%;
+            max-width: 950px;
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            color: var(--accent-orange);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 5px;
+        }
+
+        header p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 25px; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 35px; }
+        @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+
+        .control-group { margin-bottom: 20px; }
+        
+        label {
+            display: flex; justify-content: space-between;
+            font-size: 0.75rem; font-weight: bold; color: var(--text-muted);
+            text-transform: uppercase; margin-bottom: 8px;
+        }
+
+        .label-val { color: var(--accent-blue); font-family: monospace; font-size: 0.9rem; }
+
+        input[type="range"] {
+            -webkit-appearance: none; width: 100%; height: 6px;
+            background: var(--bg-input); border-radius: 3px; outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+            background: var(--accent-orange); cursor: pointer; border: 2px solid var(--bg-panel);
+        }
+
+        .results {
+            background-color: #07090e;
+            border-left: 3px solid var(--accent-orange);
+            padding: 25px; border-radius: 6px;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        .metric { border-bottom: 1px solid #1a2233; padding-bottom: 15px; }
+        .metric:last-child { border-bottom: none; padding-bottom: 0; }
+        
+        .metric-title { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;}
+        .metric-value { font-size: 1.3rem; font-weight: bold; font-family: monospace; color: var(--accent-blue); margin-top: 5px; }
+        .metric-sub { font-size: 0.7rem; color: #ff3333; margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <header>
+        <h1>LKS MILITAR | Dinâmica de Equação de Radar & Geometria do Feixe</h1>
+        <p>Análise Vetorial de Poynting, Tensão de Maxwell e Expansão do Lóbulo Principal</p>
+    </header>
+
+    <div class="grid">
+        <div class="controls">
+            <div class="control-group">
+                <label>Potência de Transmissão (Pt) <span id="val-pt" class="label-val">100 kW</span></label>
+                <input type="range" id="slider-pt" min="1" max="1000" step="1" value="100" oninput="calcularFisica()">
+            </div>
+            <div class="control-group">
+                <label>Ganho da Antena (G) <span id="val-g" class="label-val">35 dBi</span></label>
+                <input type="range" id="slider-g" min="10" max="50" step="1" value="35" oninput="calcularFisica()">
+            </div>
+            <div class="control-group">
+                <label>Abertura do Feixe (Beamwidth θ) <span id="val-theta" class="label-val" style="color: var(--accent-green);">2.0°</span></label>
+                <input type="range" id="slider-theta" min="0.5" max="15" step="0.1" value="2.0" oninput="calcularFisica()">
+                <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 4px;">Largura do Lóbulo Principal de Meia Potência (-3dB)</div>
+            </div>
+            <div class="control-group">
+                <label>Frequência Operacional (f) <span id="val-f" class="label-val">10 GHz (Banda X)</span></label>
+                <input type="range" id="slider-f" min="1" max="20" step="0.5" value="10" oninput="calcularFisica()">
+            </div>
+            <div class="control-group">
+                <label>Seção Super Retilínea (RCS) <span id="val-rcs" class="label-val">5 m² (Caça)</span></label>
+                <input type="range" id="slider-rcs" min="-30" max="20" step="1" value="7" oninput="calcularFisica()">
+            </div>
+            <div class="control-group">
+                <label>Distância de Engajamento (R) <span id="val-r" class="label-val">150 km</span></label>
+                <input type="range" id="slider-r" min="5" max="500" step="5" value="150" oninput="calcularFisica()">
+            </div>
+        </div>
+
+        <div class="results">
+            <div class="metric">
+                <div class="metric-title">Diâmetro do Feixe no Alvo (Cone de Varredura)</div>
+                <div id="res-footprint" class="metric-value" style="color: var(--accent-green);">0.00 km</div>
+                <div class="metric-sub">Área transversal iluminada na distância atual.</div>
+            </div>
+            <div class="metric">
+                <div class="metric-title">Vetor de Poynting (Densidade de Potência Incidente)</div>
+                <div id="res-poynting" class="metric-value">0.00 W/m²</div>
+                <div class="metric-sub">Energia espalhada sobre a fuselagem alvo.</div>
+            </div>
+            <div class="metric">
+                <div class="metric-title">Pressão de Radiação (Tensor de Maxwell)</div>
+                <div id="res-pressao" class="metric-value">0.00 µPa</div>
+                <div class="metric-sub">Transferência de momento mecânico via fótons.</div>
+            </div>
+            <div class="metric">
+                <div class="metric-title">Sinal de Retorno (Equação do Radar - Atenuação 1/R⁴)</div>
+                <div id="res-pr-dbm" class="metric-value" style="color: var(--accent-orange);">0.00 dBm</div>
+                <div id="res-pr-watts" style="font-family: monospace; font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">0 Watts</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function calcularFisica() {
+    const Pt_kW = parseFloat(document.getElementById("slider-pt").value);
+    const G_dBi = parseFloat(document.getElementById("slider-g").value);
+    const theta_deg = parseFloat(document.getElementById("slider-theta").value);
+    const f_GHz = parseFloat(document.getElementById("slider-f").value);
+    const rcs_dBsm = parseFloat(document.getElementById("slider-rcs").value);
+    const R_km = parseFloat(document.getElementById("slider-r").value);
+
+    const c = 299792458; 
+    const Pt = Pt_kW * 1000; 
+    const G = Math.pow(10, G_dBi / 10); 
+    const f = f_GHz * 1e9; 
+    const lambda = c / f; 
+    const sigma = Math.pow(10, rcs_dBsm / 10); 
+    const R = R_km * 1000; 
+
+    // Atualização dos Labels
+    document.getElementById("val-pt").innerText = `${Pt_kW} kW`;
+    document.getElementById("val-g").innerText = `${G_dBi} dBi`;
+    
+    // Miliradianos para referência técnica
+    const theta_mrad = theta_deg * (Math.PI / 180) * 1000;
+    document.getElementById("val-theta").innerText = `${theta_deg.toFixed(1)}° (${theta_mrad.toFixed(0)} mrad)`;
+    
+    document.getElementById("val-f").innerText = `${f_GHz.toFixed(1)} GHz`;
+    
+    let rcs_desc = "m²";
+    if (sigma < 0.01) rcs_desc = "m² (VLO/Stealth)";
+    else if (sigma <= 5) rcs_desc = "m² (Caça Médio)";
+    else rcs_desc = "m² (Bombardeiro)";
+    document.getElementById("val-rcs").innerText = `${sigma.toFixed(3)} ${rcs_desc}`;
+    document.getElementById("val-r").innerText = `${R_km} km`;
+
+    // 1. Cálculo da Geometria do Feixe (Beam Footprint)
+    // D = 2 * R * tan(theta / 2)
+    const theta_rad = theta_deg * (Math.PI / 180);
+    const diametro_feixe_m = 2 * R * Math.tan(theta_rad / 2);
+
+    // 2. Cálculo do Vetor de Poynting (S) no Alvo
+    const area_esfera_ida = 4 * Math.PI * Math.pow(R, 2);
+    const S = (Pt * G) / area_esfera_ida;
+
+    // 3. Pressão de Radiação
+    const p_rad = (2 * S) / c; 
+    const p_rad_micro_pascal = p_rad * 1e6; 
+
+    // 4. Potência de Recepção (Pr) - Quarta Potência
+    const numerador = Pt * Math.pow(G, 2) * Math.pow(lambda, 2) * sigma;
+    const denominador = Math.pow(4 * Math.PI, 3) * Math.pow(R, 4);
+    const Pr = numerador / denominador;
+
+    const Pr_dBm = 10 * Math.log10(Pr * 1000);
+
+    // Atualização do DOM
+    if (diametro_feixe_m > 1000) {
+        document.getElementById("res-footprint").innerText = (diametro_feixe_m / 1000).toFixed(2) + " km";
+    } else {
+        document.getElementById("res-footprint").innerText = diametro_feixe_m.toFixed(0) + " metros";
+    }
+
+    document.getElementById("res-poynting").innerText = S < 0.001 ? S.toExponential(2) + " W/m²" : S.toFixed(6) + " W/m²";
+    document.getElementById("res-pressao").innerText = p_rad_micro_pascal.toFixed(6) + " µPa";
+    document.getElementById("res-pr-dbm").innerText = Pr_dBm.toFixed(2) + " dBm";
+    document.getElementById("res-pr-watts").innerText = Pr.toExponential(4) + " Watts";
+}
+
+calcularFisica();
+</script>
+
+</body>
+</html>
