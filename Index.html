@@ -166,6 +166,48 @@
     </div>
 </div>
 
+    <div style="margin-top: 25px; background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; padding: 20px;">
+        <details style="cursor: pointer;">
+            <summary style="font-size: 0.75rem; color: var(--accent-orange); text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; outline: none; user-select: none;">
+                [+] EXPANDIR FUNDAMENTAÇÃO MATEMÁTICA E ELETRODINÂMICA VETORIAL
+            </summary>
+            
+            <div style="margin-top: 20px; font-size: 0.8rem; line-height: 1.6; color: #cbd5e1; text-align: justify; display: flex; flex-direction: column; gap: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
+                <p>
+                    <strong style="color: var(--accent-blue);">1. Formulação Vetorial Integral e o Limite Assintótico de Fraunhofer</strong><br>
+                    A modelagem matemática do feixe eletromagnético radiado por uma abertura circular baseia-se na formulação integral vetorial de <strong>Stratton-Chu</strong>, que atua como o propagador tensorial universal da perturbação no espaço livre. O motor de cálculo deste simulador valida a transição da zona de Fresnel para a região de campo distante de Fraunhofer através do critério da distância crítica de Rayleigh (R_f = 2D²/λ). Como a distância de operação estipulada em sistemas de radar de longo alcance atende ao limite de alta frequência onde R >> R_f, o termo de amplitude degenera monotonamente para o decaimento esférico regulamentar de 1/R, satisfazendo a Condição de Radiação de Sommerfeld e assumindo a característica de uma onda plana local TEM.
+                </p>
+
+                <p>
+                    <strong style="color: var(--accent-blue);">2. Densidade de Fluxo de Potência e o Vetor de Poynting Real</strong><br>
+                    A energia transportada pela onda eletromagnética por unidade de tempo e área é descrita pelo componente real do Vetor de Poynting complexo (S = Re{E x H*}). Em campo distante, a magnitude da densidade de fluxo de potência radiada no vácuo ao longo do eixo de boresight, considerando uma antena diretiva com Ganho linear (G) e Potência de transmissão (Pt), é calculada de forma exata por:
+                    <div style="font-family: monospace; background: #07090e; padding: 12px; border-radius: 4px; color: var(--accent-green); text-align: center; border: 1px solid var(--border-color);">
+                        S = (Pt * G) / (4 * pi * R²)
+                    </div>
+                    Esta equação governa a dispersão da densidade de energia do campo elétrico e magnético integrada no simulador, provando que a divergência do fluxo ativo é nula (∇ · S = 0) em meio ideal não-dissipativo, garantindo a conservação estrita da energia injetada no sistema.
+                </p>
+
+                <p>
+                    <strong style="color: var(--accent-blue);">3. Conservação do Tensor de Tensão de Maxwell e Pressão de Radiação</strong><br>
+                    O feixe de rádio não apenas difunde energia, mas transporta momento linear mecânico macroscópico. A densidade de momento linear (p) contida na radiação contínua é proporcional ao vetor de Poynting pela causalidade relativística do vácuo (p = S/c). O impacto e a absorção ou reflexão dessa frente de onda sobre um alvo condutor acionam a arquitetura de segunda ordem do <strong>Tensor de Tensão de Maxwell</strong> (T_ij). Sob a condição de incidência normal de onda plana e reflexão ideal, as tensões de cisalhamento cruzadas minimizam-se, e a pressão escalar volumétrica exercida pelo feixe de radar (pressão de radiação) é computada analiticamente por:
+                    <div style="font-family: monospace; background: #07090e; padding: 12px; border-radius: 4px; color: var(--accent-green); text-align: center; border: 1px solid var(--border-color);">
+                        p_rad = (2 * S) / c
+                    </div>
+                </p>
+
+                <p>
+                    <strong style="color: var(--accent-blue);">4. Equação Monostática do Radar e Geometria de Retorno</strong><br>
+                    A potência eletromagnética que efetivamente retorna à antena interceptadora após colidir com a Seção Reta do Radar (RCS / σ) do alvo sofre uma dupla penalização geométrica pelo inverso do quadrado da distância (1/R⁴). O acoplamento final que dita o limiar de potência de recepção (Pr) sintetiza a equação clássica do radar monostático:
+                    <div style="font-family: monospace; background: #07090e; padding: 12px; border-radius: 4px; color: var(--accent-green); text-align: center; border: 1px solid var(--border-color);">
+                        Pr = (Pt * G² * λ² * σ) / ((4 * pi)³ * R⁴)
+                    </div>
+                    A conversão logarítmica subsequente para dBm estabelece a assinatura real de detecção contra o ruído térmico de fundo do sistema receptor.
+                </p>
+            </div>
+        </details>
+    </div>
+
+    
 <script>
     function calcularFisica() {
         const Pt_kW = parseFloat(document.getElementById("slider-pt").value);
