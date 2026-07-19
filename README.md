@@ -2,13 +2,18 @@
 
 Análise matemática da linha de visada horizontal (LOS) e restrições geométricas de ocultação pela curvatura terrestre.
 
-https://lksmilitar.github.io/simuladores/radar_los_simulator_v2.html
+<a href="https://lksmilitar.github.io/simuladores/radar_los_simulator_v2.html" target="_blank" style="display: inline-block; background-color: #1b5e20; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; font-family: sans-serif; margin: 15px 0 35px 0;">
+  Acessar Simulador de Linha de Visada
+</a>
 
 # LKS MILITAR | Dinâmica de Equação de Radar & Geometria do Feixe
 
 Análise Vetorial de Poynting, Tensão de Maxwell e Expansão do Lóbulo Principal
 
-https://lksmilitar.github.io/simuladores/Index.html
+<a href="https://lksmilitar.github.io/simuladores/Index.html" target="_blank" style="display: inline-block; background-color: #1b5e20; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: bold; font-family: sans-serif; margin: 15px 0;">
+  Acessar Simulador de Equação de Radar
+</a>
+
 
 ## Visão Geral
 
