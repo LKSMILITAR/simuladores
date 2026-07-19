@@ -371,7 +371,8 @@ function processarSimulacao() {
     if (modelo === "geometrica_pura") k = 0.0;
     if (modelo === "optica") k = 0.14; // MDPI standard geodetic correction
 
-    const R_efetivo = R_real / (1.0 - k);
+    // CORREÇÃO: Fator de refração condicional para geometria pura
+    const R_efetivo = (modelo === "geometrica_pura") ? R_real : (R_real / (1.0 - k));
 
     // Calculating horizon distances: d = sqrt(2*R*h + h^2)
     const d0_km = Math.sqrt(2 * R_efetivo * h0_km + Math.pow(h0_km, 2));
