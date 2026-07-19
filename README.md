@@ -2,6 +2,12 @@
 
 https://lksmilitar.github.io/simuladores/radar_los_simulator_v2.html
 
+# LKS MILITAR | Dinâmica de Equação de Radar & Geometria do Feixe
+
+Análise Vetorial de Poynting, Tensão de Maxwell e Expansão do Lóbulo Principal
+
+https://lksmilitar.github.io/simuladores/Index.html
+
 Análise matemática da linha de visada horizontal (LOS) e restrições geométricas de ocultação pela curvatura terrestre.
 
 ## Visão Geral
