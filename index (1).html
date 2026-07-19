@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKS MILITAR | Air Warfare Radar Horizon & LOS</title>
+    <style>
+        :root {
+            --bg-color: #0a0c10;
+            --panel-color: #12161f;
+            --accent-color: #00e5ff;
+            --text-color: #f1f5f9;
+            --muted-color: #94a3b8;
+            --alert-color: #ff3333;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+            background: var(--panel-color);
+            border: 1px solid #1e293b;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            letter-spacing: 1.5px;
+            margin-top: 0;
+            color: var(--accent-color);
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 25px;
+        }
+
+        @media (max-width: 650px) { .grid { grid-template-columns: 1fr; } }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--muted-color);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            background: #1e2530;
+            border: 1px solid #334155;
+            color: var(--text-color);
+            padding: 10px;
+            border-radius: 6px;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        input[type="range"] {
+            padding: 0;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #334155;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-color);
+            cursor: pointer;
+        }
+
+        .value-display {
+            font-weight: bold;
+            color: var(--accent-color);
+            float: right;
+        }
+
+        .results-panel {
+            background: #06080c;
+            border-left: 4px solid var(--accent-color);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .result-item {
+            margin-bottom: 15px;
+            border-bottom: 1px solid #1e293b;
+            padding-bottom: 10px;
+        }
+
+        .result-item:last-child { 
+            margin-bottom: 0; 
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-size: 0.75rem;
+            color: var(--muted-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-value {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+
+        .status-badge {
+            display: block;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>⚡ LKS MILITAR | SIMULADOR DE COBERTURA RADAR BVR</h1>
+    
+    <div class="grid">
+        <div class="controls">
+            <div class="control-group">
+                <label for="meio">Física de Propagação do Meio</label>
+                <select id="meio" oninput="atualizarCalculosAereos()">
+                    <option value="radar">Frequências de Radar (Banda X/L/S - Fator 4/3)</option>
+                    <option value="optica">Sensores Ópticos / FLIR (MDPI k=0.14)</option>
+                    <option value="geometrica_pura">Linha de Visada Geométrica (Vácuo k=0.0)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="h0">Altitude da Plataforma Radarguiada (h0): <span id="h0-val" class="value-display">10.0</span> km</label>
+                <input type="range" id="h0" min="0.1" max="20.0" value="10.0" step="0.1" oninput="atualizarCalculosAereos()">
+            </div>
+
+            <div class="control-group">
+                <label for="h1">Altitude do Vetor Hostil / Alvo (h1): <span id="h1-val" class="value-display">5.0</span> km</label>
+                <input type="range" id="h1" min="0.0" max="20.0" value="5.0" step="0.1" oninput="atualizarCalculosAereos()">
+            </div>
+
+            <div class="control-group">
+                <label for="distancia">Distância de Engajamento Real: <span id="distancia-val" class="value-display">250</span> km</label>
+                <input type="range" id="distancia" min="5" max="500" value="250" step="5" oninput="atualizarCalculosAereos()">
+            </div>
+        </div>
+
+        <div class="results-panel">
+            <div>
+                <div class="result-item">
+                    <div class="result-label">Horizonte de Detecção da Plataforma (d0)</div>
+                    <div id="res-d0" class="result-value">0.00 km</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Alcance Máximo da Linha de Visada (LOS)</div>
+                    <div id="res-visada-max" class="result-value" style="color: var(--accent-color);">0.00 km</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Porção Ocultada pela Curvatura</div>
+                    <div id="res-ocultada" class="result-value">0.00 m</div>
+                </div>
+            </div>
+            <div>
+                <div class="result-label" style="margin-bottom: 5px;">Viabilidade de Varredura / Trava</div>
+                <div id="res-status" class="status-badge">---</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function atualizarCalculosAereos() {
+    // 1. Coleta de inputs direto em quilômetros
+    const meio = document.getElementById("meio").value;
+    const h0_km = parseFloat(document.getElementById("h0").value);
+    const h1_km = parseFloat(document.getElementById("h1").value);
+    const d_real_km = parseFloat(document.getElementById("distancia").value);
+
+    // Atualização instantânea dos elementos de exibição
+    document.getElementById("h0-val").innerText = h0_km.toFixed(1);
+    document.getElementById("h1-val").innerText = h1_km.toFixed(1);
+    document.getElementById("distancia-val").innerText = d_real_km;
+
+    // 2. Parâmetros do Raio Terrestre Corrigido por Refração Atmosférica
+    const R_real = 6371.0; 
+    let k = 0.25; // Padrão de Radar (Fator 4/3) como default na aviação militar
+
+    if (meio === "geometrica_pura") k = 0.0;
+    if (meio === "optica") k = 0.14; // Artigos MDPI Sensors
+
+    const R_efetivo = R_real / (1.0 - k);
+
+    // 3. Resolução da Geometria de Linha de Visada (LOS)
+    // d = sqrt(2 * R * h + h²) -> Como h está em km, o cálculo gera o resultado direto em km
+    const d0_horizonte_km = Math.sqrt(2 * R_efetivo * h0_km + Math.pow(h0_km, 2));
+    const d1_horizonte_km = Math.sqrt(2 * R_efetivo * h1_km + Math.pow(h1_km, 2));
+    const visada_maxima_km = d0_horizonte_km + d1_horizonte_km;
+
+    let ocultacao_m = 0.0;
+    let status_texto = "";
+    let status_cor = "#00e5ff";
+    let texto_cor = "#0a0c10";
+
+    // 4. Verificação de Alinhamento e Zona de Sombra
+    if (d_real_km <= d0_horizonte_km) {
+        ocultacao_m = 0.0;
+        status_texto = "ALVO ACIMA DO HORIZONTE RADAR (LOCK DISPONÍVEL)";
+    } else {
+        const d_restante_km = d_real_km - d0_horizonte_km;
+        const queda_km = Math.sqrt(Math.pow(R_efetivo, 2) + Math.pow(d_restante_km, 2)) - R_efetivo;
+        ocultacao_m = queda_km * 1000.0; // Convertido para metros para melhor leitura de alvos baixos
+
+        const h1_metros = h1_km * 1000.0;
+
+        if (ocultacao_m >= h1_metros) {
+            status_texto = "ZONA DE SOMBRA: ALVO OCULTADO PELA TERRA";
+            status_cor = "#ff3333";
+            texto_cor = "#ffffff";
+        } else {
+            const exposto_m = h1_metros - ocultacao_m;
+            status_texto = `RETICULADO EXPOSTO: ${exposto_m.toFixed(0)}m ACIMA DO HORIZONTE`;
+            status_cor = "#ffaa00";
+        }
+    }
+
+    // 5. Atualização da Interface Visual
+    document.getElementById("res-d0").innerText = `${d0_horizonte_km.toFixed(1)} km`;
+    document.getElementById("res-visada-max").innerText = `${visada_maxima_km.toFixed(1)} km`;
+    
+    // Formatação amigável para a ocultação
+    if (ocultacao_m >= 1000) {
+        document.getElementById("res-ocultada").innerText = `${(ocultacao_m / 1000).toFixed(2)} km`;
+    } else {
+        document.getElementById("res-ocultada").innerText = `${ocultacao_m.toFixed(0)} metros`;
+    }
+    
+    const badge = document.getElementById("res-status");
+    badge.innerText = status_texto;
+    badge.style.backgroundColor = status_cor;
+    badge.style.color = texto_cor;
+}
+
+// Inicialização automática do painel táctico
+atualizarCalculosAereos();
+</script>
+
+</body>
+</html>
