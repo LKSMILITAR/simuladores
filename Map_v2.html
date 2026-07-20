@@ -1,15 +1,229 @@
-// ==========================================
-        // 3. GERAÇÃO DA MATRIZ DO GLOBO E DATA INTEGRATION
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKS MILITAR - Banco de Dados de Projeção Tática</title>
+    <style>
+        :root {
+            --primary: #00FFCC;
+            --secondary: #FFCC00;
+            --bg-dark: #03070A;
+            --panel-bg: rgba(3, 15, 22, 0.88);
+            --border-color: rgba(0, 255, 204, 0.3);
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+            font-family: 'Courier New', Courier, monospace;
+            color: #FFFFFF;
+            user-select: none;
+        }
+
+        /* HEADER SUPERIOR */
+        #header-hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 12px 20px;
+            box-sizing: border-box;
+            background: linear-gradient(180deg, rgba(3,20,30,0.95) 0%, rgba(3,7,10,0) 100%);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .brand-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary);
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px rgba(0,255,204,0.5);
+        }
+
+        .system-status {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            display: flex;
+            gap: 20px;
+        }
+
+        /* PAINEL LATERAL DE SELEÇÃO DE VETORES */
+        #vector-panel {
+            position: absolute;
+            top: 70px;
+            left: 20px;
+            width: 260px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 4px;
+            z-index: 90;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 15px rgba(0,0,0,0.8);
+        }
+
+        .panel-header {
+            font-size: 0.85rem;
+            color: var(--primary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+            font-weight: bold;
+        }
+
+        .vector-card {
+            background: rgba(0, 255, 204, 0.05);
+            border: 1px solid rgba(0, 255, 204, 0.15);
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .vector-card:hover, .vector-card.active {
+            background: rgba(0, 255, 204, 0.2);
+            border-color: var(--primary);
+            box-shadow: 0 0 8px rgba(0, 255, 204, 0.4);
+        }
+
+        .vector-name {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #FFF;
+        }
+
+        .vector-spec {
+            font-size: 0.7rem;
+            color: var(--secondary);
+            margin-top: 4px;
+        }
+
+        /* PAINEL DE TELEMETRIA DO ALVO */
+        #target-hud {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 310px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            z-index: 90;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            backdrop-filter: blur(5px);
+        }
+
+        .hud-label { color: rgba(255,255,255,0.5); font-size: 0.7rem; }
+        .hud-value { color: var(--primary); font-weight: bold; }
+        .hud-target { color: var(--secondary); font-size: 0.95rem; font-weight: bold; margin-top: 5px; }
+
+        #canvas-container { width: 100vw; height: 100vh; }
+    </style>
+
+    <!-- BIBLIOTECAS ENGINE -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+</head>
+<body>
+
+    <!-- HUD SUPERIOR -->
+    <div id="header-hud">
+        <div class="brand-title">LKS MILITAR // TACTICAL VECTOR DATABASE</div>
+        <div class="system-status">
+            <span>ENGINE: THREE.JS / D3 CHORD-GEODETIC</span>
+            <span id="status-tag">STATUS: CARREGANDO MAPA...</span>
+        </div>
+    </div>
+
+    <!-- MENU LATERAL DE VETORES -->
+    <div id="vector-panel">
+        <div class="panel-header">SELEÇÃO DE VETOR TÁTICO</div>
+        <div id="vector-list"></div>
+    </div>
+
+    <!-- HUD DE TELEMETRIA -->
+    <div id="target-hud">
+        <div class="hud-label">SISTEMA DE PROJEÇÃO GEODÉSICA</div>
+        <div id="selected-vector-display" class="hud-value">VETOR: F-15E STRIKE EAGLE</div>
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 8px 0;">
+        <div id="coords-display">LAT: -- | LON: --</div>
+        <div id="target-display" class="hud-target">AGUARDANDO SELEÇÃO NO GLOBO...</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script>
+        // ==========================================
+        // 1. BANCO DE DADOS DE VETORES (DESACOPLADO)
+        // ==========================================
+        const AIRCRAFT_DATABASE = [
+            { id: 'f15e', name: 'F-15E Strike Eagle', rangeKm: 1270, payload: 'Conf. Ataque Distância', color: 0x00FFCC },
+            { id: 'su35', name: 'Su-35 Flanker-E', rangeKm: 1600, payload: 'Patrulha Superioridade', color: 0xFF9900 },
+            { id: 'gripen', name: 'JAS 39 Gripen E', rangeKm: 800, payload: 'Carga Padrão Defesa', color: 0x00AABB },
+            { id: 'rafale', name: 'Dassault Rafale F4', rangeKm: 1100, payload: 'Perfil Interdição', color: 0xFF0055 }
+        ];
+
+        let selectedVector = AIRCRAFT_DATABASE[0];
+
+        const vectorListContainer = document.getElementById('vector-list');
+        AIRCRAFT_DATABASE.forEach((vector, index) => {
+            const card = document.createElement('div');
+            card.className = `vector-card ${index === 0 ? 'active' : ''}`;
+            card.innerHTML = `
+                <div class="vector-name">${vector.name}</div>
+                <div class="vector-spec">RAIO COMBATE: ${vector.rangeKm} KM</div>
+            `;
+            card.onclick = () => {
+                document.querySelectorAll('.vector-card').forEach(c => c.classList.remove('active'));
+                card.classList.add('active');
+                selectedVector = vector;
+                document.getElementById('selected-vector-display').innerText = `VETOR: ${vector.name.toUpperCase()}`;
+            };
+            vectorListContainer.appendChild(card);
+        });
+
+        // ==========================================
+        // 2. CONFIGURAÇÃO DO MOTOR GRÁFICO 3D
+        // ==========================================
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x03070A, 0.12);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 4;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 1.6;
+        controls.maxDistance = 5.5;
+
+        // ==========================================
+        // 3. GERAÇÃO DA MATRIZ DO GLOBO E INDEXAÇÃO RAM
         // ==========================================
         const globeRadius = 1.5;
-        const earthRadiusKm = 6371; // Raio real da Terra para a escala matemática
+        const earthRadiusKm = 6371;
         const numPoints = 9000;
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(numPoints * 3);
         const colors = new Float32Array(numPoints * 3);
-        const phi = Math.PI * (3 - Math.sqrt(5)); // Proporção áurea de Fibonacci
+        const phi = Math.PI * (3 - Math.sqrt(5));
 
-        // Banco de dados em memória RAM (O(1)) para lermos o país sem travar a engine
         const mapaPontosMemoria = new Map();
 
         for (let i = 0; i < numPoints; i++) {
@@ -25,18 +239,19 @@
             positions[i * 3 + 1] = posY;
             positions[i * 3 + 2] = posZ;
 
-            // Cor base tática para o oceano (Azul/Cinza profundo de radar militar)
-            colors[i * 3] = 0.1;     // R
-            colors[i * 3 + 1] = 0.15; // G
-            colors[i * 3 + 2] = 0.2;  // B
+            // Cor inicial do oceano
+            colors[i * 3] = 0.1;
+            colors[i * 3 + 1] = 0.15;
+            colors[i * 3 + 2] = 0.2;
 
-            // Conversão matemática ultra precisa de 3D para coordenadas geodésicas reais
             const lat = Math.asin(posY / globeRadius) * (180 / Math.PI);
             const lon = Math.atan2(-posX, posZ) * (180 / Math.PI);
 
-            // Mapeia o ponto na estrutura aberta editável
             mapaPontosMemoria.set(i, {
                 index: i,
+                x: posX,
+                y: posY,
+                z: posZ,
                 lat: lat,
                 lon: lon,
                 pais: "Oceano / Território Neutro"
@@ -46,38 +261,34 @@
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-        const material = new THREE.PointsMaterial({
+        const globeMaterial = new THREE.PointsMaterial({
             size: 0.015,
             vertexColors: true,
             transparent: true,
             opacity: 0.8
         });
 
-        const globe = new THREE.Points(geometry, material);
+        const globe = new THREE.Points(geometry, globeMaterial);
         scene.add(globe);
 
-        // Esfera invisível de colisão dedicada para garantir cálculo de clique suave sem delay de FPS
         const hitSphereGeom = new THREE.SphereGeometry(globeRadius, 32, 32);
         const hitSphereMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
         const hitSphere = new THREE.Mesh(hitSphereGeom, hitSphereMat);
         scene.add(hitSphere);
 
         // ==========================================
-        // 4. CARREGAMENTO DO BANCO DE FRONTEIRAS ESTÁTICO (GEOJSON)
+        // 4. MAPEMENTO GEOGRÁFICO VIA D3 (EXECUTADO 1X)
         // ==========================================
-        // Usamos uma base mundial leve via D3. O navegador roda isso uma única vez na inicialização
-        d3.json('https://githubusercontent.com')
+        d3.json('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson')
             .then(geoJson => {
                 const colorAttribute = geometry.attributes.color;
 
                 mapaPontosMemoria.forEach(ponto => {
-                    // O D3 varre as fronteiras e injeta o país direto no nosso array de memória
                     for (let i = 0; i < geoJson.features.length; i++) {
                         const feature = geoJson.features[i];
                         if (d3.geoContains(feature, [ponto.lon, ponto.lat])) {
-                            ponto.pais = feature.properties.ADMIN || feature.properties.name || "Desconhecido";
-                            
-                            // Delineamento visual estático: Pinta a terra com a cor padrão da marca LKS (Verde Tático)
+                            ponto.pais = feature.properties.ADMIN || feature.properties.NAME || "Desconhecido";
+                            // Destaca continentes em Verde Tático LKS
                             colorAttribute.setXYZ(ponto.index, 0.0, 0.4, 0.3);
                             break;
                         }
@@ -85,32 +296,20 @@
                 });
 
                 colorAttribute.needsUpdate = true;
-                document.querySelector('.system-status span:nth-child(2)').innerText = "STATUS: MAP READY";
+                document.getElementById('status-tag').innerText = "STATUS: MAP READY";
             })
             .catch(err => {
-                console.error("Erro no carregamento geodésico:", err);
+                document.getElementById('status-tag').innerText = "STATUS: MAP READ-ONLY";
             });
 
         // ==========================================
-        // 5. MOTOR DE TELEMETRIA, INTERAÇÃO E DISTÂNCIA REAL
+        // 5. TELEMETRIA E PROCESSAMENTO POR CORDA 3D (O(1) MATH)
         // ==========================================
         const raycaster = new THREE.Raycaster();
         const mouse = new THREE.Vector2();
         let currentRings = [];
 
-        // Fórmula real de Haversine para cálculo de metragens e distâncias militares em KM
-        function calcularDistanciaRealKM(lat1, lon1, lat2, lon2) {
-            const toRad = Math.PI / 180;
-            const dLat = (lat2 - lat1) * toRad;
-            const dLon = (lon2 - lon1) * toRad;
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                      Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
-                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            return earthRadiusKm * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-        }
-
         window.addEventListener('click', (event) => {
-            // Ignora o clique se o usuário estiver interagindo com o painel lateral HTML
             if (event.target.closest('#vector-panel')) return;
 
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -121,75 +320,83 @@
 
             if (intersects.length > 0) {
                 const point = intersects[0].point;
-                // Ajusta a colisão 3D baseando-se na rotação viva da esfera
                 const localPoint = hitSphere.worldToLocal(point.clone());
 
                 const latClique = Math.asin(localPoint.y / globeRadius) * (180 / Math.PI);
                 const lonClique = Math.atan2(-localPoint.x, localPoint.z) * (180 / Math.PI);
 
-                // Captura dinamicamente o alcance em KM do caça selecionado no seu menu lateral!
                 const raioAtaqueKm = selectedVector.rangeKm;
 
-                // Desenha o anel de projeção perfeitamente escalonado na tela
-                criarAnelEscalonado(point, intersects[0].normal, raioAtaqueKm, selectedVector.color);
-
-                // Busca O(1): Descobre em qual país clicou varrendo o mapa local super rápido
+                // 1. Busca do País via Menor Distância 3D (Otimizada)
                 let paisAlvo = "Oceano / Território Neutro";
+                let menorDistSq = Infinity;
+
                 for (let [i, pt] of mapaPontosMemoria) {
-                    // Uma aproximação geométrica simples para achar o país do clique no mapa indexado
-                    if (Math.abs(pt.lat - latClique) < 1.5 && Math.abs(pt.lon - lonClique) < 1.5) {
-                        if (pt.pais !== "Oceano / Território Neutro") {
-                            paisAlvo = pt.pais;
-                            break;
-                        }
+                    const dx = pt.x - localPoint.x;
+                    const dy = pt.y - localPoint.y;
+                    const dz = pt.z - localPoint.z;
+                    const distSq = dx * dx + dy * dy + dz * dz;
+
+                    if (distSq < menorDistSq) {
+                        menorDistSq = distSq;
+                        paisAlvo = pt.pais;
                     }
                 }
 
-                // Processamento de Brilho de Alvo Real na Malha de Pontos
-                const colorAttribute = geometry.attributes.color;
-                mapaPontosMemoria.forEach(ponto => {
-                    const distanciaKM = calcularDistanciaRealKM(latClique, lonClique, ponto.lat, ponto.lon);
+                // 2. Cálculo do Limite por Corda 3D ao Quadrado (Substitui Haversine no Loop)
+                const thetaHalf = (raioAtaqueKm / (2 * earthRadiusKm));
+                const chordLimit = 2 * globeRadius * Math.sin(thetaHalf);
+                const chordLimitSq = chordLimit * chordLimit;
 
-                    if (distanciaKM <= raioAtaqueKm) {
-                        // Se o ponto está dentro do raio real do caça, acende com a cor exclusiva dele (do seu AIRCRAFT_DATABASE)
-                        const c = new THREE.Color(selectedVector.color);
-                        colorAttribute.setXYZ(ponto.index, c.r, c.g, c.b);
+                // 3. Atualização de Cores dos Vértices em Alta Velocidade
+                const colorAttribute = geometry.attributes.color;
+                const activeColor = new THREE.Color(selectedVector.color);
+
+                for (let i = 0; i < numPoints; i++) {
+                    const dx = positions[i * 3] - localPoint.x;
+                    const dy = positions[i * 3 + 1] - localPoint.y;
+                    const dz = positions[i * 3 + 2] - localPoint.z;
+                    const dist3DSq = dx * dx + dy * dy + dz * dz;
+
+                    const pt = mapaPontosMemoria.get(i);
+
+                    if (dist3DSq <= chordLimitSq) {
+                        colorAttribute.setXYZ(i, activeColor.r, activeColor.g, activeColor.b);
                     } else {
-                        // Fora do raio, reseta para a cor padrão do relevo estático
-                        if (ponto.pais !== "Oceano / Território Neutro") {
-                            colorAttribute.setXYZ(ponto.index, 0.0, 0.4, 0.3); // Terra comum
+                        if (pt.pais !== "Oceano / Território Neutro") {
+                            colorAttribute.setXYZ(i, 0.0, 0.4, 0.3); // Terra comum
                         } else {
-                            colorAttribute.setXYZ(ponto.index, 0.1, 0.15, 0.2); // Mar comum
+                            colorAttribute.setXYZ(i, 0.1, 0.15, 0.2); // Oceano comum
                         }
                     }
-                });
+                }
                 colorAttribute.needsUpdate = true;
 
-                // Atualiza o seu painel HUD de Telemetria com os dados reais calculados
+                // 4. Desenha o Anel de Borda com Projeção por Seno Angular Correta
+                criarAnelEscalonado(point, intersects[0].normal, raioAtaqueKm, selectedVector.color);
+
+                // 5. Atualiza HUD
                 document.getElementById('coords-display').innerHTML = 
                     `LAT: ${latClique.toFixed(4)}° | LON: ${lonClique.toFixed(4)}°<br>` +
                     `<span style="color: #FFF; font-size: 0.75rem;">RAIO OPERACIONAL: ${raioAtaqueKm} KM</span>`;
                 
                 document.getElementById('target-display').innerText = `ALVO: ${paisAlvo.toUpperCase()}`;
-                if(paisAlvo !== "Oceano / Território Neutro") {
-                    document.getElementById('target-display').style.color = "var(--secondary)";
-                } else {
-                    document.getElementById('target-display').style.color = "rgba(255,255,255,0.4)";
-                }
+                document.getElementById('target-display').style.color = 
+                    (paisAlvo !== "Oceano / Território Neutro") ? "var(--secondary)" : "rgba(255,255,255,0.4)";
             }
         });
 
         function criarAnelEscalonado(position, normal, raioKm, hexadecimalColor) {
-            // Conversão matemática milimétrica: Transforma a metragem real em KM na escala física 3D do Three.js
-            const raioVisualThreeJS = (raioKm / earthRadiusKm) * globeRadius;
+            // Trigonometria de Corda Esférica Exata: R_visual = R_globo * sin(theta)
+            const theta = raioKm / earthRadiusKm;
+            const raioVisualThreeJS = Math.sin(theta) * globeRadius;
 
-            // Cria uma linha perfeitamente circular ao redor do alvo
-            const ringGeom = new THREE.RingGeometry(raioVisualThreeJS - 0.015, raioVisualThreeJS, 64);
+            const ringGeom = new THREE.RingGeometry(Math.max(0.001, raioVisualThreeJS - 0.012), raioVisualThreeJS, 64);
             const ringMat = new THREE.MeshBasicMaterial({ 
                 color: hexadecimalColor, 
                 side: THREE.DoubleSide, 
                 transparent: true, 
-                opacity: 0.85,
+                opacity: 0.9,
                 depthTest: false
             });
 
@@ -200,4 +407,32 @@
             scene.add(ring);
             currentRings.push(ring);
 
-// Animação militar sóbria (Apenas fade out estável para não distorcer a escala real em KM)new TWEEN.Tween(ringMat).to({ opacity: 0 }, 2500).onComplete(() => { scene.remove(ring); }).start();}// ==========================================// 6. RENDER LOOP E RESPONSIVIDADE// ==========================================function animate(time) {requestAnimationFrame(animate);TWEEN.update(time);controls.update();// Sincronização de rotação tática contínua do globo e da zona de colisãoif(controls.getAzimuthalAngle() !== undefined) {globe.rotation.y += 0.0004;hitSphere.rotation.y += 0.0004;}renderer.render(scene, camera);}animate();window.addEventListener('resize', () => {camera.aspect = window.innerWidth / window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth, window.innerHeight);});
+            new TWEEN.Tween(ringMat)
+                .to({ opacity: 0 }, 2800)
+                .onComplete(() => { scene.remove(ring); })
+                .start();
+        }
+
+        // ==========================================
+        // 6. RENDER LOOP E RESPONSIVIDADE
+        // ==========================================
+        function animate(time) {
+            requestAnimationFrame(animate);
+            TWEEN.update(time);
+            controls.update();
+
+            globe.rotation.y += 0.0004;
+            hitSphere.rotation.y += 0.0004;
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
