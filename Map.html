@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motor Tático - Projeção Geodésica</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #03070A; /* Fundo escuro tático */
+            font-family: 'Courier New', Courier, monospace;
+            user-select: none;
+        }
+        #ui-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #00FFCC;
+            pointer-events: none;
+            z-index: 10;
+        }
+        h1 { margin: 0; font-size: 1.2rem; letter-spacing: 2px; }
+        p { margin: 5px 0 0 0; font-size: 0.8rem; opacity: 0.7; }
+        #coords-display { margin-top: 15px; font-size: 0.9rem; font-weight: bold; }
+    </style>
+    <!-- Bibliotecas Core (Three.js + Tween.js para animações fluidas) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+</head>
+<body>
+
+    <div id="ui-panel">
+        <h1>PROJEÇÃO ESTRATÉGICA ATIVA</h1>
+        <p>Motor: Matriz de Pontos + Raycasting Direto</p>
+        <p>Status: Aguardando seleção de vetor na malha...</p>
+        <div id="coords-display">LAT: -- | LON: --</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script>
+        // 1. CONFIGURAÇÃO BASE DO MOTOR GRÁFICO
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x03070A, 0.15); // Neblina para profundidade
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 4;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 1.5; // Limite de zoom IN (Visão de Teatro)
+        controls.maxDistance = 6.0; // Limite de zoom OUT (Visão Global)
+        controls.enablePan = false;
+
+        // 2. GERAÇÃO DA MATRIZ DE PONTOS (FIBONACCI SPHERE)
+        // Distribuição matemática super eficiente para criar a malha do globo
+        const radius = 1.5;
+        const numPoints = 8000; 
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(numPoints * 3);
+        const phi = Math.PI * (3 - Math.sqrt(5)); // Proporção áurea
+
+        for (let i = 0; i < numPoints; i++) {
+            const y = 1 - (i / (numPoints - 1)) * 2;
+            const radiusAtY = Math.sqrt(1 - y * y);
+            const theta = phi * i;
+
+            positions[i * 3] = Math.cos(theta) * radiusAtY * radius;
+            positions[i * 3 + 1] = y * radius;
+            positions[i * 3 + 2] = Math.sin(theta) * radiusAtY * radius;
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        // Material da malha - Estética de radar tático
+        const material = new THREE.PointsMaterial({
+            color: 0x224455,
+            size: 0.015,
+            transparent: true,
+            opacity: 0.8
+        });
+
+        const globe = new THREE.Points(geometry, material);
+        scene.add(globe);
+
+        // Geometria invisível para capturar os cliques do mouse com perfeição
+        const hitSphereGeom = new THREE.SphereGeometry(radius, 32, 32);
+        const hitSphereMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
+        const hitSphere = new THREE.Mesh(hitSphereGeom, hitSphereMat);
+        scene.add(hitSphere);
+
+        // 3. MOTOR DE INTERAÇÃO (RAYCASTING E PROJEÇÃO GEODÉSICA)
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let currentRings = [];
+
+        window.addEventListener('click', (event) => {
+            // Normaliza as coordenadas do mouse
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(hitSphere);
+
+            if (intersects.length > 0) {
+                const point = intersects[0].point;
+                const normal = intersects[0].normal;
+                
+                // Dispara a criação do Raio de Combate
+                createCombatRadius(point, normal);
+                
+                // Atualiza o painel UI (Cálculo fictício de Lat/Lon para visualização)
+                const lat = Math.asin(point.y / radius) * (180 / Math.PI);
+                const lon = Math.atan2(point.x, point.z) * (180 / Math.PI);
+                document.getElementById('coords-display').innerText = 
+                    `LAT: ${lat.toFixed(2)}° | LON: ${lon.toFixed(2)}° | VETOR LANÇADO`;
+            }
+        });
+
+        // Função para criar o anel de alcance tático
+        function createCombatRadius(position, normal) {
+            // Geometria do anel (representando o limite de 600km, por exemplo)
+            const ringGeom = new THREE.RingGeometry(0.01, 0.03, 64);
+            const ringMat = new THREE.MeshBasicMaterial({ 
+                color: 0x00FFCC, 
+                side: THREE.DoubleSide, 
+                transparent: true, 
+                opacity: 0.9,
+                depthTest: false // Garante que brilhe sobre a malha
+            });
+
+            const ring = new THREE.Mesh(ringGeom, ringMat);
+            
+            // Posiciona no local do clique e orienta alinhado à superfície da esfera
+            ring.position.copy(position);
+            ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
+            
+            scene.add(ring);
+            currentRings.push(ring);
+
+            // Animação expansiva fluida (Tween)
+            new TWEEN.Tween(ring.scale)
+                .to({ x: 15, y: 15, z: 15 }, 1200) // Velocidade da expansão
+                .easing(TWEEN.Easing.Cubic.Out)
+                .start();
+
+            // Fade out lento após a expansão
+            new TWEEN.Tween(ringMat)
+                .to({ opacity: 0 }, 3000)
+                .delay(2000)
+                .onComplete(() => { scene.remove(ring); }) // Limpa a memória
+                .start();
+        }
+
+        // 4. LOOP DE RENDERIZAÇÃO
+        function animate(time) {
+            requestAnimationFrame(animate);
+            TWEEN.update(time);
+            controls.update();
+
+            // Rotação suave do globo se inativo
+            if(controls.getAzimuthalAngle() !== undefined) {
+                globe.rotation.y += 0.0005;
+                hitSphere.rotation.y += 0.0005;
+            }
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // 5. RESPONSIVIDADE
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
+
