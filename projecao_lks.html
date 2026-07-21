@@ -3,286 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LKS MILITAR - Projeção de Alcance Tático</title>
+    <title>LKS MILITAR - Projeção Tática (MapLibre)</title>
+    
+    <!-- Motor MapLibre GL JS -->
+    <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.css' />
+    <script src='https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.js'></script>
+
     <style>
         :root {
             --primary: #00FFCC;
             --secondary: #FFCC00;
-            --bg-dark: #020508;
-            --panel-bg: rgba(3, 15, 22, 0.88);
-            --border-color: rgba(0, 255, 204, 0.4);
-            --text-main: #FFFFFF;
-            --text-dim: rgba(255, 255, 255, 0.5);
+            --bg-dark: #03070A;
+            --panel-bg: rgba(3, 15, 22, 0.9);
+            --border-color: rgba(0, 255, 204, 0.3);
         }
 
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            background-color: var(--bg-dark); 
-            font-family: 'Courier New', Courier, monospace; 
-            color: var(--text-main); 
-            user-select: none;
-        }
+        body { margin: 0; padding: 0; overflow: hidden; background: var(--bg-dark); font-family: 'Courier New', Courier, monospace; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
 
-        #globeViz { 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            width: 100vw; 
-            height: 100vh; 
-            z-index: 1; 
-        }
-
-        /* HUD SUPERIOR */
+        /* HUD Superior */
         #header-hud {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            padding: 12px 18px;
-            border-radius: 4px;
-            z-index: 10;
-            backdrop-filter: blur(5px);
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            position: absolute; top: 0; left: 0; width: 100%; padding: 12px 20px; box-sizing: border-box;
+            background: linear-gradient(180deg, rgba(3,20,30,0.95) 0%, rgba(3,7,10,0) 100%);
+            border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between;
+            align-items: center; z-index: 100; pointer-events: none;
         }
 
-        .brand-title { 
-            font-size: 1rem; 
-            font-weight: bold; 
-            color: var(--primary); 
-            letter-spacing: 2px; 
-            text-shadow: 0 0 8px rgba(0,255,204,0.4);
-        }
+        .brand-title { font-size: 1.1rem; font-weight: bold; color: var(--primary); letter-spacing: 2px; }
 
-        .vector-selector-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 4px 10px;
-            border: 1px solid rgba(0,255,204,0.2);
-            border-radius: 3px;
-        }
-
-        .vector-selector-container label {
-            font-size: 0.75rem;
-            color: var(--text-dim);
-        }
-
-        #vector-select {
-            background: transparent;
-            color: var(--primary);
-            border: none;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.85rem;
-            font-weight: bold;
-            cursor: pointer;
-            outline: none;
-        }
-
-        #vector-select option {
-            background: var(--bg-dark);
-            color: #FFF;
-        }
-
-        /* HUD INFERIOR DIREITO */
+        /* HUD Inferior - Telemetria */
         #target-hud {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 270px;
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
-            padding: 15px;
-            z-index: 10;
-            font-size: 0.8rem;
-            line-height: 1.4;
+            position: absolute; bottom: 30px; right: 30px; width: 300px;
+            background: var(--panel-bg); border: 1px solid var(--border-color);
+            padding: 15px; z-index: 90; font-size: 0.8rem; line-height: 1.4; color: white;
             backdrop-filter: blur(5px);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
-            pointer-events: none;
         }
-
-        .hud-label { color: var(--text-dim); font-size: 0.7rem; }
-        .hud-value { color: var(--primary); font-weight: bold; margin-top: 3px; }
-        .hud-target { color: var(--secondary); font-size: 0.95rem; font-weight: bold; margin-top: 6px; }
-
-        @media (max-width: 768px) {
-            #header-hud { top: 10px; left: 10px; right: 10px; flex-direction: column; align-items: stretch; gap: 10px; }
-            #target-hud { bottom: 10px; right: 10px; width: auto; left: 10px; }
-        }
+        .hud-label { color: rgba(255,255,255,0.5); font-size: 0.7rem; }
+        .hud-value { color: var(--primary); font-weight: bold; }
+        .hud-alert { color: var(--secondary); font-size: 0.95rem; font-weight: bold; margin-top: 5px; }
     </style>
-
-    <script src="//unpkg.com/three"></script>
-    <script src="//unpkg.com/globe.gl"></script>
 </head>
 <body>
 
     <div id="header-hud">
-        <div class="brand-title">LKS MILITAR // TACTICAL VECTOR</div>
-        <div class="vector-selector-container">
-            <label for="vector-select">VETOR ATIVO</label>
-            <select id="vector-select"></select>
-        </div>
+        <div class="brand-title">LKS MILITAR // GLOBO TÁTICO</div>
     </div>
 
     <div id="target-hud">
         <div class="hud-label">TELEMETRIA DE PROJEÇÃO</div>
-        <div id="selected-vector-display" class="hud-value">F-15E STRIKE EAGLE [ 1270 KM ]</div>
+        <div class="hud-value">VETOR: F-15E STRIKE EAGLE</div>
         <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 8px 0;">
-        <div id="coords-display">LAT: -15.7900° | LON: -47.8800°</div>
-        <div id="target-display" class="hud-target">BASE ATIVA (BRASÍLIA)</div>
+        <div id="coords-display">LAT: -- | LON: --</div>
+        <div class="hud-alert">AERONAVE EM ROTA DE INTERCEPTAÇÃO</div>
     </div>
 
-    <div id="globeViz"></div>
+    <!-- Container do Mapa -->
+    <div id="map"></div>
 
     <script>
-        // 1. BANCO DE DADOS
-        const AIRCRAFT_DATABASE = [
-            { id: 'f15e', name: 'F-15E Strike Eagle', rangeKm: 1270, color: '#00FFCC' },
-            { id: 'su35', name: 'Su-35 Flanker-E', rangeKm: 1600, color: '#FF9900' },
-            { id: 'gripen', name: 'JAS 39 Gripen E', rangeKm: 800, color: '#00AABB' },
-            { id: 'f22', name: 'F-22 Raptor', rangeKm: 1093, color: '#FFFFFF' }
-        ];
-
-        let selectedVector = AIRCRAFT_DATABASE[0];
-        const selector = document.getElementById('vector-select');
-
-        AIRCRAFT_DATABASE.forEach(v => {
-            const opt = document.createElement('option');
-            opt.value = v.id; 
-            opt.innerText = `${v.name} [ ${v.rangeKm} KM ]`;
-            selector.appendChild(opt);
+        // Inicializa o mapa com estilo escuro e a projeção de globo (vertical-perspective)
+        const map = new maplibregl.Map({
+            container: 'map',
+            // Usando um base map escuro gratuito (Carto Dark Matter)
+            style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+            center: [-43.2096, -22.9035], // Centro no Rio de Janeiro
+            zoom: 2.5, // Zoom inicial bem afastado para ver o globo
+            pitch: 20,
+            projection: {
+                type: "vertical-perspective" // O globo que você encontrou!
+            }
         });
 
-        // Posição Inicial Padrão (Brasília - Base Operacional Inicial)
-        let currentLat = -15.7900;
-        let currentLng = -47.8800;
+        // Função rápida de geometria para desenhar um círculo (Raio de Combate)
+        function criarCirculoGeoJSON(centro, raioKm) {
+            const pontos = 64;
+            const coords = [];
+            const distanciaX = raioKm / (111.320 * Math.cos(centro[1] * Math.PI / 180));
+            const distanciaY = raioKm / 110.574;
 
-        function atualizarProjecao(lat, lng) {
-            currentLat = lat;
-            currentLng = lng;
-            
-            document.getElementById('coords-display').innerHTML = `LAT: ${lat.toFixed(4)}° | LON: ${lng.toFixed(4)}°`;
-            document.getElementById('target-display').innerHTML = `RAIO: ${selectedVector.rangeKm} KM`;
-
-            const rangeInDegrees = selectedVector.rangeKm / 111.12;
-
-            // Injeta o caça 3D
-            world.customLayerData([{ 
-                lat: lat, 
-                lng: lng, 
-                alt: 0.05, 
-                color: selectedVector.color 
-            }]);
-
-            // Injeta o anel de alcance
-            world.ringsData([{ 
-                lat: lat, 
-                lng: lng, 
-                maxR: rangeInDegrees 
-            }])
-            .ringColor(() => selectedVector.color)
-            .ringMaxRadius('maxR')
-            .ringPropagationSpeed(1.5)
-            .ringRepeatPeriod(800);
+            for(let i = 0; i < pontos; i++) {
+                const theta = (i / pontos) * (2 * Math.PI);
+                const x = distanciaX * Math.cos(theta);
+                const y = distanciaY * Math.sin(theta);
+                coords.push([centro[0] + x, centro[1] + y]);
+            }
+            coords.push(coords[0]); // Fecha o polígono
+            return {
+                "type": "Feature",
+                "geometry": { "type": "Polygon", "coordinates": [coords] }
+            };
         }
 
-        selector.addEventListener('change', (e) => {
-            selectedVector = AIRCRAFT_DATABASE.find(v => v.id === e.target.value);
-            document.getElementById('selected-vector-display').innerText = `${selectedVector.name.toUpperCase()} [ ${selectedVector.rangeKm} KM ]`;
+        map.on('load', () => {
+            // 1. Adicionando o Círculo de Alcance (Polygon)
+            const raioCombate = criarCirculoGeoJSON([-43.2096, -22.9035], 1270); // 1270km alcance F-15E
             
-            // Reaplica na mesma coordenada atual ao trocar de aeronave
-            atualizarProjecao(currentLat, currentLng);
-        });
-
-        // 2. INICIALIZAÇÃO DO GLOBO COM ÁGUA ESCURA CORRIGIDA
-        const world = Globe()(document.getElementById('globeViz'))
-            .globeImageUrl('//unpkg.com/three-globe/example/img/earth-dark.jpg')
-            .backgroundColor('#020508')
-            .pointOfView({ lat: -15.7900, lng: -47.8800, altitude: 1.8 });
-
-        // Correção de Material: Força os oceanos a ficarem escuros/profundos
-        setTimeout(() => {
-            const globeMaterial = world.globeMaterial();
-            globeMaterial.color = new THREE.Color('#0b131a'); // Tom escuro controlando a base dos oceanos
-            globeMaterial.roughness = 0.9;
-            globeMaterial.metalness = 0.1;
-        }, 300);
-
-        // Iluminação
-        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
-        world.scene().add(ambientLight);
-        
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-        dirLight.position.set(5, 3, 5);
-        world.scene().add(dirLight);
-
-        // 3. CONTROLES DE CÂMERA
-        setTimeout(() => {
-            const controls = world.controls();
-            controls.enablePan = false;       
-            controls.zoomSpeed = 0.4;         
-            controls.minDistance = 130;       
-            controls.maxDistance = 250;       
-        }, 500);
-
-        // 4. CONSTRUÇÃO DO CAÇA 3D GEOMÉTRICO (F-22)
-        world.customThreeObject(d => {
-            const shape = new THREE.Shape();
-            shape.moveTo(0, 3);       shape.lineTo(0.5, 1);     shape.lineTo(2.5, -1);
-            shape.lineTo(0.5, -1.5);  shape.lineTo(1, -2.5);    shape.lineTo(0, -2);
-            shape.lineTo(-1, -2.5);   shape.lineTo(-0.5, -1.5); shape.lineTo(-2.5, -1);
-            shape.lineTo(-0.5, 1);    shape.lineTo(0, 3);
-
-            const geometry = new THREE.ExtrudeGeometry(shape, { depth: 0.2, bevelEnabled: true, bevelSize: 0.1, bevelThickness: 0.1 });
-            geometry.center(); 
-            
-            const material = new THREE.MeshStandardMaterial({ 
-                color: d.color || '#00FFCC', 
-                metalness: 0.7, 
-                roughness: 0.2 
+            map.addSource('raio-combate', {
+                'type': 'geojson',
+                'data': raioCombate
             });
-            
-            return new THREE.Mesh(geometry, material);
+
+            map.addLayer({
+                'id': 'raio-fill',
+                'type': 'fill',
+                'source': 'raio-combate',
+                'paint': {
+                    'fill-color': '#00FFCC',
+                    'fill-opacity': 0.1
+                }
+            });
+
+            map.addLayer({
+                'id': 'raio-linha',
+                'type': 'line',
+                'source': 'raio-combate',
+                'paint': {
+                    'line-color': '#00FFCC',
+                    'line-width': 2,
+                    'line-dasharray': [2, 4] // Linha tracejada militar
+                }
+            });
+
+            // 2. Adicionando a Rota de Voo (Line)
+            map.addSource('rota-voo', {
+                'type': 'geojson',
+                'data': {
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'LineString',
+                        'coordinates': [
+                            [-43.2096, -22.9035], // Origem
+                            [-45.5, -20.0],
+                            [-47.9292, -15.7801]  // Destino (Brasília)
+                        ]
+                    }
+                }
+            });
+
+            map.addLayer({
+                'id': 'rota-linha',
+                'type': 'line',
+                'source': 'rota-voo',
+                'layout': {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                'paint': {
+                    'line-color': '#FFCC00',
+                    'line-width': 3
+                }
+            });
         });
 
-        world.customThreeObjectUpdate((obj, d) => {
-            const coords = world.getCoords(d.lat, d.lng, 0.05);
-            obj.position.set(coords.x, coords.y, coords.z);
-            
-            const centerVector = obj.position.clone().normalize();
-            const northPos = world.getCoords(d.lat + 1, d.lng, 0.05);
-            const northVector = new THREE.Vector3(northPos.x, northPos.y, northPos.z).sub(obj.position).normalize();
-            
-            const rightVector = new THREE.Vector3().crossVectors(northVector, centerVector).normalize();
-            const forwardVector = new THREE.Vector3().crossVectors(centerVector, rightVector).normalize();
-            
-            const matrix = new THREE.Matrix4().makeBasis(rightVector, centerVector, forwardVector);
-            obj.quaternion.setFromRotationMatrix(matrix);
-            obj.rotateX(Math.PI / 2); 
-            
-            if(d.color) obj.material.color.set(d.color);
-
-            const dist = world.camera().position.distanceTo(obj.position);
-            obj.scale.setScalar(dist * 0.012); 
-        });
-
-        // 5. RENDERIZAÇÃO INICIAL AUTOMÁTICA (Sem precisar clicar)
-        atualizarProjecao(currentLat, currentLng);
-
-        // 6. INTERAÇÃO DE CLIQUE (Para mover a base se quiser)
-        world.onGlobeClick(({ lat, lng }) => {
-            atualizarProjecao(lat, lng);
-        });
-
-        window.addEventListener('resize', () => {
-            world.width(window.innerWidth).height(window.innerHeight);
+        // 3. Interação com o Mouse (Atualiza o HUD)
+        map.on('mousemove', (e) => {
+            const lat = e.lngLat.lat.toFixed(4);
+            const lon = e.lngLat.lng.toFixed(4);
+            document.getElementById('coords-display').innerText = `LAT: ${lat}° | LON: ${lon}°`;
         });
     </script>
 </body>
 </html>
-
