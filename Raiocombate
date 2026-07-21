@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKS MILITAR - Projeção Tática Oficial</title>
+    <style>
+        :root {
+            --primary: #00FFCC;
+            --secondary: #FFCC00;
+            --bg-dark: #020508;
+            --panel-bg: rgba(3, 15, 22, 0.90);
+            --border-color: rgba(0, 255, 204, 0.4);
+            --text-main: #FFFFFF;
+            --text-dim: rgba(255, 255, 255, 0.5);
+        }
+
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: var(--bg-dark); 
+            font-family: 'Courier New', Courier, monospace; 
+            color: var(--text-main); 
+            user-select: none;
+        }
+
+        #globeViz { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            z-index: 1; 
+        }
+
+        /* HUD SUPERIOR */
+        #header-hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 12px 18px;
+            border-radius: 4px;
+            z-index: 10;
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        }
+
+        .brand-title { 
+            font-size: 1rem; 
+            font-weight: bold; 
+            color: var(--primary); 
+            letter-spacing: 2px; 
+            text-shadow: 0 0 8px rgba(0,255,204,0.4);
+        }
+
+        .vector-selector-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px 10px;
+            border: 1px solid rgba(0,255,204,0.2);
+            border-radius: 3px;
+        }
+
+        .vector-selector-container label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        #vector-select {
+            background: transparent;
+            color: var(--primary);
+            border: none;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            outline: none;
+        }
+
+        #vector-select option {
+            background: var(--bg-dark);
+            color: #FFF;
+        }
+
+        /* HUD INFERIOR DIREITO */
+        #target-hud {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 290px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            z-index: 10;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            pointer-events: none;
+        }
+
+        .hud-label { color: var(--text-dim); font-size: 0.7rem; }
+        .hud-value { color: var(--primary); font-weight: bold; margin-top: 3px; }
+        .hud-target { color: var(--secondary); font-size: 0.95rem; font-weight: bold; margin-top: 6px; }
+
+        @media (max-width: 768px) {
+            #header-hud { top: 10px; left: 10px; right: 10px; flex-direction: column; align-items: stretch; gap: 10px; }
+            #target-hud { bottom: 10px; right: 10px; width: auto; left: 10px; }
+        }
+    </style>
+
+    <script src="//unpkg.com/three"></script>
+    <script src="//unpkg.com/globe.gl"></script>
+</head>
+<body>
+
+    <div id="header-hud">
+        <div class="brand-title">LKS MILITAR // GESTÃO DE RAIO</div>
+        <div class="vector-selector-container">
+            <label for="vector-select">VETOR ATIVO</label>
+            <select id="vector-select"></select>
+        </div>
+    </div>
+
+    <div id="target-hud">
+        <div class="hud-label">TELEMETRIA DE PROJEÇÃO</div>
+        <div id="selected-vector-display" class="hud-value">F-15E STRIKE EAGLE [ 1270 KM ]</div>
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 8px 0;">
+        <div id="coords-display">LAT: -15.7900° | LON: -47.8800°</div>
+        <div id="target-display" class="hud-target">BASE FIXA (BRASÍLIA)</div>
+    </div>
+
+    <div id="globeViz"></div>
+
+    <script>
+        // 1. BANCO DE DADOS
+        const AIRCRAFT_DATABASE = [
+            { id: 'f15e', name: 'F-15E Strike Eagle', rangeKm: 1270, color: '#00FFCC' },
+            { id: 'su35', name: 'Su-35 Flanker-E', rangeKm: 1600, color: '#FF9900' },
+            { id: 'gripen', name: 'JAS 39 Gripen E', rangeKm: 800, color: '#00AABB' },
+            { id: 'f22', name: 'F-22 Raptor', rangeKm: 1093, color: '#FFFFFF' }
+        ];
+
+        let selectedVector = AIRCRAFT_DATABASE[0];
+        const selector = document.getElementById('vector-select');
+
+        AIRCRAFT_DATABASE.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.id; 
+            opt.innerText = `${v.name} [ ${v.rangeKm} KM ]`;
+            selector.appendChild(opt);
+        });
+
+        // Posição Padrão: Brasília
+        let currentLat = -15.7900;
+        let currentLng = -47.8800;
+
+        function atualizarProjecao(lat, lng) {
+            currentLat = lat;
+            currentLng = lng;
+            
+            document.getElementById('coords-display').innerHTML = `LAT: ${lat.toFixed(4)}° | LON: ${lng.toFixed(4)}°`;
+            document.getElementById('target-display').innerHTML = `RAIO: ${selectedVector.rangeKm} KM`;
+
+            // Conversão matemática exata para o raio geodésico
+            const rangeInDegrees = selectedVector.rangeKm / 111.12;
+
+            // Injeta o caça 3D visível
+            world.customLayerData([{ 
+                lat: lat, 
+                lng: lng, 
+                alt: 0.05, 
+                color: selectedVector.color 
+            }]);
+
+            // Injeta o anel de alcance com visibilidade garantida
+            world.ringsData([{ 
+                lat: lat, 
+                lng: lng, 
+                maxR: rangeInDegrees 
+            }])
+            .ringColor(() => selectedVector.color)
+            .ringMaxRadius('maxR')
+            .ringPropagationSpeed(1.0)
+            .ringRepeatPeriod(1000);
+        }
+
+        selector.addEventListener('change', (e) => {
+            selectedVector = AIRCRAFT_DATABASE.find(v => v.id === e.target.value);
+            document.getElementById('selected-vector-display').innerText = `${selectedVector.name.toUpperCase()} [ ${selectedVector.rangeKm} KM ]`;
+            atualizarProjecao(currentLat, currentLng);
+        });
+
+        // 2. INICIALIZAÇÃO DO GLOBO (Altitude 1.0: Perspectiva Estratégica Ideal para ver o Círculo Inteiro)
+        const world = Globe()(document.getElementById('globeViz'))
+            .globeImageUrl('//unpkg.com/three-globe/example/img/earth-dark.jpg')
+            .backgroundColor('#020508')
+            .pointOfView({ lat: -15.7900, lng: -47.8800, altitude: 1.0 });
+
+        // Oceano com cor profunda tática
+        setTimeout(() => {
+            const globeMaterial = world.globeMaterial();
+            globeMaterial.color = new THREE.Color('#0b131a');
+            globeMaterial.roughness = 0.9;
+            globeMaterial.metalness = 0.1;
+        }, 300);
+
+        // Iluminação direta no modelo
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.8);
+        world.scene().add(ambientLight);
+        
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(5, 5, 5);
+        world.scene().add(dirLight);
+
+        // 3. CONTROLES DE CÂMERA (Travados numa altura que mostra o caça E o raio inteiro)
+        setTimeout(() => {
+            const controls = world.controls();
+            controls.enablePan = false;       
+            controls.zoomSpeed = 0.4;         
+            controls.minDistance = 110;       // Aproximação segura
+            controls.maxDistance = 180;       // Limite estrito para nunca perder o raio de vista
+        }, 500);
+
+        // 4. CONSTRUÇÃO DO CAÇA 3D (F-22 Geométrico Robusto)
+        world.customThreeObject(d => {
+            const shape = new THREE.Shape();
+            shape.moveTo(0, 3);       shape.lineTo(0.5, 1);     shape.lineTo(2.5, -1);
+            shape.lineTo(0.5, -1.5);  shape.lineTo(1, -2.5);    shape.lineTo(0, -2);
+            shape.lineTo(-1, -2.5);   shape.lineTo(-0.5, -1.5); shape.lineTo(-2.5, -1);
+            shape.lineTo(-0.5, 1);    shape.lineTo(0, 3);
+
+            const geometry = new THREE.ExtrudeGeometry(shape, { depth: 0.2, bevelEnabled: true, bevelSize: 0.1, bevelThickness: 0.1 });
+            geometry.center(); 
+            
+            const material = new THREE.MeshStandardMaterial({ 
+                color: d.color || '#00FFCC', 
+                metalness: 0.8, 
+                roughness: 0.2 
+            });
+            
+            return new THREE.Mesh(geometry, material);
+        });
+
+        world.customThreeObjectUpdate((obj, d) => {
+            const coords = world.getCoords(d.lat, d.lng, 0.05);
+            obj.position.set(coords.x, coords.y, coords.z);
+            
+            const centerVector = obj.position.clone().normalize();
+            const northPos = world.getCoords(d.lat + 1, d.lng, 0.05);
+            const northVector = new THREE.Vector3(northPos.x, northPos.y, northPos.z).sub(obj.position).normalize();
+            
+            const rightVector = new THREE.Vector3().crossVectors(northVector, centerVector).normalize();
+            const forwardVector = new THREE.Vector3().crossVectors(centerVector, rightVector).normalize();
+            
+            const matrix = new THREE.Matrix4().makeBasis(rightVector, centerVector, forwardVector);
+            obj.quaternion.setFromRotationMatrix(matrix);
+            obj.rotateX(Math.PI / 2); 
+            
+            if(d.color) obj.material.color.set(d.color);
+
+            // Escala proporcional visível
+            obj.scale.setScalar(2.0); 
+        });
+
+        // 5. CARGA INICIAL AUTOMÁTICA
+        atualizarProjecao(currentLat, currentLng);
+
+        // 6. CLIQUE PARA REMOVER/REPOSICIONAR A BASE
+        world.onGlobeClick(({ lat, lng }) => {
+            atualizarProjecao(lat, lng);
+            world.pointOfView({ lat: lat, lng: lng, altitude: 1.0 }, 1000);
+        });
+
+        window.addEventListener('resize', () => {
+            world.width(window.innerWidth).height(window.innerHeight);
+        });
+    </script>
+</body>
+</html>
+
