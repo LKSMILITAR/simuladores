@@ -9,43 +9,111 @@
             --primary: #00FFCC;
             --secondary: #FFCC00;
             --bg-dark: #020508;
-            --panel-bg: rgba(3, 15, 22, 0.95);
-            --border-color: rgba(0, 255, 204, 0.3);
+            --panel-bg: rgba(3, 15, 22, 0.88);
+            --border-color: rgba(0, 255, 204, 0.4);
             --text-main: #FFFFFF;
             --text-dim: rgba(255, 255, 255, 0.5);
         }
 
-        body { margin: 0; overflow: hidden; background-color: var(--bg-dark); font-family: 'Courier New', Courier, monospace; color: var(--text-main); display: flex; }
-
-        /* MENU LATERAL LKS MILITAR */
-        #sidebar {
-            position: absolute; left: 0; top: 0; width: 320px; height: 100vh;
-            background: var(--panel-bg); border-right: 1px solid var(--border-color);
-            box-shadow: 5px 0 20px rgba(0,0,0,0.8); z-index: 10;
-            display: flex; flex-direction: column; padding: 20px; box-sizing: border-box;
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: var(--bg-dark); 
+            font-family: 'Courier New', Courier, monospace; 
+            color: var(--text-main); 
+            user-select: none;
         }
 
-        .brand-title { font-size: 1.4rem; font-weight: bold; color: var(--primary); letter-spacing: 2px; margin-bottom: 25px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;}
-        
-        .control-label { font-size: 0.8rem; color: var(--text-dim); display: block; margin-bottom: 8px; }
-        
-        select {
-            width: 100%; background: rgba(0, 0, 0, 0.5); color: var(--primary);
-            border: 1px solid var(--border-color); padding: 10px; font-family: 'Courier New', Courier, monospace;
-            font-size: 0.95rem; font-weight: bold; outline: none; cursor: pointer; margin-bottom: 20px;
+        /* GLOBO OCUPANDO 100% DA TELA */
+        #globeViz { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            z-index: 1; 
         }
-        select option { background: var(--bg-dark); color: #FFF; }
 
-        .telemetry-panel { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.1); padding: 15px; flex-grow: 1; display: flex; flex-direction: column; }
-        .data-row { margin-bottom: 12px; }
-        .data-label { font-size: 0.7rem; color: var(--text-dim); }
-        .data-value { font-size: 1rem; color: var(--primary); font-weight: bold; margin-top: 3px; }
+        /* HUD SUPERIOR: TÍTULO E SELETOR FLUTUANTE */
+        #header-hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 12px 18px;
+            border-radius: 4px;
+            z-index: 10;
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        }
 
-        #globeViz { position: absolute; left: 320px; width: calc(100vw - 320px); height: 100vh; }
+        .brand-title { 
+            font-size: 1rem; 
+            font-weight: bold; 
+            color: var(--primary); 
+            letter-spacing: 2px; 
+            text-shadow: 0 0 8px rgba(0,255,204,0.4);
+        }
+
+        .vector-selector-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 4px 10px;
+            border: 1px solid rgba(0,255,204,0.2);
+            border-radius: 3px;
+        }
+
+        .vector-selector-container label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        #vector-select {
+            background: transparent;
+            color: var(--primary);
+            border: none;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            outline: none;
+        }
+
+        #vector-select option {
+            background: var(--bg-dark);
+            color: #FFF;
+        }
+
+        /* HUD INFERIOR DIREITO: TELEMETRIA */
+        #target-hud {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 270px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            z-index: 10;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            pointer-events: none;
+        }
+
+        .hud-label { color: var(--text-dim); font-size: 0.7rem; }
+        .hud-value { color: var(--primary); font-weight: bold; margin-top: 3px; }
+        .hud-target { color: var(--secondary); font-size: 0.95rem; font-weight: bold; margin-top: 6px; }
 
         @media (max-width: 768px) {
-            #sidebar { width: 100%; height: 40vh; top: auto; bottom: 0; border-right: none; border-top: 1px solid var(--border-color); overflow-y: auto;}
-            #globeViz { left: 0; width: 100vw; height: 60vh; top: 0; }
+            #header-hud { top: 10px; left: 10px; right: 10px; flex-direction: column; align-items: stretch; gap: 10px; }
+            #target-hud { bottom: 10px; right: 10px; width: auto; left: 10px; }
         }
     </style>
 
@@ -55,31 +123,29 @@
 </head>
 <body>
 
-    <div id="sidebar">
-        <div class="brand-title">LKS MILITAR<br><span style="font-size: 0.7rem; color: var(--text-dim);">PROJEÇÃO DE ALCANCE // TÁTICO</span></div>
-
-        <label class="control-label">PLATAFORMA DE OPERAÇÃO</label>
-        <select id="vector-select"></select>
-
-        <div class="telemetry-panel">
-            <div class="data-row">
-                <div class="data-label">COORDENADA DE BASE</div>
-                <div class="data-value" id="disp-coords">AGUARDANDO CLIQUE...</div>
-            </div>
-            <div class="data-row">
-                <div class="data-label">RAIO DE COMBATE / AUTONOMIA</div>
-                <div class="data-value" id="disp-range">1270 KM</div>
-            </div>
-            <div style="margin-top: auto; font-size: 0.7rem; color: var(--text-dim); text-align: center;">
-                GLOBO TRAVADO // VETOR ESTÁTICO
-            </div>
+    <!-- HUD SUPERIOR FLUTUANTE -->
+    <div id="header-hud">
+        <div class="brand-title">LKS MILITAR // TACTICAL VECTOR</div>
+        <div class="vector-selector-container">
+            <label for="vector-select">VETOR ATIVO</label>
+            <select id="vector-select"></select>
         </div>
     </div>
 
+    <!-- HUD INFERIOR DIREITO DE TELEMETRIA -->
+    <div id="target-hud">
+        <div class="hud-label">TELEMETRIA DE PROJEÇÃO</div>
+        <div id="selected-vector-display" class="hud-value">F-15E STRIKE EAGLE [ 1270 KM ]</div>
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 8px 0;">
+        <div id="coords-display">LAT: -- | LON: --</div>
+        <div id="target-display" class="hud-target">CLIQUE NO GLOBO</div>
+    </div>
+
+    <!-- CONTAINER DO GLOBO (TELA CHEIA) -->
     <div id="globeViz"></div>
 
     <script>
-        // 1. BANCO DE DADOS - Foco em Autonomia e Raio
+        // 1. BANCO DE DADOS
         const AIRCRAFT_DATABASE = [
             { id: 'f15e', name: 'F-15E Strike Eagle', rangeKm: 1270, color: '#00FFCC' },
             { id: 'su35', name: 'Su-35 Flanker-E', rangeKm: 1600, color: '#FF9900' },
@@ -92,38 +158,45 @@
 
         AIRCRAFT_DATABASE.forEach(v => {
             const opt = document.createElement('option');
-            opt.value = v.id; opt.innerText = `${v.name} [ ${v.rangeKm} KM ]`;
+            opt.value = v.id; 
+            opt.innerText = `${v.name} [ ${v.rangeKm} KM ]`;
             selector.appendChild(opt);
         });
 
         selector.addEventListener('change', (e) => {
             selectedVector = AIRCRAFT_DATABASE.find(v => v.id === e.target.value);
-            document.getElementById('disp-range').innerText = `${selectedVector.rangeKm} KM`;
+            document.getElementById('selected-vector-display').innerText = `${selectedVector.name.toUpperCase()} [ ${selectedVector.rangeKm} KM ]`;
             
-            // Limpa o mapa ao trocar a aeronave
             world.ringsData([]); 
             world.customLayerData([]); 
-            document.getElementById('disp-coords').innerText = "AGUARDANDO CLIQUE...";
+            document.getElementById('coords-display').innerText = "LAT: -- | LON: --";
+            document.getElementById('target-display').innerText = "CLIQUE NO GLOBO";
         });
 
-        // 2. INICIALIZAÇÃO DO GLOBO (Textura Tática Escura)
+        // 2. INICIALIZAÇÃO DO GLOBO EM TELA CHEIA
         const world = Globe()(document.getElementById('globeViz'))
             .globeImageUrl('//unpkg.com/three-globe/example/img/earth-dark.jpg')
             .backgroundColor('#020508')
-            .pointOfView({ altitude: 2.5 });
+            .pointOfView({ altitude: 1.8 });
 
-        // Adiciona luz para o caça 3D ficar visível
-        world.scene().add(new THREE.AmbientLight(0xffffff, 0.8));
+        // Iluminação do modelo 3D
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+        world.scene().add(ambientLight);
+        
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight.position.set(5, 3, 5);
+        world.scene().add(dirLight);
 
-        // 3. TRAVA DE CÂMERA (Impede o globo de sair da tela ou se perder)
+        // 3. CONTROLES DE CÂMERA SUAVES E LIMITADOS
         setTimeout(() => {
             const controls = world.controls();
-            controls.enablePan = false;       // Impede o usuário de arrastar o planeta para fora do centro
-            controls.minDistance = 120;       // Limite máximo de zoom in (não atravessa a Terra)
-            controls.maxDistance = 400;       // Limite máximo de zoom out (não vai para o limbo espacial)
+            controls.enablePan = false;       
+            controls.zoomSpeed = 0.4;         
+            controls.minDistance = 130;       
+            controls.maxDistance = 250;       
         }, 500);
 
-        // 4. CONSTRUÇÃO DO CAÇA 3D (Fica parado na base que você clicar)
+        // 4. CONSTRUÇÃO DO CAÇA 3D GEOMÉTRICO (F-22)
         world.customThreeObject(d => {
             const shape = new THREE.Shape();
             shape.moveTo(0, 3);       shape.lineTo(0.5, 1);     shape.lineTo(2.5, -1);
@@ -134,19 +207,21 @@
             const geometry = new THREE.ExtrudeGeometry(shape, { depth: 0.2, bevelEnabled: true, bevelSize: 0.1, bevelThickness: 0.1 });
             geometry.center(); 
             
-            const material = new THREE.MeshStandardMaterial({ color: d.color, metalness: 0.6, roughness: 0.3 });
-            const jet = new THREE.Mesh(geometry, material);
+            const material = new THREE.MeshStandardMaterial({ 
+                color: d.color || '#00FFCC', 
+                metalness: 0.7, 
+                roughness: 0.2 
+            });
             
-            return jet;
+            return new THREE.Mesh(geometry, material);
         });
 
         world.customThreeObjectUpdate((obj, d) => {
-            // Posiciona a aeronave exatamente na lat/lon do clique, um pouquinho acima do solo (0.02)
-            Object.assign(obj.position, world.getCoords(d.lat, d.lng, 0.02));
+            const coords = world.getCoords(d.lat, d.lng, 0.05);
+            obj.position.set(coords.x, coords.y, coords.z);
             
-            // Lógica para deitar a aeronave acompanhando a curvatura da Terra (apontada para o Norte)
             const centerVector = obj.position.clone().normalize();
-            const northPos = world.getCoords(d.lat + 1, d.lng, 0.02);
+            const northPos = world.getCoords(d.lat + 1, d.lng, 0.05);
             const northVector = new THREE.Vector3(northPos.x, northPos.y, northPos.z).sub(obj.position).normalize();
             
             const rightVector = new THREE.Vector3().crossVectors(northVector, centerVector).normalize();
@@ -154,40 +229,43 @@
             
             const matrix = new THREE.Matrix4().makeBasis(rightVector, centerVector, forwardVector);
             obj.quaternion.setFromRotationMatrix(matrix);
+            obj.rotateX(Math.PI / 2); 
             
-            obj.rotateX(Math.PI / 2); // Deita o modelo
-            
-            // O caça ajusta a escala conforme você dá zoom, para não sumir
+            if(d.color) obj.material.color.set(d.color);
+
             const dist = world.camera().position.distanceTo(obj.position);
-            obj.scale.setScalar(dist * 0.015); 
+            obj.scale.setScalar(dist * 0.012); 
         });
 
-        // 5. INTERAÇÃO DE CLIQUE: FIXA A BASE E CALCULA O RAIO
+        // 5. INTERAÇÃO DE CLIQUE E ATUALIZAÇÃO DO HUD
         world.onGlobeClick(({ lat, lng }) => {
-            // Atualiza painel
-            document.getElementById('disp-coords').innerHTML = `LAT: ${lat.toFixed(3)}°<br>LON: ${lng.toFixed(3)}°`;
+            document.getElementById('coords-display').innerHTML = `LAT: ${lat.toFixed(4)}° | LON: ${lng.toFixed(4)}°`;
+            document.getElementById('target-display').innerHTML = `RAIO: ${selectedVector.rangeKm} KM`;
 
-            // Conversão matemática cravada para a escala do Globe.gl
             const rangeInDegrees = selectedVector.rangeKm / 111.12;
 
-            // Renderiza o Caça 3D exatamente no ponto clicado
-            world.customLayerData([{ lat: lat, lng: lng, color: selectedVector.color }]);
+            world.customLayerData([{ 
+                lat: lat, 
+                lng: lng, 
+                alt: 0.05, 
+                color: selectedVector.color 
+            }]);
 
-            // Renderiza o Anel do Raio de Combate saindo do Caça
-            world.ringsData([{ lat: lat, lng: lng, maxR: rangeInDegrees }])
-                 .ringColor(() => selectedVector.color)
-                 .ringMaxRadius('maxR')
-                 .ringPropagationSpeed(1.5)
-                 .ringRepeatPeriod(800);
+            world.ringsData([{ 
+                lat: lat, 
+                lng: lng, 
+                maxR: rangeInDegrees 
+            }])
+            .ringColor(() => selectedVector.color)
+            .ringMaxRadius('maxR')
+            .ringPropagationSpeed(1.5)
+            .ringRepeatPeriod(800);
         });
 
-        // Responsividade para ajuste de janela
+        // Responsividade dinâmica em tela cheia
         window.addEventListener('resize', () => {
-            const width = document.getElementById('globeViz').clientWidth;
-            const height = document.getElementById('globeViz').clientHeight;
-            world.width(width).height(height);
+            world.width(window.innerWidth).height(window.innerHeight);
         });
     </script>
 </body>
 </html>
-
