@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKS MILITAR - Projeção Tática Global</title>
+    
+    <!-- Motor MapLibre GL JS -->
+    <link rel='stylesheet' href='https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.css' />
+    <script src='https://unpkg.com/maplibre-gl@4.0.0/dist/maplibre-gl.js'></script>
+    
+    <!-- Motor Matemático Turf.js (Para cálculos geodésicos precisos) -->
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #00FFCC;
+            --secondary: #FFCC00;
+            --bg-dark: #03070A;
+            --panel-bg: rgba(3, 15, 22, 0.9);
+            --border-color: rgba(0, 255, 204, 0.3);
+        }
+
+        body { margin: 0; padding: 0; overflow: hidden; background: var(--bg-dark); font-family: 'Courier New', Courier, monospace; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; cursor: crosshair; }
+
+        /* HUD Superior */
+        #header-hud {
+            position: absolute; top: 0; left: 0; width: 100%; padding: 12px 20px; box-sizing: border-box;
+            background: linear-gradient(180deg, rgba(3,20,30,0.95) 0%, rgba(3,7,10,0) 100%);
+            border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between;
+            align-items: center; z-index: 100; pointer-events: none;
+        }
+
+        .brand-title { font-size: 1.1rem; font-weight: bold; color: var(--primary); letter-spacing: 2px; }
+
+        /* HUD Inferior - Telemetria */
+        #target-hud {
+            position: absolute; bottom: 30px; right: 30px; width: 320px;
+            background: var(--panel-bg); border: 1px solid var(--border-color);
+            padding: 15px; z-index: 90; font-size: 0.8rem; line-height: 1.4; color: white;
+            backdrop-filter: blur(5px); pointer-events: none;
+        }
+        .hud-label { color: rgba(255,255,255,0.5); font-size: 0.7rem; }
+        .hud-value { color: var(--primary); font-weight: bold; }
+        .hud-alert { color: var(--secondary); font-size: 0.95rem; font-weight: bold; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+    <div id="header-hud">
+        <div class="brand-title">LKS MILITAR // GLOBO TÁTICO GLOBAL</div>
+    </div>
+
+    <div id="target-hud">
+        <div class="hud-label">TELEMETRIA DE PROJEÇÃO</div>
+        <div class="hud-value">VETOR: F-15E STRIKE EAGLE</div>
+        <div class="hud-value" id="raio-display">RAIO DE COMBATE: 1270 KM</div>
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 8px 0;">
+        <div id="coords-display">LAT: -22.9035° | LON: -43.2096°</div>
+        <div class="hud-alert">CLIQUE NO MAPA PARA REPOSICIONAR</div>
+    </div>
+
+    <!-- Container do Mapa -->
+    <div id="map"></div>
+
+    <script>
+        // Configurações do Vetor
+        const raioCombateKm = 1270;
+        let posicaoAtual = [-43.2096, -22.9035]; // Inicia no RJ
+
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+            center: posicaoAtual,
+            zoom: 2.5,
+            pitch: 0,
+            projection: { type: "vertical-perspective" } // Mantém a visualização de globo
+        });
+
+        // Função para gerar o ícone do F-15 em SVG (Top-Down com sombra para dar sensação de altitude)
+        function carregarIconeVetor() {
+            const svgXML = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="60" height="60">
+                    <defs>
+                        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="0" dy="15" stdDeviation="5" flood-color="#000" flood-opacity="0.8"/>
+                        </filter>
+                    </defs>
+                    <g filter="url(#shadow)" fill="#00FFCC">
+                        <!-- Bico e Fuselagem -->
+                        <polygon points="50,5 56,25 60,40 40,40 44,25" />
+                        <!-- Asas Principais -->
+                        <polygon points="60,40 90,65 90,75 60,65 40,65 10,75 10,65 40,40" />
+                        <!-- Elevadores / Cauda -->
+                        <polygon points="55,75 70,90 70,95 55,90 45,90 30,95 30,90 45,75" />
+                        <!-- Motor -->
+                        <rect x="42" y="88" width="16" height="7" fill="#FFCC00" />
+                    </g>
+                </svg>
+            `;
+            const img = new Image();
+            img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgXML);
+            img.onload = () => { if (!map.hasImage('vetor-icon')) map.addImage('vetor-icon', img); };
+        }
+
+        map.on('load', () => {
+            carregarIconeVetor();
+
+            // 1. Cria os dados iniciais usando Turf.js para matemática geodésica perfeita
+            const circuloGeoJSON = turf.circle(posicaoAtual, raioCombateKm, { steps: 64, units: 'kilometers' });
+
+            // Fonte de dados do raio
+            map.addSource('raio-fonte', {
+                'type': 'geojson',
+                'data': circuloGeoJSON
+            });
+
+            // Fonte de dados da aeronave
+            map.addSource('vetor-fonte', {
+                'type': 'geojson',
+                'data': { 'type': 'Feature', 'geometry': { 'type': 'Point', 'coordinates': posicaoAtual } }
+            });
+
+            // 2. Camadas de Renderização
+            // Fundo do raio
+            map.addLayer({
+                'id': 'raio-fill',
+                'type': 'fill',
+                'source': 'raio-fonte',
+                'paint': { 'fill-color': '#00FFCC', 'fill-opacity': 0.15 }
+            });
+
+            // Borda tracejada do raio
+            map.addLayer({
+                'id': 'raio-linha',
+                'type': 'line',
+                'source': 'raio-fonte',
+                'paint': { 'line-color': '#00FFCC', 'line-width': 2, 'line-dasharray': [2, 4] }
+            });
+
+            // Ícone da aeronave
+            map.addLayer({
+                'id': 'vetor-layer',
+                'type': 'symbol',
+                'source': 'vetor-fonte',
+                'layout': {
+                    'icon-image': 'vetor-icon',
+                    'icon-size': 1,
+                    'icon-allow-overlap': true
+                }
+            });
+        });
+
+        // 3. Interatividade: Clicar para reposicionar a aeronave e o raio
+        map.on('click', (e) => {
+            const novasCoords = [e.lngLat.lng, e.lngLat.lat];
+            
+            // Recalcula o círculo perfeitamente para a nova latitude usando Turf.js
+            const novoCirculo = turf.circle(novasCoords, raioCombateKm, { steps: 64, units: 'kilometers' });
+            
+            // Atualiza os dados no mapa instantaneamente
+            map.getSource('raio-fonte').setData(novoCirculo);
+            map.getSource('vetor-fonte').setData({
+                'type': 'Feature', 'geometry': { 'type': 'Point', 'coordinates': novasCoords }
+            });
+
+            // Atualiza o painel
+            document.getElementById('coords-display').innerText = `LAT: ${novasCoords[1].toFixed(4)}° | LON: ${novasCoords[0].toFixed(4)}°`;
+            
+            // Faz a câmera voar suavemente até o novo ponto (opcional, dá um efeito tático)
+            map.flyTo({ center: novasCoords, speed: 1.2, curve: 1 });
+        });
+    </script>
+</body>
+</html>
+
