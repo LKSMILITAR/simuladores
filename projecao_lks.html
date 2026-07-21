@@ -24,7 +24,6 @@
             user-select: none;
         }
 
-        /* GLOBO OCUPANDO 100% DA TELA */
         #globeViz { 
             position: absolute; 
             top: 0; 
@@ -34,7 +33,7 @@
             z-index: 1; 
         }
 
-        /* HUD SUPERIOR: TÍTULO E SELETOR FLUTUANTE */
+        /* HUD SUPERIOR */
         #header-hud {
             position: absolute;
             top: 20px;
@@ -90,7 +89,7 @@
             color: #FFF;
         }
 
-        /* HUD INFERIOR DIREITO: TELEMETRIA */
+        /* HUD INFERIOR DIREITO */
         #target-hud {
             position: absolute;
             bottom: 20px;
@@ -117,13 +116,11 @@
         }
     </style>
 
-    <!-- IMPORTANDO O THREE.JS E O GLOBE.GL -->
     <script src="//unpkg.com/three"></script>
     <script src="//unpkg.com/globe.gl"></script>
 </head>
 <body>
 
-    <!-- HUD SUPERIOR FLUTUANTE -->
     <div id="header-hud">
         <div class="brand-title">LKS MILITAR // TACTICAL VECTOR</div>
         <div class="vector-selector-container">
@@ -132,16 +129,14 @@
         </div>
     </div>
 
-    <!-- HUD INFERIOR DIREITO DE TELEMETRIA -->
     <div id="target-hud">
         <div class="hud-label">TELEMETRIA DE PROJEÇÃO</div>
         <div id="selected-vector-display" class="hud-value">F-15E STRIKE EAGLE [ 1270 KM ]</div>
         <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 8px 0;">
-        <div id="coords-display">LAT: -- | LON: --</div>
-        <div id="target-display" class="hud-target">CLIQUE NO GLOBO</div>
+        <div id="coords-display">LAT: -15.7900° | LON: -47.8800°</div>
+        <div id="target-display" class="hud-target">BASE ATIVA (BRASÍLIA)</div>
     </div>
 
-    <!-- CONTAINER DO GLOBO (TELA CHEIA) -->
     <div id="globeViz"></div>
 
     <script>
@@ -163,23 +158,62 @@
             selector.appendChild(opt);
         });
 
+        // Posição Inicial Padrão (Brasília - Base Operacional Inicial)
+        let currentLat = -15.7900;
+        let currentLng = -47.8800;
+
+        function atualizarProjecao(lat, lng) {
+            currentLat = lat;
+            currentLng = lng;
+            
+            document.getElementById('coords-display').innerHTML = `LAT: ${lat.toFixed(4)}° | LON: ${lng.toFixed(4)}°`;
+            document.getElementById('target-display').innerHTML = `RAIO: ${selectedVector.rangeKm} KM`;
+
+            const rangeInDegrees = selectedVector.rangeKm / 111.12;
+
+            // Injeta o caça 3D
+            world.customLayerData([{ 
+                lat: lat, 
+                lng: lng, 
+                alt: 0.05, 
+                color: selectedVector.color 
+            }]);
+
+            // Injeta o anel de alcance
+            world.ringsData([{ 
+                lat: lat, 
+                lng: lng, 
+                maxR: rangeInDegrees 
+            }])
+            .ringColor(() => selectedVector.color)
+            .ringMaxRadius('maxR')
+            .ringPropagationSpeed(1.5)
+            .ringRepeatPeriod(800);
+        }
+
         selector.addEventListener('change', (e) => {
             selectedVector = AIRCRAFT_DATABASE.find(v => v.id === e.target.value);
             document.getElementById('selected-vector-display').innerText = `${selectedVector.name.toUpperCase()} [ ${selectedVector.rangeKm} KM ]`;
             
-            world.ringsData([]); 
-            world.customLayerData([]); 
-            document.getElementById('coords-display').innerText = "LAT: -- | LON: --";
-            document.getElementById('target-display').innerText = "CLIQUE NO GLOBO";
+            // Reaplica na mesma coordenada atual ao trocar de aeronave
+            atualizarProjecao(currentLat, currentLng);
         });
 
-        // 2. INICIALIZAÇÃO DO GLOBO EM TELA CHEIA
+        // 2. INICIALIZAÇÃO DO GLOBO COM ÁGUA ESCURA CORRIGIDA
         const world = Globe()(document.getElementById('globeViz'))
             .globeImageUrl('//unpkg.com/three-globe/example/img/earth-dark.jpg')
             .backgroundColor('#020508')
-            .pointOfView({ altitude: 1.8 });
+            .pointOfView({ lat: -15.7900, lng: -47.8800, altitude: 1.8 });
 
-        // Iluminação do modelo 3D
+        // Correção de Material: Força os oceanos a ficarem escuros/profundos
+        setTimeout(() => {
+            const globeMaterial = world.globeMaterial();
+            globeMaterial.color = new THREE.Color('#0b131a'); // Tom escuro controlando a base dos oceanos
+            globeMaterial.roughness = 0.9;
+            globeMaterial.metalness = 0.1;
+        }, 300);
+
+        // Iluminação
         const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
         world.scene().add(ambientLight);
         
@@ -187,7 +221,7 @@
         dirLight.position.set(5, 3, 5);
         world.scene().add(dirLight);
 
-        // 3. CONTROLES DE CÂMERA SUAVES E LIMITADOS
+        // 3. CONTROLES DE CÂMERA
         setTimeout(() => {
             const controls = world.controls();
             controls.enablePan = false;       
@@ -237,35 +271,18 @@
             obj.scale.setScalar(dist * 0.012); 
         });
 
-        // 5. INTERAÇÃO DE CLIQUE E ATUALIZAÇÃO DO HUD
+        // 5. RENDERIZAÇÃO INICIAL AUTOMÁTICA (Sem precisar clicar)
+        atualizarProjecao(currentLat, currentLng);
+
+        // 6. INTERAÇÃO DE CLIQUE (Para mover a base se quiser)
         world.onGlobeClick(({ lat, lng }) => {
-            document.getElementById('coords-display').innerHTML = `LAT: ${lat.toFixed(4)}° | LON: ${lng.toFixed(4)}°`;
-            document.getElementById('target-display').innerHTML = `RAIO: ${selectedVector.rangeKm} KM`;
-
-            const rangeInDegrees = selectedVector.rangeKm / 111.12;
-
-            world.customLayerData([{ 
-                lat: lat, 
-                lng: lng, 
-                alt: 0.05, 
-                color: selectedVector.color 
-            }]);
-
-            world.ringsData([{ 
-                lat: lat, 
-                lng: lng, 
-                maxR: rangeInDegrees 
-            }])
-            .ringColor(() => selectedVector.color)
-            .ringMaxRadius('maxR')
-            .ringPropagationSpeed(1.5)
-            .ringRepeatPeriod(800);
+            atualizarProjecao(lat, lng);
         });
 
-        // Responsividade dinâmica em tela cheia
         window.addEventListener('resize', () => {
             world.width(window.innerWidth).height(window.innerHeight);
         });
     </script>
 </body>
 </html>
+
