@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LKS MILITAR - Projeção Tática</title>
+    <title>LKS MILITAR - Projeção Tática Geodésica</title>
     <style>
         :root {
             --primary: #00FFCC;
@@ -135,7 +135,7 @@
         AIRCRAFT_DATABASE.forEach(vector => {
             const opt = document.createElement('option');
             opt.value = vector.id;
-            opt.innerText = `${vector.name} [ ${vector.rangeKm} KM ]`;
+            opt.innerText = `${vector.name} [ RAIO: ${vector.rangeKm} KM ]`;
             selector.appendChild(opt);
         });
 
@@ -158,31 +158,62 @@
         controls.dampingFactor = 0.05;
 
         const globeRadius = 1.5;
-        const earthRadiusKm = 6371;
-        const numPoints = 6000;
+        const earthRadiusKm = 6371; 
+        const numPoints = 8000;
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(numPoints * 3);
         const colors = new Float32Array(numPoints * 3);
+        const isLandArr = new Uint8Array(numPoints);
         const phi = Math.PI * (3 - Math.sqrt(5));
+
+        function checarSeEContinente(lat, lon) {
+            if (lon > -170 && lon < -30 && lat > -56 && lat < 72) {
+                if (lon > -90 && lon < -34 && lat > -35 && lat < 12) return true;
+                if (lon > -168 && lon < -50 && lat > 7 && lat < 72) return true;
+            }
+            if (lon > -15 && lon < 180 && lat > -35 && lat < 75) {
+                if (lon > -20 && lon < 55 && lat > -35 && lat < 37) return true;
+                if (lon > -10 && lon < 180 && lat > 35 && lat < 75) return true;
+                if (lon > 25 && lon < 145 && lat > -10 && lat < 55) return true;
+            }
+            if (lon > 110 && lon < 180 && lat > -50 && lat < 0) return true;
+            if (lat < -60) return true;
+            return false;
+        }
 
         for (let i = 0; i < numPoints; i++) {
             const y = 1 - (i / (numPoints - 1)) * 2;
             const radiusAtY = Math.sqrt(1 - y * y);
             const theta = phi * i;
 
-            positions[i * 3]     = Math.cos(theta) * radiusAtY * globeRadius;
-            positions[i * 3 + 1] = y * globeRadius;
-            positions[i * 3 + 2] = Math.sin(theta) * radiusAtY * globeRadius;
+            const px = Math.cos(theta) * radiusAtY * globeRadius;
+            const py = y * globeRadius;
+            const pz = Math.sin(theta) * radiusAtY * globeRadius;
 
-            colors[i * 3]     = 0.12;
-            colors[i * 3 + 1] = 0.2;
-            colors[i * 3 + 2] = 0.3;
+            positions[i * 3]     = px;
+            positions[i * 3 + 1] = py;
+            positions[i * 3 + 2] = pz;
+
+            const lat = Math.asin(py / globeRadius) * (180 / Math.PI);
+            const lon = Math.atan2(-px, pz) * (180 / Math.PI);
+
+            if (checarSeEContinente(lat, lon)) {
+                isLandArr[i] = 1;
+                colors[i * 3]     = 0.0;
+                colors[i * 3 + 1] = 0.4;
+                colors[i * 3 + 2] = 0.3;
+            } else {
+                isLandArr[i] = 0;
+                colors[i * 3]     = 0.08;
+                colors[i * 3 + 1] = 0.12;
+                colors[i * 3 + 2] = 0.18;
+            }
         }
 
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-        const globeMaterial = new THREE.PointsMaterial({ size: 0.018, vertexColors: true, transparent: true, opacity: 0.85 });
+        const globeMaterial = new THREE.PointsMaterial({ size: 0.016, vertexColors: true, transparent: true, opacity: 0.85 });
         const globe = new THREE.Points(geometry, globeMaterial);
         scene.add(globe);
 
@@ -211,8 +242,9 @@
                 const lon = Math.atan2(-localPoint.x, localPoint.z) * (180 / Math.PI);
                 const raioKm = selectedVector.rangeKm;
 
-                const thetaHalf = raioKm / (2 * earthRadiusKm);
-                const chordLimitSq = Math.pow(2 * globeRadius * Math.sin(thetaHalf), 2);
+                // Distância angular exata do raio de combate na esfera terrestre
+                const angularDistance = raioKm / earthRadiusKm;
+                const chordLimitSq = Math.pow(2 * globeRadius * Math.sin(angularDistance / 2), 2);
                 
                 const colorAttr = geometry.attributes.color;
                 const activeColor = new THREE.Color(selectedVector.color);
@@ -225,15 +257,18 @@
                     if ((dx * dx + dy * dy + dz * dz) <= chordLimitSq) {
                         colorAttr.setXYZ(i, activeColor.r, activeColor.g, activeColor.b);
                     } else {
-                        colorAttr.setXYZ(i, 0.12, 0.2, 0.3);
+                        if (isLandArr[i] === 1) {
+                            colorAttr.setXYZ(i, 0.0, 0.4, 0.3);
+                        } else {
+                            colorAttr.setXYZ(i, 0.08, 0.12, 0.18);
+                        }
                     }
                 }
                 colorAttr.needsUpdate = true;
 
                 if (anelAtivo) scene.remove(anelAtivo);
 
-                const thetaRange = raioKm / earthRadiusKm;
-                const visualRadius = Math.sin(thetaRange) * globeRadius;
+                const visualRadius = globeRadius * Math.sin(angularDistance);
 
                 const ringGeom = new THREE.RingGeometry(Math.max(0.001, visualRadius - 0.015), visualRadius, 64);
                 const ringMat = new THREE.MeshBasicMaterial({ 
@@ -255,6 +290,7 @@
             dispararProjecao(e.clientX, e.clientY);
         });
 
+        // Correção aplicada: uso correto de e.changedTouches em vez de event.changedTouches
         window.addEventListener('touchend', (e) => {
             if (e.target.closest('#header-hud')) return;
             if (e.changedTouches.length > 0) {
