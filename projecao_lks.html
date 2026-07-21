@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LKS MILITAR - Projeção Tática (Follow Aircraft Mode)</title>
+    <title>LKS MILITAR - Projeção de Alcance Tático</title>
     <style>
         :root {
             --primary: #00FFCC;
@@ -40,7 +40,6 @@
         .data-row { margin-bottom: 12px; }
         .data-label { font-size: 0.7rem; color: var(--text-dim); }
         .data-value { font-size: 1rem; color: var(--primary); font-weight: bold; margin-top: 3px; }
-        .data-target { color: var(--secondary); }
 
         #globeViz { position: absolute; left: 320px; width: calc(100vw - 320px); height: 100vh; }
 
@@ -57,27 +56,22 @@
 <body>
 
     <div id="sidebar">
-        <div class="brand-title">LKS MILITAR<br><span style="font-size: 0.7rem; color: var(--text-dim);">MODO DE VOO CONTÍNUO (FOLLOW)</span></div>
+        <div class="brand-title">LKS MILITAR<br><span style="font-size: 0.7rem; color: var(--text-dim);">PROJEÇÃO DE ALCANCE // TÁTICO</span></div>
 
         <label class="control-label">PLATAFORMA DE OPERAÇÃO</label>
         <select id="vector-select"></select>
 
         <div class="telemetry-panel">
             <div class="data-row">
-                <div class="data-label">TELEMETRIA DA AERONAVE</div>
-                <div class="data-value" id="disp-coords">INICIANDO SISTEMAS...</div>
+                <div class="data-label">COORDENADA DE BASE</div>
+                <div class="data-value" id="disp-coords">AGUARDANDO CLIQUE...</div>
             </div>
             <div class="data-row">
-                <div class="data-label">RAIO DE AÇÃO OPERACIONAL</div>
+                <div class="data-label">RAIO DE COMBATE / AUTONOMIA</div>
                 <div class="data-value" id="disp-range">1270 KM</div>
             </div>
-            <hr style="border:0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
-            <div class="data-row">
-                <div class="data-label">ALVO DE NAVEGAÇÃO</div>
-                <div class="data-value data-target" id="disp-target">VÔO LIVRE (CLIQUE NO GLOBO)</div>
-            </div>
             <div style="margin-top: auto; font-size: 0.7rem; color: var(--text-dim); text-align: center;">
-                SISTEMA: CÂMERA ACOPLADA AO VETOR
+                GLOBO TRAVADO // VETOR ESTÁTICO
             </div>
         </div>
     </div>
@@ -85,9 +79,7 @@
     <div id="globeViz"></div>
 
     <script>
-        // ==========================================
-        // 1. DADOS TÁTICOS
-        // ==========================================
+        // 1. BANCO DE DADOS - Foco em Autonomia e Raio
         const AIRCRAFT_DATABASE = [
             { id: 'f15e', name: 'F-15E Strike Eagle', rangeKm: 1270, color: '#00FFCC' },
             { id: 'su35', name: 'Su-35 Flanker-E', rangeKm: 1600, color: '#FF9900' },
@@ -107,167 +99,89 @@
         selector.addEventListener('change', (e) => {
             selectedVector = AIRCRAFT_DATABASE.find(v => v.id === e.target.value);
             document.getElementById('disp-range').innerText = `${selectedVector.rangeKm} KM`;
-            flightData.aircraft.color = selectedVector.color;
-            flightData.ring.maxR = selectedVector.rangeKm / 111.12;
-            flightData.ring.color = selectedVector.color;
+            
+            // Limpa o mapa ao trocar a aeronave
+            world.ringsData([]); 
+            world.customLayerData([]); 
+            document.getElementById('disp-coords').innerText = "AGUARDANDO CLIQUE...";
         });
 
-        // ==========================================
-        // 2. MATEMÁTICA GEODÉSICA (ESFERA)
-        // ==========================================
-        // Calcula a distância real em KM na superfície
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; 
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-            return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-        }
-
-        // Calcula o Azimute (Heading) da Aeronave
-        function calculateBearing(lat1, lon1, lat2, lon2) {
-            const toRad = Math.PI / 180;
-            const φ1 = lat1 * toRad, φ2 = lat2 * toRad;
-            const Δλ = (lon2 - lon1) * toRad;
-            const y = Math.sin(Δλ) * Math.cos(φ2);
-            const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-            return (Math.atan2(y, x) * (180 / Math.PI) + 360) % 360;
-        }
-
-        // Calcula a próxima posição Baseado na Velocidade e Rumo
-        function getNextCoordinate(lat, lng, bearing, distanceKm) {
-            const R = 6371;
-            const latRad = lat * Math.PI / 180;
-            const lngRad = lng * Math.PI / 180;
-            const brngRad = bearing * Math.PI / 180;
-            
-            const nextLatRad = Math.asin(Math.sin(latRad) * Math.cos(distanceKm / R) + Math.cos(latRad) * Math.sin(distanceKm / R) * Math.cos(brngRad));
-            const nextLngRad = lngRad + Math.atan2(Math.sin(brngRad) * Math.sin(distanceKm / R) * Math.cos(latRad), Math.cos(distanceKm / R) - Math.sin(latRad) * Math.sin(nextLatRad));
-            
-            return { lat: nextLatRad * 180 / Math.PI, lng: nextLngRad * 180 / Math.PI };
-        }
-
-        // ==========================================
-        // 3. VARIÁVEIS DE ESTADO DE VOO
-        // ==========================================
-        const flightData = {
-            aircraft: { lat: -15.79, lng: -47.88, heading: 45, color: selectedVector.color },
-            ring: { lat: -15.79, lng: -47.88, maxR: selectedVector.rangeKm / 111.12, color: selectedVector.color },
-            target: null,
-            speedKmPerFrame: 15 // Velocidade de cruzeiro do simulador
-        };
-
-        // ==========================================
-        // 4. INICIALIZAÇÃO DO GLOBO E INVERSÃO DE TEXTURA
-        // ==========================================
-        // earth-water.png inverte a lógica: Oceanos ficam brancos (rochosos com bump) e continentes ficam escuros.
+        // 2. INICIALIZAÇÃO DO GLOBO (Textura Tática Escura)
         const world = Globe()(document.getElementById('globeViz'))
-            .globeImageUrl('//unpkg.com/three-globe/example/img/earth-water.png')
-            .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
+            .globeImageUrl('//unpkg.com/three-globe/example/img/earth-dark.jpg')
             .backgroundColor('#020508')
-            .pointOfView({ altitude: 1.5 })
-            .ringsData([flightData.ring])
-            .ringColor(d => d.color)
-            .ringMaxRadius(d => d.maxR)
-            .ringPropagationSpeed(1.5)
-            .ringRepeatPeriod(800)
-            .customLayerData([flightData.aircraft]);
+            .pointOfView({ altitude: 2.5 });
 
-        // Ajuste material para as massas continentais ficarem táticas
-        world.globeMaterial().color = new THREE.Color('#050A0F');
-        world.scene().add(new THREE.AmbientLight(0xffffff, 1.2));
+        // Adiciona luz para o caça 3D ficar visível
+        world.scene().add(new THREE.AmbientLight(0xffffff, 0.8));
 
-        // ==========================================
-        // 5. CAÇA GEOMÉTRICO (ESCALA FIXA)
-        // ==========================================
+        // 3. TRAVA DE CÂMERA (Impede o globo de sair da tela ou se perder)
+        setTimeout(() => {
+            const controls = world.controls();
+            controls.enablePan = false;       // Impede o usuário de arrastar o planeta para fora do centro
+            controls.minDistance = 120;       // Limite máximo de zoom in (não atravessa a Terra)
+            controls.maxDistance = 400;       // Limite máximo de zoom out (não vai para o limbo espacial)
+        }, 500);
+
+        // 4. CONSTRUÇÃO DO CAÇA 3D (Fica parado na base que você clicar)
         world.customThreeObject(d => {
             const shape = new THREE.Shape();
             shape.moveTo(0, 3);       shape.lineTo(0.5, 1);     shape.lineTo(2.5, -1);
             shape.lineTo(0.5, -1.5);  shape.lineTo(1, -2.5);    shape.lineTo(0, -2);
             shape.lineTo(-1, -2.5);   shape.lineTo(-0.5, -1.5); shape.lineTo(-2.5, -1);
             shape.lineTo(-0.5, 1);    shape.lineTo(0, 3);
+
             const geometry = new THREE.ExtrudeGeometry(shape, { depth: 0.2, bevelEnabled: true, bevelSize: 0.1, bevelThickness: 0.1 });
             geometry.center(); 
-            const material = new THREE.MeshStandardMaterial({ color: '#FFFFFF', metalness: 0.8, roughness: 0.2 });
+            
+            const material = new THREE.MeshStandardMaterial({ color: d.color, metalness: 0.6, roughness: 0.3 });
             const jet = new THREE.Mesh(geometry, material);
             
-            // REGRA: Escala Geométrica Fixa - Nunca se altera com o zoom
-            jet.scale.setScalar(1.5); 
             return jet;
         });
 
         world.customThreeObjectUpdate((obj, d) => {
-            // Altitude 0.02
+            // Posiciona a aeronave exatamente na lat/lon do clique, um pouquinho acima do solo (0.02)
             Object.assign(obj.position, world.getCoords(d.lat, d.lng, 0.02));
             
-            // Orientação Baseada na Normal do Planeta e no Rumo (Heading)
+            // Lógica para deitar a aeronave acompanhando a curvatura da Terra (apontada para o Norte)
             const centerVector = obj.position.clone().normalize();
+            const northPos = world.getCoords(d.lat + 1, d.lng, 0.02);
+            const northVector = new THREE.Vector3(northPos.x, northPos.y, northPos.z).sub(obj.position).normalize();
             
-            // Projeta um ponto à frente no globo para a aeronave "olhar"
-            const lookPosLatLng = getNextCoordinate(d.lat, d.lng, d.heading, 100);
-            const lookPos = world.getCoords(lookPosLatLng.lat, lookPosLatLng.lng, 0.02);
+            const rightVector = new THREE.Vector3().crossVectors(northVector, centerVector).normalize();
+            const forwardVector = new THREE.Vector3().crossVectors(centerVector, rightVector).normalize();
             
-            const forwardVector = new THREE.Vector3().subVectors(lookPos, obj.position).normalize();
-            const rightVector = new THREE.Vector3().crossVectors(forwardVector, centerVector).normalize();
-            const trueForward = new THREE.Vector3().crossVectors(centerVector, rightVector).normalize();
-            
-            const matrix = new THREE.Matrix4().makeBasis(rightVector, centerVector, trueForward);
+            const matrix = new THREE.Matrix4().makeBasis(rightVector, centerVector, forwardVector);
             obj.quaternion.setFromRotationMatrix(matrix);
-            obj.rotateX(Math.PI / 2); // Deita a aeronave
             
-            // Atualiza a cor dinamicamente se trocar de caça
-            obj.material.color.set(d.color);
+            obj.rotateX(Math.PI / 2); // Deita o modelo
+            
+            // O caça ajusta a escala conforme você dá zoom, para não sumir
+            const dist = world.camera().position.distanceTo(obj.position);
+            obj.scale.setScalar(dist * 0.015); 
         });
 
-        // ==========================================
-        // 6. MOTOR PRINCIPAL: FOLLOW AIRCRAFT E ROTA
-        // ==========================================
+        // 5. INTERAÇÃO DE CLIQUE: FIXA A BASE E CALCULA O RAIO
         world.onGlobeClick(({ lat, lng }) => {
-            flightData.target = { lat, lng };
-            document.getElementById('disp-target').innerHTML = `LAT: ${lat.toFixed(3)}° | LON: ${lng.toFixed(3)}°`;
+            // Atualiza painel
+            document.getElementById('disp-coords').innerHTML = `LAT: ${lat.toFixed(3)}°<br>LON: ${lng.toFixed(3)}°`;
+
+            // Conversão matemática cravada para a escala do Globe.gl
+            const rangeInDegrees = selectedVector.rangeKm / 111.12;
+
+            // Renderiza o Caça 3D exatamente no ponto clicado
+            world.customLayerData([{ lat: lat, lng: lng, color: selectedVector.color }]);
+
+            // Renderiza o Anel do Raio de Combate saindo do Caça
+            world.ringsData([{ lat: lat, lng: lng, maxR: rangeInDegrees }])
+                 .ringColor(() => selectedVector.color)
+                 .ringMaxRadius('maxR')
+                 .ringPropagationSpeed(1.5)
+                 .ringRepeatPeriod(800);
         });
 
-        function animateFlight() {
-            // 1. Navegação Geodésica
-            if (flightData.target) {
-                const dist = calculateDistance(flightData.aircraft.lat, flightData.aircraft.lng, flightData.target.lat, flightData.target.lng);
-                if (dist > flightData.speedKmPerFrame) {
-                    flightData.aircraft.heading = calculateBearing(flightData.aircraft.lat, flightData.aircraft.lng, flightData.target.lat, flightData.target.lng);
-                    const nextStep = getNextCoordinate(flightData.aircraft.lat, flightData.aircraft.lng, flightData.aircraft.heading, flightData.speedKmPerFrame);
-                    flightData.aircraft.lat = nextStep.lat;
-                    flightData.aircraft.lng = nextStep.lng;
-                } else {
-                    flightData.target = null; // Chegou ao alvo
-                    document.getElementById('disp-target').innerHTML = "VÔO LIVRE (CLIQUE NO GLOBO)";
-                }
-            } else {
-                // Vôo de Patrulha Contínuo (Segue no último rumo)
-                const nextStep = getNextCoordinate(flightData.aircraft.lat, flightData.aircraft.lng, flightData.aircraft.heading, flightData.speedKmPerFrame);
-                flightData.aircraft.lat = nextStep.lat;
-                flightData.aircraft.lng = nextStep.lng;
-            }
-
-            // 2. Atualização dos Dados em Tempo Real
-            flightData.ring.lat = flightData.aircraft.lat;
-            flightData.ring.lng = flightData.aircraft.lng;
-            world.customLayerData([...world.customLayerData()]); // Força re-render da camada
-            world.ringsData([...world.ringsData()]);             // Força re-render do anel de combate
-
-            document.getElementById('disp-coords').innerHTML = 
-                `LAT: ${flightData.aircraft.lat.toFixed(3)}°<br>LON: ${flightData.aircraft.lng.toFixed(3)}°<br>RUMO (HDG): ${flightData.aircraft.heading.toFixed(1)}°`;
-
-            // 3. SISTEMA "FOLLOW AIRCRAFT" (Trava Câmera, Preserva Zoom)
-            const currentZoomAlt = world.pointOfView().altitude;
-            // Transição = 0ms garante que a câmera grude na aeronave e a terra se mova
-            world.pointOfView({ lat: flightData.aircraft.lat, lng: flightData.aircraft.lng, altitude: currentZoomAlt }, 0);
-
-            requestAnimationFrame(animateFlight);
-        }
-
-        // Inicia o motor após 1 segundo
-        setTimeout(animateFlight, 1000);
-
-        // Responsividade
+        // Responsividade para ajuste de janela
         window.addEventListener('resize', () => {
             const width = document.getElementById('globeViz').clientWidth;
             const height = document.getElementById('globeViz').clientHeight;
@@ -276,3 +190,4 @@
     </script>
 </body>
 </html>
+
