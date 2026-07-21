@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKS MILITAR - Banco de Dados de Projeção Tática</title>
+    <style>
+        :root {
+            --primary: #00FFCC;
+            --secondary: #FFCC00;
+            --bg-dark: #03070A;
+            --panel-bg: rgba(3, 15, 22, 0.88);
+            --border-color: rgba(0, 255, 204, 0.3);
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+            font-family: 'Courier New', Courier, monospace;
+            color: #FFFFFF;
+            user-select: none;
+        }
+
+        /* HEADER SUPERIOR (AGORA ABRIGA O MENU DE SELEÇÃO) */
+        #header-hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 12px 20px;
+            box-sizing: border-box;
+            background: linear-gradient(180deg, rgba(3,20,30,0.95) 0%, rgba(3,7,10,0) 100%);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .brand-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary);
+            letter-spacing: 2px;
+            text-shadow: 0 0 8px rgba(0,255,204,0.5);
+        }
+
+        /* NOVO SELETOR SUPERIOR LEVE E ISOLADO */
+        .vector-selector-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 4px 15px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+
+        .vector-selector-container label {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.6);
+            letter-spacing: 1px;
+        }
+
+        #vector-select {
+            background: transparent;
+            color: var(--primary);
+            border: none;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            outline: none;
+        }
+
+        #vector-select option {
+            background: var(--bg-dark);
+            color: #FFF;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .system-status {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            display: flex;
+            gap: 20px;
+        }
+
+        /* PAINEL DE TELEMETRIA DO ALVO */
+        #target-hud {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 310px;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            z-index: 90;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            backdrop-filter: blur(5px);
+            pointer-events: none; /* Deixa o mouse passar direto por ele se clicar sem querer */
+        }
+
+        .hud-label { color: rgba(255,255,255,0.5); font-size: 0.7rem; }
+        .hud-value { color: var(--primary); font-weight: bold; }
+        .hud-target { color: var(--secondary); font-size: 0.95rem; font-weight: bold; margin-top: 5px; }
+
+        #canvas-container { width: 100vw; height: 100vh; }
+    </style>
+
+    <!-- BIBLIOTECAS ENGINE -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+</head>
+<body>
+
+    <!-- HUD SUPERIOR COM O SELETOR EMBUTIDO -->
+    <div id="header-hud">
+        <div class="brand-title">LKS MILITAR // TACTICAL VECTOR DATABASE</div>
+        
+        <div class="vector-selector-container">
+            <label for="vector-select">VETOR ATIVO</label>
+            <select id="vector-select"></select>
+        </div>
+
+        <div class="system-status">
+            <span>ENGINE: THREE.JS / D3 CHORD-GEODETIC</span>
+            <span id="status-tag">STATUS: CARREGANDO MAPA...</span>
+        </div>
+    </div>
+
+    <!-- HUD DE TELEMETRIA -->
+    <div id="target-hud">
+        <div class="hud-label">SISTEMA DE PROJEÇÃO GEODÉSICA</div>
+        <div id="selected-vector-display" class="hud-value">VETOR: F-15E STRIKE EAGLE</div>
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 8px 0;">
+        <div id="coords-display">LAT: -- | LON: --</div>
+        <div id="target-display" class="hud-target">AGUARDANDO SELEÇÃO NO GLOBO...</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script>
+        // ==========================================
+        // 1. BANCO DE DADOS DE VETORES & MENU SUSPENSO
+        // ==========================================
+        const AIRCRAFT_DATABASE = [
+            { id: 'f15e', name: 'F-15E Strike Eagle', rangeKm: 1270, color: 0x00FFCC },
+            { id: 'su35', name: 'Su-35 Flanker-E', rangeKm: 1600, color: 0xFF9900 },
+            { id: 'gripen', name: 'JAS 39 Gripen E', rangeKm: 800, color: 0x00AABB },
+            { id: 'rafale', name: 'Dassault Rafale F4', rangeKm: 1100, color: 0xFF0055 }
+        ];
+
+        let selectedVector = AIRCRAFT_DATABASE[0];
+
+        const selector = document.getElementById('vector-select');
+        AIRCRAFT_DATABASE.forEach(vector => {
+            const opt = document.createElement('option');
+            opt.value = vector.id;
+            opt.innerText = `${vector.name} [ ${vector.rangeKm} KM ]`;
+            selector.appendChild(opt);
+        });
+
+        // Escuta a mudança no menu e atualiza o HUD
+        selector.addEventListener('change', (e) => {
+            selectedVector = AIRCRAFT_DATABASE.find(v => v.id === e.target.value);
+            document.getElementById('selected-vector-display').innerText = `VETOR: ${selectedVector.name.toUpperCase()}`;
+        });
+
+        // ==========================================
+        // 2. CONFIGURAÇÃO DO MOTOR GRÁFICO 3D
+        // ==========================================
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x03070A, 0.12);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 4;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 1.6;
+        controls.maxDistance = 5.5;
+
+        // ==========================================
+        // 3. GERAÇÃO DA MATRIZ DO GLOBO E INDEXAÇÃO RAM
+        // ==========================================
+        const globeRadius = 1.5;
+        const earthRadiusKm = 6371;
+        const numPoints = 9000;
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(numPoints * 3);
+        const colors = new Float32Array(numPoints * 3);
+        const phi = Math.PI * (3 - Math.sqrt(5));
+
+        const mapaPontosMemoria = new Map();
+
+        for (let i = 0; i < numPoints; i++) {
+            const y = 1 - (i / (numPoints - 1)) * 2;
+            const radiusAtY = Math.sqrt(1 - y * y);
+            const theta = phi * i;
+
+            const posX = Math.cos(theta) * radiusAtY * globeRadius;
+            const posY = y * globeRadius;
+            const posZ = Math.sin(theta) * radiusAtY * globeRadius;
+
+            positions[i * 3] = posX;
+            positions[i * 3 + 1] = posY;
+            positions[i * 3 + 2] = posZ;
+
+            // Cor inicial do oceano
+            colors[i * 3] = 0.1;
+            colors[i * 3 + 1] = 0.15;
+            colors[i * 3 + 2] = 0.2;
+
+            const lat = Math.asin(posY / globeRadius) * (180 / Math.PI);
+            const lon = Math.atan2(-posX, posZ) * (180 / Math.PI);
+
+            mapaPontosMemoria.set(i, {
+                index: i,
+                x: posX,
+                y: posY,
+                z: posZ,
+                lat: lat,
+                lon: lon,
+                pais: "Oceano / Território Neutro"
+            });
+        }
+
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        const globeMaterial = new THREE.PointsMaterial({
+            size: 0.015,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8
+        });
+
+        const globe = new THREE.Points(geometry, globeMaterial);
+        scene.add(globe);
+
+        const hitSphereGeom = new THREE.SphereGeometry(globeRadius, 32, 32);
+        const hitSphereMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
+        const hitSphere = new THREE.Mesh(hitSphereGeom, hitSphereMat);
+        scene.add(hitSphere);
+
+        // ==========================================
+        // 4. MAPEMENTO GEOGRÁFICO VIA D3 (EXECUTADO 1X)
+        // ==========================================
+        d3.json('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_admin_0_countries.geojson')
+            .then(geoJson => {
+                const colorAttribute = geometry.attributes.color;
+
+                mapaPontosMemoria.forEach(ponto => {
+                    for (let i = 0; i < geoJson.features.length; i++) {
+                        const feature = geoJson.features[i];
+                        if (d3.geoContains(feature, [ponto.lon, ponto.lat])) {
+                            ponto.pais = feature.properties.ADMIN || feature.properties.NAME || "Desconhecido";
+                            // Destaca continentes em Verde Tático LKS
+                            colorAttribute.setXYZ(ponto.index, 0.0, 0.4, 0.3);
+                            break;
+                        }
+                    }
+                });
+
+                colorAttribute.needsUpdate = true;
+                document.getElementById('status-tag').innerText = "STATUS: MAP READY";
+            })
+            .catch(err => {
+                document.getElementById('status-tag').innerText = "STATUS: MAP READ-ONLY";
+            });
+
+        // ==========================================
+        // 5. TELEMETRIA E PROCESSAMENTO POR CORDA 3D O(1)
+        // ==========================================
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener('click', (event) => {
+            // Isolamento rigoroso: Ignora o clique se ocorreu no header superior
+            if (event.target.closest('#header-hud')) return;
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(hitSphere);
+
+            if (intersects.length > 0) {
+                const point = intersects[0].point;
+                const localPoint = hitSphere.worldToLocal(point.clone());
+
+                const latClique = Math.asin(localPoint.y / globeRadius) * (180 / Math.PI);
+                const lonClique = Math.atan2(-localPoint.x, localPoint.z) * (180 / Math.PI);
+
+                const raioAtaqueKm = selectedVector.rangeKm;
+
+                // 1. Busca do País via Menor Distância 3D
+                let paisAlvo = "Oceano / Território Neutro";
+                let menorDistSq = Infinity;
+
+                for (let [i, pt] of mapaPontosMemoria) {
+                    const dx = pt.x - localPoint.x;
+                    const dy = pt.y - localPoint.y;
+                    const dz = pt.z - localPoint.z;
+                    const distSq = dx * dx + dy * dy + dz * dz;
+
+                    if (distSq < menorDistSq) {
+                        menorDistSq = distSq;
+                        paisAlvo = pt.pais;
+                    }
+                }
+
+                // 2. Cálculo do Limite por Corda 3D ao Quadrado
+                const thetaHalf = (raioAtaqueKm / (2 * earthRadiusKm));
+                const chordLimit = 2 * globeRadius * Math.sin(thetaHalf);
+                const chordLimitSq = chordLimit * chordLimit;
+
+                // 3. Atualização de Cores dos Vértices
+                const colorAttribute = geometry.attributes.color;
+                const activeColor = new THREE.Color(selectedVector.color);
+
+                for (let i = 0; i < numPoints; i++) {
+                    const dx = positions[i * 3] - localPoint.x;
+                    const dy = positions[i * 3 + 1] - localPoint.y;
+                    const dz = positions[i * 3 + 2] - localPoint.z;
+                    const dist3DSq = dx * dx + dy * dy + dz * dz;
+
+                    const pt = mapaPontosMemoria.get(i);
+
+                    if (dist3DSq <= chordLimitSq) {
+                        colorAttribute.setXYZ(i, activeColor.r, activeColor.g, activeColor.b);
+                    } else {
+                        if (pt.pais !== "Oceano / Território Neutro") {
+                            colorAttribute.setXYZ(i, 0.0, 0.4, 0.3); // Terra
+                        } else {
+                            colorAttribute.setXYZ(i, 0.1, 0.15, 0.2); // Oceano
+                        }
+                    }
+                }
+                colorAttribute.needsUpdate = true;
+
+                // 4. Desenha o Anel de Borda
+                criarAnelEscalonado(point, intersects[0].normal, raioAtaqueKm, selectedVector.color);
+
+                // 5. Atualiza HUD
+                document.getElementById('coords-display').innerHTML = 
+                    `LAT: ${latClique.toFixed(4)}° | LON: ${lonClique.toFixed(4)}°<br>` +
+                    `<span style="color: #FFF; font-size: 0.75rem;">RAIO OPERACIONAL: ${raioAtaqueKm} KM</span>`;
+                
+                document.getElementById('target-display').innerText = `ALVO: ${paisAlvo.toUpperCase()}`;
+                document.getElementById('target-display').style.color = 
+                    (paisAlvo !== "Oceano / Território Neutro") ? "var(--secondary)" : "rgba(255,255,255,0.4)";
+            }
+        });
+
+        function criarAnelEscalonado(position, normal, raioKm, hexadecimalColor) {
+            const theta = raioKm / earthRadiusKm;
+            const raioVisualThreeJS = Math.sin(theta) * globeRadius;
+
+            const ringGeom = new THREE.RingGeometry(Math.max(0.001, raioVisualThreeJS - 0.012), raioVisualThreeJS, 64);
+            const ringMat = new THREE.MeshBasicMaterial({ 
+                color: hexadecimalColor, 
+                side: THREE.DoubleSide, 
+                transparent: true, 
+                opacity: 0.9,
+                depthTest: false
+            });
+
+            const ring = new THREE.Mesh(ringGeom, ringMat);
+            ring.position.copy(position);
+            ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
+            
+            scene.add(ring);
+
+            new TWEEN.Tween(ringMat)
+                .to({ opacity: 0 }, 2800)
+                .onComplete(() => { scene.remove(ring); })
+                .start();
+        }
+
+        // ==========================================
+        // 6. RENDER LOOP E RESPONSIVIDADE
+        // ==========================================
+        function animate(time) {
+            requestAnimationFrame(animate);
+            TWEEN.update(time);
+            controls.update();
+
+            globe.rotation.y += 0.0004;
+            hitSphere.rotation.y += 0.0004;
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
+
