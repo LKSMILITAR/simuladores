@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulador de Detecção Infravermelha (IRST)</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        h1 { margin-bottom: 5px; color: #4caf50; }
+        p { max-width: 800px; text-align: center; font-size: 0.95em; color: #aaa; }
+        .controls {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        label { font-size: 0.9em; }
+        input[type=range] { vertical-align: middle; }
+        .container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .canvas-box {
+            background: #1e1e1e;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        canvas {
+            border: 1px solid #333;
+            image-rendering: pixelated;
+        }
+        .legend { margin-top: 5px; font-size: 0.85em; color: #888; }
+    </style>
+</head>
+<body>
+
+    <h1>Simulador Radiométrico & Detecção IRST</h1>
+    <p>
+        Este simulador ilustra o "caos de fótons" (piso de ruído do planeta), a presença do objeto físico bloqueando/alterando a radiação e o efeito do filtro de variação (cancelamento de fundo).
+    </p>
+
+    <div class="controls">
+        <label>
+            Temperatura do Objeto:
+            <input type="range" id="tempObj" min="0" max="255" value="40">
+            <span id="tempVal">Frio (Bloqueio)</span>
+        </label>
+        <label>
+            <input type="checkbox" id="toggleFilter" checked>
+            Ativar Filtro de Variação (Subtração Ortogonal do Fundo)
+        </label>
+    </div>
+
+    <div class="container">
+        <div class="canvas-box">
+            <h3>Sinal Bruto (Matriz do Sensor / FPA)</h3>
+            <canvas id="canvasRaw" width="200" height="200"></canvas>
+            <div class="legend">Piso de ruído do ambiente + Objeto em movimento</div>
+        </div>
+        <div class="canvas-box">
+            <h3>Saída Processada (Sinal Filtrado)</h3>
+            <canvas id="canvasProcessed" width="200" height="200"></canvas>
+            <div class="legend">Fundo removido: isola a alteração e a borda física</div>
+        </div>
+    </div>
+
+    <script>
+        const canvasRaw = document.getElementById('canvasRaw');
+        const ctxRaw = canvasRaw.getContext('2d');
+        const canvasProcessed = document.getElementById('canvasProcessed');
+        const ctxProc = canvasProcessed.getContext('2d');
+
+        const width = 200;
+        const height = 200;
+
+        // Posição e dinâmica do objeto
+        let objX = 10;
+        let objY = 90;
+        const objSize = 20;
+        let objSpeed = 1.5;
+
+        // Armazena o frame anterior para calcular a variação temporal
+        let previousFrame = new Float32Array(width * height);
+
+        const tempSlider = document.getElementById('tempObj');
+        const tempLabel = document.getElementById('tempVal');
+        const filterCheck = document.getElementById('toggleFilter');
+
+        tempSlider.addEventListener('input', () => {
+            const val = parseInt(tempSlider.value);
+            if(val < 100) tempLabel.innerText = "Frio (Bloqueio / Silhueta)";
+            else if(val > 150) tempLabel.innerText = "Quente (Emissão Ativa)";
+            else tempLabel.innerText = "Neutro (Igual ao Fundo)";
+        });
+
+        function render() {
+            const rawImageData = ctxRaw.createImageData(width, height);
+            const procImageData = ctxProc.createImageData(width, height);
+
+            const rawData = rawImageData.data;
+            const procData = procImageData.data;
+
+            const targetVal = parseInt(tempSlider.value);
+            const useFilter = filterCheck.checked;
+
+            // Mover o objeto
+            objX += objSpeed;
+            if (objX > width) objX = -objSize;
+
+            // 1. GERAR A CENA RADIANTE REAL (SINAL BRUTO)
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const idx = (y * width + x);
+                    const pixelIdx = idx * 4;
+
+                    // Piso de ruído do ambiente (neve/fundo com flutuação quântica)
+                    // Média em torno de 128 com ruído aleatório
+                    let noise = (Math.random() - 0.5) * 35;
+                    let bgRadiance = 128 + noise;
+
+                    let currentPixelVal = bgRadiance;
+
+                    // Verificar se o objeto físico está neste pixel (Bloqueia o fundo)
+                    if (x >= objX && x < objX + objSize && y >= objY && y < objY + objSize) {
+                        // O objeto substitui o fundo pela sua própria emissão + pequeno ruído
+                        currentPixelVal = targetVal + (Math.random() - 0.5) * 10;
+                    }
+
+                    // Limitar entre 0 e 255
+                    currentPixelVal = Math.max(0, Math.min(255, currentPixelVal));
+
+                    // Preencher o Canvas Bruto (Visão de Intensidade Térmica)
+                    rawData[pixelIdx] = currentPixelVal;     // R
+                    rawData[pixelIdx + 1] = currentPixelVal; // G
+                    rawData[pixelIdx + 2] = currentPixelVal; // B
+                    rawData[pixelIdx + 3] = 255;             // Alpha
+
+                    // 2. PROCESSAMENTO DE SINAL (FILTRAGEM DE VARIAÇÃO)
+                    let processedVal = 0;
+
+                    if (useFilter) {
+                        // Variação Temporal (Diferença entre frames consecutivos: dI/dt)
+                        let deltaT = Math.abs(currentPixelVal - previousFrame[idx]);
+
+                        // Se a variação for significativa (supera o piso de ruído do fundo), destaca
+                        if (deltaT > 18) {
+                            processedVal = Math.min(255, deltaT * 8); // Amplifica a variação
+                        } else {
+                            processedVal = 0; // Deleta o piso de ruído estático
+                        }
+                    } else {
+                        processedVal = currentPixelVal;
+                    }
+
+                    // Preencher Canvas Processado (Canais em verde para estilo IRST tático)
+                    procData[pixelIdx] = 0;                      // R
+                    procData[pixelIdx + 1] = processedVal;       // G
+                    procData[pixelIdx + 2] = 0;                      // B
+                    procData[pixelIdx + 3] = 255;                  // Alpha
+
+                    // Atualizar histórico do frame
+                    previousFrame[idx] = currentPixelVal;
+                }
+            }
+
+            ctxRaw.putImageData(rawImageData, 0, 0);
+            ctxProc.putImageData(procImageData, 0, 0);
+
+            requestAnimationFrame(render);
+        }
+
+        // Iniciar simulação
+        render();
+    </script>
+</body>
+</html>
