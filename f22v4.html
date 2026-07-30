@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F-22 Raptor - Advanced Cyber Blueprint</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #02060d;
+            overflow: hidden;
+            font-family: 'Consolas', 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        /* Painel HUD Lateral de Alta Tecnologia */
+        .hud-sidebar {
+            position: absolute;
+            left: 30px;
+            top: 40px;
+            bottom: 40px;
+            width: 280px;
+            border-left: 2px solid #00f0ff;
+            padding-left: 15px;
+            color: #00f0ff;
+            font-size: 11px;
+            z-index: 2;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-shadow: 0 0 5px rgba(0, 240, 255, 0.5);
+        }
+        .hud-title { font-size: 18px; font-weight: bold; letter-spacing: 2px; color: #fff; }
+        .matrix-flow { color: rgba(0, 240, 255, 0.3); font-size: 9px; line-height: 12px; }
+        
+        /* Moldura de Escaneamento */
+        .scanline {
+            position: absolute; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 6px 100%;
+            z-index: 3; pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="scanline"></div>
+    <canvas id="blueprintCanvas"></canvas>
+
+    <!-- Interface HUD inspirada em simuladores e artigos MDPI -->
+    <div class="hud-sidebar">
+        <div>
+            <div class="hud-title">LOCKHEED F-22</div>
+            <p style="color: #617a8a; margin-bottom: 20px;">MODEL: RAPTOR // STEALTH GEN 5</p>
+            <p>===================================</p>
+            <p>SYSTEM DIAGNOSTIC: <span style="color: #00ff66;">ONLINE</span></p>
+            <p>RADAR SIGNATURE: MINIMAL (RCS)</p>
+            <p>AERODYNAMIC PROFILE: VECTOR OPTIMIZED</p>
+            <p>GRID SCANNER: ACTIVE (3D_MESH)</p>
+            <p>===================================</p>
+        </div>
+        <div class="matrix-flow" id="hexStream">
+            <!-- Injetado via JS -->
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('blueprintCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        // Coordenadas Vetoriais Frontais Reais do F-22 (Proporções de Engenharia)
+        // Centralizado em (0,0), escala multiplicativa aplicada na renderização
+        const f22Nodes = [
+            {x: 0, y: -25},     // 0: Topo do Canopy (Cockpit)
+            {x: 0, y: 5},       // 1: Bico do Caça (Radome frontal)
+            {x: -12, y: 0},     // 2: Entrada de Ar Esquerda (Superior)
+            {x: 12, y: 0},      // 3: Entrada de Ar Direita (Superior)
+            {x: -15, y: 15},    // 4: Carenagem Motor Esquerdo
+            {x: 15, y: 15},     // 5: Carenagem Motor Direito
+            {x: -95, y: 5},     // 6: Ponta da Asa Esquerda
+            {x: 95, y: 5},      // 7: Ponta da Asa Direita
+            {x: -35, y: -45},   // 8: Estabilizador Vertical Esq (Topo)
+            {x: 35, y: -45},    // 9: Estabilizador Vertical Dir (Topo)
+            {x: -18, y: 5},     // 10: Base da Cauda Esquerda
+            {x: 18, y: 5},      // 11: Base da Cauda Direita
+            {x: -55, y: 12},    // 12: Flaps/Borda de Fuga Esq
+            {x: 55, y: 12}      // 13: Flaps/Borda de Fuga Dir
+        ];
+
+        // Conexões de Linhas (Arestas da Malha 3D)
+        const f22Edges = [
+            [0, 1], [0, 2], [0, 3], [1, 2], [1, 3], // Cockpit e Nariz
+            [2, 4], [3, 5], [4, 5],                 // Fuselagem Central / Motores
+            [2, 6], [4, 12], [6, 12],               // Asa Esquerda Completa
+            [3, 7], [5, 13], [7, 13],               // Asa Direita Completa
+            [10, 8], [11, 9],                       // Linhas de subida das Caudas
+            [8, 9], [4, 10], [5, 11]                // Encaixe traseiro estrutural
+        ];
+
+        let angle = 0;
+
+        function drawBlueprint() {
+            // Fundo escuro azulado com rastro sutil
+            ctx.fillStyle = 'rgba(2, 6, 13, 0.15)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const centerX = canvas.width * 0.58; // Deslocado levemente para a direita para balancear o HUD
+            const centerY = canvas.height * 0.52;
+            const scale = Math.min(canvas.width, canvas.height) * 0.0045; // Escala responsiva
+
+            // Efeito de Oscilação de Altitude/Ângulo (Simulador de Voo)
+            angle += 0.02;
+            const tilt = Math.sin(angle) * 2;
+            const floatY = Math.cos(angle * 1.5) * 8;
+
+            ctx.save();
+            ctx.translate(centerX, centerY + floatY);
+            ctx.rotate(tilt * Math.PI / 180);
+
+            // 1. Desenhar a Grade de Fundo Tática (Radar Grid)
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.03)';
+            ctx.lineWidth = 1;
+            for(let i = -200; i <= 200; i += 40) {
+                ctx.beginPath(); ctx.moveTo(i * scale, -150 * scale); ctx.lineTo(i * scale, 100 * scale); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(-200 * scale, i * scale); ctx.lineTo(200 * scale, i * scale); ctx.stroke();
+            }
+
+            // 2. Desenhar as Linhas do Caça (Efeito Brilho Neon Azul Blueprint)
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#00f0ff';
+
+            f22Edges.forEach(edge => {
+                const p1 = f22Nodes[edge[0]];
+                const p2 = f22Nodes[edge[1]];
+                
+                ctx.beginPath();
+                ctx.moveTo(p1.x * scale, p1.y * scale);
+                ctx.lineTo(p2.x * scale, p2.y * scale);
+                ctx.stroke();
+            });
+
+            // 3. Desenhar os Nós de Intersecção (Pontos de Dados)
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 8;
+            f22Nodes.forEach(node => {
+                ctx.beginPath();
+                ctx.arc(node.x * scale, node.y * scale, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.restore();
+
+            // 4. Fluxo de Dados Digitais Fictícios no Fundo da Tela
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(0, 240, 255, 0.05)';
+            ctx.font = '10px monospace';
+            for (let i = 0; i < 5; i++) {
+                ctx.fillText("0x" + Math.floor(Math.random() * 16777215).toString(16).toUpperCase() + " // SYS_OK", canvas.width - 180, 40 + (i * 20));
+            }
+        }
+
+        // Loop de Animação Principal
+        setInterval(drawBlueprint, 1000 / 60);
+
+        // Gerador do Fluxo Hexadecimal da Barra Lateral
+        const hexStream = document.getElementById('hexStream');
+        setInterval(() => {
+            let output = "";
+            for(let i=0; i<8; i++) {
+                output += "F22_DATA_[" + Math.floor(Math.random()*90+10) + "]: " + Math.random().toString(16).substr(2, 8).toUpperCase() + "<br>";
+            }
+            hexStream.innerHTML = output;
+        }, 120);
+    </script>
+</body>
+</html>
