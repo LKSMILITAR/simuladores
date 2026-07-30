@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LKS MILITAR - Digital Target Scan F-22 (9x16 Vertical)</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      background-color: #020604;
+      overflow: hidden;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    .container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    /* Top Banner reestruturado para formato vertical (Shorts/Reels/TikTok) */
+    .top-panel {
+      position: absolute;
+      top: 25px;
+      left: 4%;
+      right: 4%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      background: rgba(2, 15, 8, 0.85);
+      border: 1px solid rgba(0, 255, 102, 0.5);
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 0 18px rgba(0, 255, 102, 0.25);
+      z-index: 20;
+      pointer-events: none;
+    }
+
+    .brand-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      text-align: center;
+    }
+
+    .brand-title {
+      color: #ffffff;
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 4px;
+      text-shadow: 0 0 12px #00ff66;
+    }
+
+    .subscribe-btn {
+      background: #00ff66;
+      color: #020604;
+      font-weight: bold;
+      font-size: 12px;
+      letter-spacing: 2px;
+      padding: 6px 16px;
+      border-radius: 4px;
+      box-shadow: 0 0 14px rgba(0, 255, 102, 0.9);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 255, 102, 0.6); }
+      50% { transform: scale(1.05); box-shadow: 0 0 22px rgba(0, 255, 102, 1); }
+      100% { transform: scale(1); box-shadow: 0 0 10px rgba(0, 255, 102, 0.6); }
+    }
+
+    .status-group {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .hud-badge {
+      border: 1px solid #00ff66;
+      color: #00ff66;
+      padding: 3px 6px;
+      font-size: 10px;
+      border-radius: 3px;
+      letter-spacing: 1px;
+      background: rgba(0, 255, 102, 0.08);
+      text-shadow: 0 0 5px #00ff66;
+    }
+
+    .hud-footer {
+      position: absolute;
+      bottom: 25px;
+      left: 4%;
+      right: 4%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: #00ff66;
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-align: center;
+      opacity: 0.9;
+      text-shadow: 0 0 6px rgba(0, 255, 102, 0.6);
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    .blink {
+      animation: blinker 1s linear infinite;
+    }
+
+    @keyframes blinker {
+      50% { opacity: 0.2; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Painel Superior adaptado para Telas Verticais (9x16) -->
+  <div class="top-panel">
+    <div class="brand-box">
+      <div class="brand-title">LKS MILITAR</div>
+      <div class="subscribe-btn">INSCREVA-SE NO CANAL</div>
+    </div>
+    <div class="status-group">
+      <div class="hud-badge"><span class="blink">●</span> AESA RADAR</div>
+      <div class="hud-badge">TARGET: F-22</div>
+      <div class="hud-badge">SIGINT MATRIX</div>
+    </div>
+  </div>
+
+  <canvas id="radarCanvas"></canvas>
+
+  <div class="hud-footer">
+    <div>CANAL LKS MILITAR // DEFESA E TECNOLOGIA</div>
+    <div>FREQ: 9.85 GHz // X-BAND RADAR</div>
+    <div>STATUS: ALVO EM CÓDIGO BINÁRIO</div>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById('radarCanvas');
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Matriz ASCII do F-22 Raptor Frontal
+  const asciiArt = [
+    "                                                                                 .                                 ",
+    "                                   --                                           #                                  ",
+    "                                    .#                                        :+                                   ",
+    "                                      +-                                     #:                                    ",
+    "                                       .%                                  .%                                      ",
+    "                                         %:            :%@@@+             +*                                       ",
+    "                                          %#          .@@@@@@%           %-                                        ",
+    "                                           *@        -@@@@@@@@#        :@.                                         ",
+    "                                            -@%.    :@@@@@@@@@@@     -@%                                           ",
+    "                                             -@@#:*@@@@@@@@@@@@@@%*-%@@                                            ",
+    "                                              #@@@@@@@@@@@@@@@@@@@@@@@=                                            ",
+    "                                        .:-%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#-..                                      ",
+    "                 :-+*****#%%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%##****+=-.               ",
+    "   :#**+=-::.     .#-              :+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%=.              *=     ..:--=+**+  ",
+    "                          .--#@#***=.      =@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.      :=**#%%+--.                        ",
+    "                                            :@@@@@@@@@@@@@@@@@@@@@@@@@@#                                           ",
+    "                                             .%@@@@@@@@@@@@@@@@@@@@@@@+                                            "
+  ];
+
+  const numRows = asciiArt.length;
+  const numCols = asciiArt[0].length;
+  const f22Points = [];
+
+  for (let r = 0; r < numRows; r++) {
+    for (let c = 0; c < numCols; c++) {
+      const char = asciiArt[r][c];
+      if (char !== ' ') {
+        const relX = (c - numCols / 2); 
+        const relY = (r - numRows / 2);
+        
+        let type = 'body';
+        if (char === '@' || char === '%') type = 'core';
+        if (char === '#' || char === '*' || char === '+') type = 'edge';
+        if (char === '.' || char === ':' || char === '-') type = 'faint';
+
+        f22Points.push({ x: relX, y: relY, type: type });
+      }
+    }
+  }
+
+  // Chuva de binários de fundo
+  const fontSize = 13;
+  let columns = Math.floor(canvas.width / fontSize);
+  let drops = Array(columns).fill(0).map(() => Math.floor(Math.random() * -100));
+
+  window.addEventListener('resize', () => {
+    columns = Math.floor(canvas.width / fontSize);
+    drops = Array(columns).fill(0).map(() => Math.floor(Math.random() * -100));
+  });
+
+  let frame = 0;
+
+  function render() {
+    frame++;
+    const width = canvas.width;
+    const height = canvas.height;
+
+    ctx.fillStyle = 'rgba(2, 6, 4, 0.22)';
+    ctx.fillRect(0, 0, width, height);
+
+    // 1. CHUVA BINÁRIA DE FUNDO
+    ctx.font = `${fontSize}px monospace`;
+    for (let i = 0; i < drops.length; i++) {
+      const char = Math.random() > 0.5 ? '1' : '0';
+      const x = i * fontSize;
+      const y = drops[i] * fontSize;
+
+      ctx.fillStyle = 'rgba(0, 255, 102, 0.25)';
+      ctx.fillText(char, x, y);
+
+      if (y > height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+
+    // 2. ESCALA ADAPTATIVA DINÂMICA PARA FORMATO VERTICAL (9x16)
+    const targetWidthRatio = width * 0.92; 
+    const baseSpacingX = targetWidthRatio / numCols;
+    const baseSpacingY = baseSpacingX * 1.35; 
+
+    const time = frame * 0.025;
+    const translateY = Math.sin(time) * 20; 
+    const dynamicScale = 1 + Math.sin(time * 0.5) * 0.02;
+
+    const centerX = width / 2;
+    const centerY = height / 2 + translateY + 10;
+
+    // 3. RENDERIZAÇÃO DO F-22 RAPTOR
+    const charSize = Math.max(8, Math.floor(baseSpacingX * 1.1));
+    ctx.font = `bold ${charSize}px monospace`;
+
+    for (let i = 0; i < f22Points.length; i++) {
+      const pt = f22Points[i];
+      const px = centerX + (pt.x * baseSpacingX) * dynamicScale;
+      const py = centerY + (pt.y * baseSpacingY) * dynamicScale;
+
+      const char = (Math.random() > 0.2) ? (i % 2 === 0 ? '1' : '0') : (Math.random() > 0.5 ? '0' : '1');
+
+      if (pt.type === 'edge') {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.shadowColor = '#00FF66';
+        ctx.shadowBlur = 8;
+      } else if (pt.type === 'core') {
+        ctx.fillStyle = '#00FF66';
+        ctx.shadowColor = '#00FF66';
+        ctx.shadowBlur = 5;
+      } else if (pt.type === 'body') {
+        ctx.fillStyle = '#00CC52';
+        ctx.shadowBlur = 0;
+      } else {
+        ctx.fillStyle = '#008033';
+        ctx.shadowBlur = 0;
+      }
+
+      ctx.fillText(char, px, py);
+    }
+
+    ctx.shadowBlur = 0;
+    requestAnimationFrame(render);
+  }
+
+  render();
+</script>
+</body>
+</html>
