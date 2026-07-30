@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F-22 Raptor - Binary Radar Scan</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      background-color: #020604;
+      overflow: hidden;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    .container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Overlay HUD militar */
+    .hud-header {
+      position: absolute;
+      top: 30px;
+      left: 5%;
+      right: 5%;
+      display: flex;
+      justify-content: space-between;
+      color: #00ff66;
+      font-size: 15px;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(0, 255, 102, 0.8);
+      pointer-events: none;
+    }
+
+    .hud-footer {
+      position: absolute;
+      bottom: 30px;
+      left: 5%;
+      right: 5%;
+      display: flex;
+      justify-content: space-between;
+      color: #00ff66;
+      font-size: 13px;
+      letter-spacing: 1.5px;
+      opacity: 0.85;
+      text-shadow: 0 0 6px rgba(0, 255, 102, 0.6);
+      pointer-events: none;
+    }
+
+    .blink {
+      animation: blinker 1s linear infinite;
+    }
+
+    @keyframes blinker {
+      50% { opacity: 0.2; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="hud-header">
+    <div>SYSTEM SCAN: <span class="blink">ACTIVE</span></div>
+    <div>TARGET ID: F-22 RAPTOR</div>
+    <div>DATA STREAM: BINARY_AERO</div>
+  </div>
+
+  <canvas id="radarCanvas"></canvas>
+
+  <div class="hud-footer">
+    <div>SIGINT / AESA RADAR HARVESTING</div>
+    <div>FREQ: 9.85 GHz // GAIN: +42dB</div>
+    <div>STATUS: THREAT DISCRIMINATED</div>
+  </div>
+</div>
+
+<script>
+  const canvas = document.getElementById('radarCanvas');
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // Matriz ASCII fornecida do F-22 Raptor Frontal
+  const asciiArt = [
+    "                                                                                 .                                 ",
+    "                                   --                                           #                                  ",
+    "                                    .#                                        :+                                   ",
+    "                                      +-                                     #:                                    ",
+    "                                       .%                                  .%                                      ",
+    "                                         %:            :%@@@+             +*                                       ",
+    "                                          %#          .@@@@@@%           %-                                        ",
+    "                                           *@        -@@@@@@@@#        :@.                                         ",
+    "                                            -@%.    :@@@@@@@@@@@     -@%                                           ",
+    "                                             -@@#:*@@@@@@@@@@@@@@%*-%@@                                            ",
+    "                                              #@@@@@@@@@@@@@@@@@@@@@@@=                                            ",
+    "                                        .:-%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@#-..                                      ",
+    "                 :-+*****#%%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%##****+=-.               ",
+    "   :#**+=-::.     .#-              :+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@%=.              *=     ..:--=+**+  ",
+    "                          .--#@#***=.      =@@@@@@@@@@@@@@@@@@@@@@@@@@@@@.      :=**#%%+--.                        ",
+    "                                            :@@@@@@@@@@@@@@@@@@@@@@@@@@#                                           ",
+    "                                             .%@@@@@@@@@@@@@@@@@@@@@@@+                                            "
+  ];
+
+  // Converte a arte ASCII em coordenadas X/Y relativas ao centro
+  const numRows = asciiArt.length;
+  const numCols = asciiArt[0].length;
+  const f22Points = [];
+
+  for (let r = 0; r < numRows; r++) {
+    for (let c = 0; c < numCols; c++) {
+      const char = asciiArt[r][c];
+      if (char !== ' ') {
+        // Normaliza as coordenadas centralizando no ponto (0,0)
+        const relX = (c - numCols / 2) * 11; 
+        const relY = (r - numRows / 2) * 16;
+        
+        // Categorização de brilho e contraste estrutural
+        let type = 'body';
+        if (char === '@' || char === '%') type = 'core';
+        if (char === '#' || char === '*' || char === '+') type = 'edge';
+        if (char === '.' || char === ':' || char === '-') type = 'faint';
+
+        f22Points.push({ x: relX, y: relY, type: type });
+      }
+    }
+  }
+
+  // Fundo com fluxo binário em chuva de matriz
+  const fontSize = 14;
+  let columns = Math.floor(canvas.width / fontSize);
+  let drops = Array(columns).fill(0).map(() => Math.floor(Math.random() * -100));
+
+  window.addEventListener('resize', () => {
+    columns = Math.floor(canvas.width / fontSize);
+    drops = Array(columns).fill(0).map(() => Math.floor(Math.random() * -100));
+  });
+
+  let frame = 0;
+
+  function render() {
+    frame++;
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // Persistência de tela (efeito fosforecente de radar)
+    ctx.fillStyle = 'rgba(2, 6, 4, 0.22)';
+    ctx.fillRect(0, 0, width, height);
+
+    // 1. DESENHO DO FUNDO BINÁRIO (Sinal Fraco / Ruído de Fundo)
+    ctx.font = `${fontSize}px monospace`;
+    for (let i = 0; i < drops.length; i++) {
+      const char = Math.random() > 0.5 ? '1' : '0';
+      const x = i * fontSize;
+      const y = drops[i] * fontSize;
+
+      ctx.fillStyle = 'rgba(0, 255, 102, 0.12)';
+      ctx.fillText(char, x, y);
+
+      if (y > height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+
+    // 2. MOVIMENTO DE ARFAGEM (Oscilação de Voo para Baixo e para Cima)
+    const time = frame * 0.025;
+    const translateY = Math.sin(time) * 35; // Deslocamento vertical
+    const scale = 1 + Math.sin(time * 0.5) * 0.02; // Micro variação de profundidade
+
+    const centerX = width / 2;
+    const centerY = height / 2 + translateY;
+
+    // 3. DESENHO DO F-22 RAPTOR EM BINÁRIO DE ALTO CONTRASTE
+    ctx.font = 'bold 12px monospace';
+
+    for (let i = 0; i < f22Points.length; i++) {
+      const pt = f22Points[i];
+      const px = centerX + pt.x * scale;
+      const py = centerY + pt.y * scale;
+
+      // Caracteres binários oscilantes
+      const char = (Math.random() > 0.2) ? (i % 2 === 0 ? '1' : '0') : (Math.random() > 0.5 ? '0' : '1');
+
+      // Aplicação de cores com base no contraste da matriz estrutural
+      if (pt.type === 'edge') {
+        ctx.fillStyle = '#FFFFFF'; // Bordos de ataque reluzentes
+        ctx.shadowColor = '#00FF66';
+        ctx.shadowBlur = 10;
+      } else if (pt.type === 'core') {
+        ctx.fillStyle = '#00FF66'; // Fuselagem central em verde-esmeralda
+        ctx.shadowColor = '#00FF66';
+        ctx.shadowBlur = 6;
+      } else if (pt.type === 'body') {
+        ctx.fillStyle = '#00CC52'; // Asas e corpo principal
+        ctx.shadowBlur = 0;
+      } else {
+        ctx.fillStyle = '#008033'; // Pontas extremas em sinal mais suave
+        ctx.shadowBlur = 0;
+      }
+
+      ctx.fillText(char, px, py);
+    }
+
+    ctx.shadowBlur = 0;
+    requestAnimationFrame(render);
+  }
+
+  render();
+</script>
+</body>
+</html>
