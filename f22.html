@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F-22 Raptor - Visualização de Radar Binário</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      background-color: #050811;
+      overflow: hidden;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    canvas {
+      display: block;
+      box-shadow: 0 0 30px rgba(0, 255, 104, 0.15);
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="radarCanvas"></canvas>
+
+<script>
+  const canvas = document.getElementById('radarCanvas');
+  const ctx = canvas.getContext('2d');
+
+  // Resolução fixa de alta definição
+  canvas.width = 1920;
+  canvas.height = 1080;
+
+  const width = canvas.width;
+  const height = canvas.height;
+
+  // Parâmetros da matriz de fundo (Efeito estilo Matrix / Data Stream)
+  const fontSize = 16;
+  const columns = Math.floor(width / fontSize);
+  const drops = Array(columns).fill(0).map(() => Math.floor(Math.random() * -50));
+
+  // Matriz de desenho do F-22 Raptor em Visão Frontal (Geometria Stealth em Baixa Resolução de Caracteres)
+  // Cada linha representa a distribuição de '0's e '1's para desenhar a silhueta
+  const f22Shape = [
+    "                        11                        ",
+    "                       1001                       ",
+    "                      100001                      ",
+    "                      101101                      ",
+    "                     101  101                     ",
+    "                     101  101                     ",
+    "                    1001  1001                    ",
+    "                    1001  1001                    ",
+    "                   10001  10001                   ",
+    "                  100001  100001                  ",
+    "                 1000001  1000001                 ",
+    "                10000001  10000001                ",
+    "               100000001  100000001               ",
+    "  1111111111111000000001  1000000001111111111111  ",
+    " 10000000000000000000001  10000000000000000000001 ",
+    "100000000000000000000001  100000000000000000000001",
+    " 11000000000000000000001  10000000000000000000011 ",
+    "   111100000000000000001  10000000000000001111    ",
+    "       11110000000000001  1000000000001111        ",
+    "           1111100000001  1000000011111           ",
+    "               111110001  100011111               ",
+    "                   11111  11111                   ",
+    "                     101  101                     ",
+    "                     101  101                     ",
+    "                     111  111                     "
+  ];
+
+  let frameCount = 0;
+
+  function render() {
+    frameCount++;
+
+    // Fundo semitransparente para criar efeito de rastro luminescente
+    ctx.fillStyle = 'rgba(5, 8, 17, 0.2)';
+    ctx.fillRect(0, 0, width, height);
+
+    // 1. DESENHO DO FUNDO BINÁRIO (Data Stream)
+    ctx.fillStyle = 'rgba(0, 255, 104, 0.15)';
+    ctx.font = `${fontSize}px monospace`;
+
+    for (let i = 0; i < drops.length; i++) {
+      const char = Math.random() > 0.5 ? '1' : '0';
+      const x = i * fontSize;
+      const y = drops[i] * fontSize;
+
+      ctx.fillText(char, x, y);
+
+      if (y > height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+
+    // 2. CÁLCULO DE MOVIMENTO DO F-22 (Oscilação de Voo / Pitch e Roll Suave)
+    const time = frameCount * 0.03;
+    const translateY = Math.sin(time) * 45; // Movimento vertical (para baixo e para cima)
+    const scale = 1 + Math.sin(time * 0.5) * 0.05; // Leve alteração de escala para simular aproximação/afastamento
+
+    const centerX = width / 2;
+    const centerY = height / 2 + translateY;
+
+    const charSpacingX = 14 * scale;
+    const charSpacingY = 18 * scale;
+
+    const totalRows = f22Shape.length;
+    const totalCols = f22Shape[0].length;
+
+    const startX = centerX - (totalCols * charSpacingX) / 2;
+    const startY = centerY - (totalRows * charSpacingY) / 2;
+
+    // 3. DESENHO DO F-22 COM CÓDIGOS BINÁRIOS
+    ctx.font = `bold ${16 * scale}px monospace`;
+
+    for (let r = 0; r < totalRows; r++) {
+      for (let c = 0; c < totalCols; c++) {
+        const charType = f22Shape[r][c];
+
+        if (charType !== ' ') {
+          const posX = startX + c * charSpacingX;
+          const posY = startY + r * charSpacingY;
+
+          // Gera binários dinâmicos que oscilam para simular processamento contínuo
+          const dynamicChar = (Math.random() > 0.3) ? charType : (Math.random() > 0.5 ? '1' : '0');
+
+          // Brilho intenso no centro do F-22 e bordas destacadas (Efeito Radar / HUD)
+          if (charType === '1') {
+            ctx.fillStyle = '#00FF68';
+            ctx.shadowColor = '#00FF68';
+            ctx.shadowBlur = 12;
+          } else {
+            ctx.fillStyle = '#80FFB4';
+            ctx.shadowColor = '#00FF68';
+            ctx.shadowBlur = 4;
+          }
+
+          ctx.fillText(dynamicChar, posX, posY);
+        }
+      }
+    }
+
+    // Reseta configurações de sombra para não comprometer a performance
+    ctx.shadowBlur = 0;
+
+    requestAnimationFrame(render);
+  }
+
+  // Inicialização da animação
+  render();
+</script>
+</body>
+</html>
