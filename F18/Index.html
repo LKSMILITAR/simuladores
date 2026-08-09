@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F/A-18 Hornet - Documentação Técnica Digital</title>
+    
+    <!-- Dependência da Biblioteca PageFlip (JS estático de alta performance) -->
+    <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0a0e14;
+            --panel-bg: #121820;
+            --accent-green: #00ff66;
+            --accent-cyan: #00e5ff;
+            --border-color: #1e293b;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar no Estilo Portal Científico (MDPI Style) */
+        .sidebar {
+            width: 320px;
+            background: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        .doc-badge {
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            border: 1px solid var(--accent-cyan);
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .doc-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 5px;
+        }
+
+        .doc-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+        }
+
+        /* Controles do Leitor */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn-ctrl {
+            flex: 1;
+            background: rgba(0, 255, 102, 0.1);
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .btn-ctrl:hover {
+            background: var(--accent-green);
+            color: #000;
+        }
+
+        /* Índice de Páginas */
+        .toc-list {
+            list-style: none;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .toc-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .toc-item:hover {
+            color: var(--accent-green);
+        }
+
+        /* ÁREA PRINCIPAL DO FLIPBOOK */
+        .main-stage {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at center, #1a2332 0%, var(--bg-dark) 100%);
+            position: relative;
+        }
+
+        /* Container da Biblioteca PageFlip */
+        .flipbook-viewport {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .page-node {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Layout Interno da Página (Print 9:16 + Texto Traduzido) */
+        .page-content {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 20px;
+            height: 100%;
+        }
+
+        .page-img-box {
+            width: 100%;
+            height: 100%;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            background: #000;
+        }
+
+        .page-img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .page-text-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+
+        .page-text-box h3 {
+            color: var(--accent-green);
+            font-family: monospace;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+        }
+
+        .page-footer {
+            margin-top: auto;
+            font-family: monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-align: right;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar de Navegação Científica -->
+    <aside class="sidebar">
+        <span class="doc-badge">DOCUMENTAÇÃO TÉCNICA</span>
+        <h1 class="doc-title">F/A-18 Hornet Manual</h1>
+        <p class="doc-subtitle">Análise Estrutural & Sistemas de Aviônica</p>
+
+        <div class="controls">
+            <button class="btn-ctrl" onclick="flipbook.flipPrev()">◄ Anterior</button>
+            <button class="btn-ctrl" onclick="flipbook.flipNext()">Próxima ►</button>
+        </div>
+
+        <ul class="toc-list">
+            <li class="toc-item" onclick="flipbook.flip(0)">Página 01: Visão Geral</li>
+            <li class="toc-item" onclick="flipbook.flip(1)">Página 02: Especificações</li>
+            <li class="toc-item" onclick="flipbook.flip(11)">Página 12: Sistemas de Aviônica</li>
+            <!-- Outras páginas podem ser listadas dinamicamente -->
+        </ul>
+    </aside>
+
+    <!-- Área de Exibição 3D do Livro -->
+    <main class="main-stage">
+        <div id="flipbook" class="flipbook-viewport">
+            
+            <!-- PÁGINA 1 -->
+            <div class="page-node">
+                <div class="page-content">
+                    <div class="page-img-box">
+                        <img src="img/img1.png" alt="Página 1">
+                    </div>
+                    <div class="page-text-box">
+                        <h3>01. INTRODUÇÃO E ARQUITETURA</h3>
+                        <p>Visão geral do caça multimissão McDonnell Douglas F/A-18 Hornet, destacando sua versatilidade operacional em plataformas de porta-aviões.</p>
+                        <div class="page-footer">PÁG. 01</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PÁGINA 2 -->
+            <div class="page-node">
+                <div class="page-content">
+                    <div class="page-img-box">
+                        <img src="img/img2.png" alt="Página 2">
+                    </div>
+                    <div class="page-text-box">
+                        <h3>02. PROPULSÃO E PERFORMANCE</h3>
+                        <p>Detalhes técnicos sobre os motores General Electric F404-GE-400 e os sistemas de controle digital FADEC de primeira geração.</p>
+                        <div class="page-footer">PÁG. 02</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PÁGINA 12 (Exemplo do Teste) -->
+            <div class="page-node">
+                <div class="page-content">
+                    <div class="page-img-box">
+                        <img src="img/img12.png" alt="Página 12">
+                    </div>
+                    <div class="page-text-box">
+                        <h3>12. SISTEMAS DE AVIÔNICA E COCKPIT</h3>
+                        <p>Integração de mostradores CRT multifuncionais (DDI) que reduziram substancialmente a carga de trabalho do piloto na gestão de combate em tempo real.</p>
+                        <div class="page-footer">PÁG. 12</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Script de Inicialização da Animação 3D -->
+    <script>
+        let flipbook;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializa a engine 3D de transição de páginas
+            flipbook = new St.PageFlip(document.getElementById('flipbook'), {
+                width: 700,        // Largura de cada página
+                height: 500,       // Altura de cada página
+                size: "fixed",
+                minWidth: 300,
+                maxWidth: 1000,
+                minHeight: 400,
+                maxHeight: 800,
+                maxShadowOpacity: 0.5,
+                showCover: false,
+                mobileScrollSupport: true
+            });
+
+            // Carrega todos os elementos com a classe .page-node para a pilha de páginas 3D
+            flipbook.loadFromHTML(document.querySelectorAll('.page-node'));
+        });
+    </script>
+</body>
+</html>
