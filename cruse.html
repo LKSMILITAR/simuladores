@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGM Advanced - Reliability & Prognostics Engineering</title>
+    <style>
+        :root {
+            --bg-main: #0d0f12;
+            --bg-card: #161a22;
+            --bg-header: #090a0f;
+            --accent-blue: #0088ff;
+            --accent-cyan: #00f0ff;
+            --text-primary: #f0f4f8;
+            --text-secondary: #8b949e;
+            --border-color: #30363d;
+            --danger: #f85149;
+            --warning: #d29922;
+            --success: #3fb950;
+            --purple: #a371f7;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', 'Segoe UI', Tahoma, monospace;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1350px;
+            margin: 0 auto;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: var(--bg-header);
+            padding: 20px 25px;
+            border-bottom: 2px solid var(--accent-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: var(--accent-cyan);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .header .subtitle {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Top Metrics Cards */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background-color: #11141b;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .metric-card {
+            background-color: var(--bg-main);
+            padding: 15px;
+            border-radius: 4px;
+            border-left: 4px solid var(--accent-blue);
+            border-top: 1px solid var(--border-color);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .metric-card.alert { border-left-color: var(--danger); }
+        .metric-card.warn { border-left-color: var(--warning); }
+        .metric-card.good { border-left-color: var(--success); }
+
+        .metric-card span {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .metric-card strong {
+            font-size: 1.3rem;
+            color: var(--text-primary);
+            display: block;
+            margin: 5px 0;
+        }
+
+        .metric-card small {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .tabs {
+            display: flex;
+            background-color: var(--bg-header);
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 14px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            font-size: 0.8rem;
+            border-right: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            background-color: var(--bg-card);
+            color: var(--accent-cyan);
+            border-bottom: 2px solid var(--accent-cyan);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 25px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.85rem;
+        }
+
+        th, td {
+            padding: 12px 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: var(--bg-header);
+            color: var(--accent-cyan);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        tr:hover {
+            background-color: rgba(255,255,255,0.02);
+        }
+
+        .tag {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .tag-danger { background: rgba(248, 81, 73, 0.15); color: var(--danger); border: 1px solid var(--danger); }
+        .tag-warning { background: rgba(210, 153, 34, 0.15); color: var(--warning); border: 1px solid var(--warning); }
+        .tag-success { background: rgba(63, 185, 80, 0.15); color: var(--success); border: 1px solid var(--success); }
+        .tag-purple { background: rgba(163, 113, 247, 0.15); color: var(--purple); border: 1px solid var(--purple); }
+
+        .btn-status {
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            transition: 0.2s;
+            background: var(--bg-main);
+            color: var(--text-primary);
+        }
+
+        .btn-status:hover {
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .progress-bar {
+            width: 100%;
+            background-color: var(--bg-main);
+            border-radius: 3px;
+            height: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            margin-top: 5px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--accent-blue);
+        }
+
+        .methodology-footer {
+            padding: 15px 25px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            background-color: var(--bg-header);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div>
+            <h1>SGM Engine Diagnostics & Prognostics</h1>
+            <div class="subtitle">Análise de Confiabilidade Baseada em Termodinâmica, Tribologia e Sinal Espectral (RCM / CBM)</div>
+        </div>
+        <div style="text-align: right;">
+            <span style="font-size: 0.75rem; color: var(--text-secondary);">Plataforma Alvo:</span><br>
+            <strong style="color: var(--accent-cyan);">Cruze Ecotec 1.8 16V (LUW/LDE)</strong>
+        </div>
+    </div>
+
+    <!-- Telemetria e Indicadores de Saúde Física (KPIs CBM) -->
+    <div class="metrics-grid">
+        <div class="metric-card alert">
+            <span>Pressão do Cárter (PCV)</span>
+            <strong>-48.2 kPa</strong>
+            <small>Vácuo Crítico (Diafragma Rupto)</small>
+        </div>
+        <div class="metric-card warn">
+            <span>Desvio Estequiométrico (LTFT)</span>
+            <strong>+18.4%</strong>
+            <small>Compensação de Mistura Pobre</small>
+        </div>
+        <div class="metric-card alert">
+            <span>Risco de Sincronismo (Poly-V)</span>
+            <strong>0.82 $\beta$ (Weibull)</strong>
+            <small>Desalinhamento / Desfiamento Iminente</small>
+        </div>
+        <div class="metric-card good">
+            <span>Integridade Térmica (Coolant)</span>
+            <strong>102°C (Nominal)</strong>
+            <small>Válvula Termostática Eletropilotada OK</small>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <div class="tab active" onclick="openTab(event, 'cbm')">01. CBM - Diagnóstico por Sinal Físico</div>
+        <div class="tab" onclick="openTab(event, 'rcm')">02. Matriz RCM / FMECA & RUL</div>
+        <div class="tab" onclick="openTab(event, 'tribo')">03. Tribologia & Degradação Térmica</div>
+        <div class="tab" onclick="openTab(event, 'specs')">04. Parâmetros de Engenharia</div>
+    </div>
+
+    <!-- TAB 1: CBM (Condition-Based Maintenance) -->
+    <div id="cbm" class="tab-content active">
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 15px;">
+            Ativos monitorados via análise espectral de vibração (FFT), vácuo no coletor e malha fechada de injeção. Padrão ISO 10816 / MDPI Sensors.
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Subsistema</th>
+                    <th>Modo de Falha Físico</th>
+                    <th>Evidência de Sinal / Sensor</th>
+                    <th>Gravidade FMECA</th>
+                    <th>Ação Diagnóstica / Corretiva</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Valvetrain / Cárter</strong></td>
+                    <td>Ruptura do diafragma PCV integrado à tampa de válvulas</td>
+                    <td>Vácuo extremo na tampa da bocal de óleo; apito por cavitação no retentor do virabrequim.</td>
+                    <td><span class="tag tag-danger">CRÍTICO (RPN 280)</span></td>
+                    <td>Substituição do conjunto e sangria do óleo contaminado.</td>
+                    <td><button class="btn-status" onclick="toggleStatus(this)">Pendente</button></td>
+                </tr>
+                <tr>
+                    <td><strong>Transmissão Frontal</strong></td>
+                    <td>Desalinhamento axial/angular na polia do alternador e tensionador Poly-V</td>
+                    <td>Pico de vibração em f = 1x RPM do acessório; desfiamento das bordas das canaletas.</td>
+                    <td><span class="tag tag-danger">CRÍTICO (RPN 245)</span></td>
+                    <td>Alinhamento a laser das polias e troca da correia e tucho hidráulico.</td>
+                    <td><button class="btn-status" onclick="toggleStatus(this)">Pendente</button></td>
+                </tr>
+                <tr>
+                    <td><strong>Admissão / Ar</strong></td>
+                    <td>Contaminação do sensor MAP por névoa de óleo soprada pela falha da PCV</td>
+                    <td>Desvio na curva de pressão estática ($\Delta P > 12\%$) vs. pressão atmosférica local.</td>
+                    <td><span class="tag tag-warning">ALTO (RPN 120)</span></td>
+                    <td>Descontaminação do elemento piezoresistivo com solvente dielétrico sem resíduo.</td>
+                    <td><button class="btn-status" onclick="toggleStatus(this)">Pendente</button></td>
+                </tr>
+                <tr>
+                    <td><strong>Ignição / Combustão</strong></td>
+                    <td>Passagem de alta tensão (flashover) por saturação de combustível e carvão na vela</td>
+                    <td>Misfire aleatório detectado via aceleração angular do virabrequim (Sensor CKP).</td>
+                    <td><span class="tag tag-warning">ALTO (RPN 105)</span></td>
+                    <td>Medição da resistência secundária da bobina de régua e ajuste do gap (0.9mm).</td>
+                    <td><button class="btn-status" onclick="toggleStatus(this)">Pendente</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- TAB 2: RCM & Prognóstico de Vida Útil Remanescente (RUL) -->
+    <div id="rcm" class="tab-content">
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 15px;">
+            Prognóstico de degradação estrutural utilizando a curva Weibull ($\beta > 1$ indica fase de desgaste final) e Lei de Arrhenius para degradação de elastômeros.
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Componente</th>
+                    <th>Modelo de Falha Dominante</th>
+                    <th>Parâmetro de Forma ($\beta$)</th>
+                    <th>Vida Útil Remanescente (RUL)</th>
+                    <th>Nível de Degradabilidade</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Correia Dentada (HNBR/Aramida)</strong></td>
+                    <td>Fadiga por flexão cíclica / degradação térmica do polímero</td>
+                    <td>$\beta = 2.8$ (Wear-out)</td>
+                    <td>
+                        <strong>~58.000 km</strong>
+                        <div class="progress-bar"><div class="progress-fill" style="width: 95%;"></div></div>
+                    </td>
+                    <td><span class="tag tag-success">Nominal</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Fluido de Freio (DOT 4 LV)</strong></td>
+                    <td>Absorção higroscópica (queda do ponto de ebulição)</td>
+                    <td>$\beta = 1.9$ (Degradação Razoável)</td>
+                    <td>
+                        <strong>~8 meses</strong>
+                        <div class="progress-bar"><div class="progress-fill" style="width: 40%; background-color: var(--warning);"></div></div>
+                    </td>
+                    <td><span class="tag tag-warning">Atenção</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Retentor Traseiro do Virabrequim</strong></td>
+                    <td>Ataque químico por vácuo do cárter + cisalhamento de borda</td>
+                    <td>$\beta = 3.4$ (Falha Iminente)</td>
+                    <td>
+                        <strong>< 500 km</strong>
+                        <div class="progress-bar"><div class="progress-fill" style="width: 5%; background-color: var(--danger);"></div></div>
+                    </td>
+                    <td><span class="tag tag-danger">Degradação Acelerada</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- TAB 3: Tribologia & Fluídos -->
+    <div id="tribo" class="tab-content">
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 15px;">
+            Análise físico-química do óleo lubricante motor SAE 05W-30 DEXOS 1 GEN 3.
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Parâmetro Tribológico</th>
+                    <th>Especificação ASTM/SAE</th>
+                    <th>Valor Medido / Estimado</th>
+                    <th>Diagnóstico Químico</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Viscosidade Cinemática @ 100°C</strong></td>
+                    <td>9.3 a 12.5 cSt</td>
+                    <td>8.8 cSt</td>
+                    <td><span class="tag tag-warning">Diluição por Combustível (~3%)</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Reserva Alcalina (TBN)</strong></td>
+                    <td>> 6.0 mg KOH/g</td>
+                    <td>4.2 mg KOH/g</td>
+                    <td>Consumo de aditivos detergentes por contaminação blow-by.</td>
+                </tr>
+                <tr>
+                    <td><strong>Contaminação por Metais (Fe/Al/Cu)</strong></td>
+                    <td>Fe < 30 PPM | Al < 10 PPM</td>
+                    <td>Fe: 14 PPM | Al: 4 PPM</td>
+                    <td><span class="tag tag-success">Desgaste Metálico sob Controle</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- TAB 4: Especificações Normativas -->
+    <div id="specs" class="tab-content">
+        <table>
+            <thead>
+                <tr>
+                    <th>Parâmetro de Engenharia</th>
+                    <th>Especificação Normativa / OEM</th>
+                    <th>Critério de Aceitação / Tolerância</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Torque dos Parafusos da Tampa de Válvulas</strong></td>
+                    <td>8 Nm (Sequência em Espiral a partir do centro)</td>
+                    <td>$\pm 0.5$ Nm (Evitar deformação do plano de junta)</td>
+                </tr>
+                <tr>
+                    <td><strong>Folga de Eletrodo das Velas de Ignição</strong></td>
+                    <td>0.9 mm</td>
+                    <td>$\pm 0.05$ mm (Resistência do Gap $\le 10\text{ k}\Omega$)</td>
+                </tr>
+                <tr>
+                    <td><strong>Vácuo do Coletor de Admissão em Lenta</strong></td>
+                    <td>-60 kPa a -70 kPa (@ 820 RPM, Motor aquecido)</td>
+                    <td>Variação máxima de oscilação: $\le 2\text{ kPa}$</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="methodology-footer">
+        <span>Framework de Engenharia de Manutenção: MDPI Sensors/Energies | ISO 17359 (Condition Monitoring)</span>
+        <span>Algoritmo de Priorização RPN = Severidade $\times$ Ocorrência $\times$ Detecção</span>
+    </div>
+</div>
+
+<script>
+    function openTab(evt, tabName) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tab-content");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].classList.remove("active");
+        }
+        tablinks = document.getElementsByClassName("tab");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].classList.remove("active");
+        }
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+
+    function toggleStatus(btn) {
+        if (btn.innerText === "Pendente") {
+            btn.innerText = "Executado";
+            btn.style.borderColor = "var(--success)";
+            btn.style.color = "var(--success)";
+        } else {
+            btn.innerText = "Pendente";
+            btn.style.borderColor = "var(--border-color)";
+            btn.style.color = "var(--text-primary)";
+        }
+    }
+</script>
+
+</body>
+</html>
