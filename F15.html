@@ -2,366 +2,345 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
- lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LKS MILITAR - Projeção Tática Geodésica</title>
+    <title>SGM - Sistema de Gestão de Manutenção RCM/CBM</title>
     <style>
         :root {
-            --primary: #00FFCC;
-            --secondary: #FFCC00;
-            --bg-dark: #03070A;
-            --panel-bg: rgba(3, 15, 22, 0.9);
-            --border-color: rgba(0, 255, 204, 0.3);
+            --primary-bg: #1e1e24;
+            --secondary-bg: #2b2b36;
+            --accent-color: #007acc;
+            --text-main: #e0e0e0;
+            --text-muted: #a0a0a0;
+            --danger: #d9534f;
+            --success: #5cb85c;
+            --warning: #f0ad4e;
+            --border-color: #444;
         }
 
         body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--primary-bg);
+            color: var(--text-main);
             margin: 0;
-            overflow: hidden;
-            background-color: var(--bg-dark);
-            font-family: 'Courier New', Courier, monospace;
-            color: #FFFFFF;
-            user-select: none;
+            padding: 20px;
         }
 
-        #header-hud {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 12px 20px;
-            box-sizing: border-box;
-            background: linear-gradient(180deg, rgba(3,20,30,0.95) 0%, rgba(3,7,10,0) 100%);
-            border-bottom: 1px solid var(--border-color);
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: #15151a;
+            padding: 20px;
+            border-bottom: 2px solid var(--accent-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 100;
         }
 
-        .brand-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: var(--primary);
-            letter-spacing: 2px;
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .vector-selector-container {
-            display: flex;
-            align-items: center;
+        .vehicle-info {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
             gap: 15px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 4px 15px;
-            border-radius: 4px;
-            border: 1px solid var(--border-color);
+            padding: 20px;
+            background-color: #22222a;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .vector-selector-container label {
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.6);
-        }
-
-        #vector-select {
-            background: transparent;
-            color: var(--primary);
-            border: none;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 0.9rem;
-            font-weight: bold;
-            cursor: pointer;
-            outline: none;
-        }
-
-        #vector-select option {
-            background: var(--bg-dark);
-            color: #FFF;
-        }
-
-        #target-hud {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 280px;
-            background: var(--panel-bg);
-            border: 1px solid var(--border-color);
+        .info-box {
+            background-color: var(--primary-bg);
             padding: 15px;
-            z-index: 90;
+            border-left: 3px solid var(--accent-color);
+            border-radius: 2px;
+        }
+
+        .info-box span {
+            display: block;
             font-size: 0.8rem;
-            line-height: 1.4;
-            backdrop-filter: blur(5px);
-            pointer-events: none;
+            color: var(--text-muted);
+            text-transform: uppercase;
         }
 
-        .hud-label { color: rgba(255,255,255,0.5); font-size: 0.7rem; }
-        .hud-value { color: var(--primary); font-weight: bold; }
-        .hud-target { color: var(--secondary); font-size: 0.95rem; font-weight: bold; margin-top: 5px; }
-
-        #reticle {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 12px;
-            height: 12px;
-            transform: translate(-50%, -50%);
-            border: 1px solid rgba(0, 255, 204, 0.4);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 50;
-        }
-        #reticle::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 2px;
-            height: 2px;
-            background: var(--primary);
-            transform: translate(-50%, -50%);
+        .info-box strong {
+            font-size: 1.1rem;
+            color: #fff;
         }
 
-        #canvas-container { width: 100vw; height: 100vh; }
+        .tabs {
+            display: flex;
+            background-color: #15151a;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-muted);
+            transition: all 0.3s;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+        }
+
+        .tab:hover {
+            background-color: var(--primary-bg);
+            color: #fff;
+        }
+
+        .tab.active {
+            background-color: var(--secondary-bg);
+            color: var(--accent-color);
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #15151a;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background-color: rgba(255,255,255,0.02);
+        }
+
+        .btn-status {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            transition: 0.2s;
+        }
+
+        .btn-critic { background-color: var(--danger); color: #fff; }
+        .btn-high { background-color: var(--warning); color: #000; }
+        .btn-ok { background-color: var(--success); color: #fff; }
+
+        .methodology-footer {
+            padding: 15px 20px;
+            font-size: 0.75rem;
+            color: #666;
+            background-color: #15151a;
+            border-top: 1px solid var(--border-color);
+            text-align: right;
+        }
     </style>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
 <body>
 
-    <div id="header-hud">
-        <div class="brand-title">LKS MILITAR // TACTICAL VECTOR</div>
-        
-        <div class="vector-selector-container">
-            <label for="vector-select">VETOR ATIVO</label>
-            <select id="vector-select"></select>
+<div class="container">
+    <div class="header">
+        <h1>SGM - Diagnóstico e Intervenção Técnica</h1>
+        <div style="text-align: right;">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Responsável Técnico:</span><br>
+            <strong>Vitor Lucas</strong>
         </div>
     </div>
 
-    <div id="reticle"></div>
-
-    <div id="target-hud">
-        <div class="hud-label">TELEMETRIA DE PROJEÇÃO</div>
-        <div id="selected-vector-display" class="hud-value">F-15E STRIKE EAGLE</div>
-        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 8px 0;">
-        <div id="coords-display">LAT: -- | LON: --</div>
-        <div id="target-display" class="hud-target">CLIQUE NO GLOBO</div>
+    <div class="vehicle-info">
+        <div class="info-box">
+            <span>Plataforma / Motorização</span>
+            <strong>Cruze Ecotec 1.8 16V</strong>
+        </div>
+        <div class="info-box">
+            <span>Identificação (VIN)</span>
+            <strong>9BGPB69M0CB318563</strong>
+        </div>
+        <div class="info-box">
+            <span>Hodômetro Registrado</span>
+            <strong>149.417 km</strong>
+        </div>
+        <div class="info-box">
+            <span>Regime de Operação</span>
+            <strong>Condições Severas / Uso Urbano</strong>
+        </div>
     </div>
 
-    <div id="canvas-container"></div>
+    <div class="tabs">
+        <div class="tab active" onclick="openTab(event, 'cbm')">CBM - Ações Corretivas por Condição</div>
+        <div class="tab" onclick="openTab(event, 'pm')">PM - Manutenção Preventiva Validada</div>
+        <div class="tab" onclick="openTab(event, 'specs')">Especificações de Engenharia</div>
+    </div>
 
-    <script>
-        // ==========================================
-        // 1. BANCO DE DADOS DE VETORES
-        // ==========================================
-        const AIRCRAFT_DATABASE = [
-            { id: 'f15e', name: 'F-15E Strike Eagle', rangeKm: 1270, color: 0x00FFCC },
-            { id: 'su35', name: 'Su-35 Flanker-E', rangeKm: 1600, color: 0xFF9900 },
-            { id: 'gripen', name: 'JAS 39 Gripen E', rangeKm: 800, color: 0x00AABB },
-            { id: 'rafale', name: 'Dassault Rafale F4', rangeKm: 1100, color: 0xFF0055 }
-        ];
+    <div id="cbm" class="tab-content active">
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+            Ativos monitorados que apresentaram falha funcional ou degradação em testes dinâmicos (vácuo excessivo, vibração, leitura de estequiometria). Requerem intervenção para restabelecimento da confiabilidade.
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Sistema / Componente</th>
+                    <th>Modo de Falha / Sintoma (Diagnóstico)</th>
+                    <th>Ação Técnica Recomendada</th>
+                    <th>Prioridade</th>
+                    <th>Status de Execução</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Sistema PCV (Tampa de Válvulas)</strong></td>
+                    <td>Ruptura do diafragma interno. Gera vácuo extremo no cárter, mistura rica e instabilidade na marcha lenta.</td>
+                    <td>Substituição integral do conjunto da tampa de válvulas.</td>
+                    <td><span style="color: var(--danger); font-weight: bold;">CRÍTICA</span></td>
+                    <td><button class="btn-status btn-critic" onclick="toggleStatus(this)">Pendente</button></td>
+                </tr>
+                <tr>
+                    <td><strong>Transmissão de Acessórios (Poly-V)</strong></td>
+                    <td>Desalinhamento geométrico nas polias. Risco iminente de desfiamento e interferência no sincronismo principal.</td>
+                    <td>Tensionamento e realinhamento mecânico nas canaletas.</td>
+                    <td><span style="color: var(--danger); font-weight: bold;">CRÍTICA</span></td>
+                    <td><button class="btn-status btn-critic" onclick="toggleStatus(this)">Pendente</button></td>
+                </tr>
+                <tr>
+                    <td><strong>Sensor de Pressão Absoluta (MAP)</strong></td>
+                    <td>Contaminação por aerossóis de óleo/carbono oriundos da falha na PCV.</td>
+                    <td>Remoção e banho químico localizado com solvente dielétrico (CAR 80).</td>
+                    <td><span style="color: var(--warning); font-weight: bold;">ALTA</span></td>
+                    <td><button class="btn-status btn-high" onclick="toggleStatus(this)">Pendente</button></td>
+                </tr>
+                <tr>
+                    <td><strong>Sistema de Ignição (Bobina/Velas)</strong></td>
+                    <td>Saturação de combustível na câmara (odor excessivo no escape). Risco de flashover ou isolamento.</td>
+                    <td>Inspeção visual e teste de resistência ôhmica do módulo de ignição.</td>
+                    <td><span style="color: var(--warning); font-weight: bold;">ALTA</span></td>
+                    <td><button class="btn-status btn-high" onclick="toggleStatus(this)">Pendente</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
-        let selectedVector = AIRCRAFT_DATABASE[0];
-        const selector = document.getElementById('vector-select');
-        
-        AIRCRAFT_DATABASE.forEach(vector => {
-            const opt = document.createElement('option');
-            opt.value = vector.id;
-            opt.innerText = `${vector.name} [ RAIO: ${vector.rangeKm} KM ]`;
-            selector.appendChild(opt);
-        });
+    <div id="pm" class="tab-content">
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+            Sistemas operando dentro da janela de confiabilidade estipulada pelo fabricante. Manutenção baseada em tempo/ciclos.
+        </p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Sistema / Componente</th>
+                    <th>Data/KM da Última Intervenção</th>
+                    <th>Limiar de Projeto (TBO)</th>
+                    <th>Próxima Intervenção Programada</th>
+                    <th>Status da Vida Útil</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Correia de Sincronismo (Dentada)</strong></td>
+                    <td>147.741 km (27/10/2025)</td>
+                    <td>60.000 km ou 5 anos</td>
+                    <td>207.741 km (Out/2030)</td>
+                    <td><button class="btn-status btn-ok" style="cursor: default;">Verificado - Nominal</button></td>
+                </tr>
+                <tr>
+                    <td><strong>Lubrificante de Motor (SAE 05W-30)</strong></td>
+                    <td>147.741 km (27/10/2025)</td>
+                    <td>5.000 km (Severo)</td>
+                    <td>152.741 km</td>
+                    <td><button class="btn-status btn-ok" style="cursor: default;">Verificado - Nominal</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
-        selector.addEventListener('change', (e) => {
-            selectedVector = AIRCRAFT_DATABASE.find(v => v.id === e.target.value);
-            document.getElementById('selected-vector-display').innerText = `VETOR: ${selectedVector.name.toUpperCase()}`;
-        });
+    <div id="specs" class="tab-content">
+        <table>
+            <thead>
+                <tr>
+                    <th>Parâmetro</th>
+                    <th>Especificação Técnica Normativa</th>
+                    <th>Notas de Engenharia</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Pressão Pneumática (225/50 R17)</strong></td>
+                    <td>Dianteira: 32 PSI (220 kPa) | Traseira: 32 PSI (220 kPa)</td>
+                    <td>Válido para carga parcial e total. Medição a frio.</td>
+                </tr>
+                <tr>
+                    <td><strong>Proteção de Circuito (ECU/Injeção)</strong></td>
+                    <td>Fusível F21 (15A - Azul)</td>
+                    <td>Alimentação primária do módulo de ignição e ECU.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
-        // ==========================================
-        // 2. CONFIGURAÇÃO DO MOTOR GRÁFICO 3D
-        // ==========================================
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 4;
+    <div class="methodology-footer">
+        Framework de gestão fundamentado em CBM (Condition-Based Maintenance) e RCM (Reliability-Centered Maintenance) - Aplicado a sistemas mecânicos veiculares.
+    </div>
+</div>
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        document.getElementById('canvas-container').appendChild(renderer.domElement);
-
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.enablePan = false; 
-        controls.minDistance = 2.0;
-        controls.maxDistance = 5.0;
-
-        // ==========================================
-        // 3. GERAÇÃO DA MATRIZ DO GLOBO (VETORIAL)
-        // ==========================================
-        const globeRadius = 1.5;
-        const earthRadiusKm = 6371; 
-        const numPoints = 14000;
-        const geometry = new THREE.BufferGeometry();
-        const positions = new Float32Array(numPoints * 3);
-        const colors = new Float32Array(numPoints * 3);
-        const baseColors = new Float32Array(numPoints * 3);
-        const isLandArr = new Uint8Array(numPoints);
-        const phi = Math.PI * (3 - Math.sqrt(5));
-
-        // Estrutura em array paralela para buscas O(1) de coordenadas geográficas
-        const mapaGeodésicoMemoria = [];
-
-        function checarSeEContinente(lat, lon) {
-            if (lon > -170 && lon < -30 && lat > -56 && lat < 72) {
-                if (lon > -90 && lon < -34 && lat > -35 && lat < 12) return true; // América do Sul
-                if (lon > -168 && lon < -50 && lat > 7 && lat < 72) return true;  // América do Norte
-            }
-            if (lon > -15 && lon < 180 && lat > -35 && lat < 75) {
-                if (lon > -20 && lon < 55 && lat > -35 && lat < 37) return true;  // África
-                if (lon > -10 && lon < 180 && lat > 35 && lat < 75) return true;  // Europa
-                if (lon > 25 && lon < 145 && lat > -10 && lat < 55) return true;  // Ásia
-            }
-            if (lon > 110 && lon < 180 && lat > -50 && lat < 0) return true;      // Oceania
-            if (lat < -60) return true;                                           // Antártida
-            return false;
+<script>
+    function openTab(evt, tabName) {
+        var i, tabcontent, tablinks;
+        tabcontent = document.getElementsByClassName("tab-content");
+        for (i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].classList.remove("active");
         }
+        tablinks = document.getElementsByClassName("tab");
+        for (i = 0; i < tablinks.length; i++) {
+            tablinks[i].classList.remove("active");
+        }
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
 
-        for (let i = 0; i < numPoints; i++) {
-            const y = 1 - (i / (numPoints - 1)) * 2;
-            const radiusAtY = Math.sqrt(1 - y * y);
-            const theta = phi * i;
-
-            const px = Math.cos(theta) * radiusAtY * globeRadius;
-            const py = y * globeRadius;
-            const pz = Math.sin(theta) * radiusAtY * globeRadius;
-
-            positions[i * 3]     = px;
-            positions[i * 3 + 1] = py;
-            positions[i * 3 + 2] = pz;
-
-            // Transforma posições 3D nativas em coordenadas geodésicas geográficas reais
-            const lat = Math.asin(py / globeRadius) * (180 / Math.PI);
-            const lon = Math.atan2(-px, pz) * (180 / Math.PI);
-
-            const eTerra = checarSeEContinente(lat, lon);
-            isLandArr[i] = eTerra ? 1 : 0;
-
-            if (eTerra) {
-                // Massa de Terra (Verde Radar)
-                colors[i * 3]     = baseColors[i * 3]     = 0.0;
-                colors[i * 3 + 1] = baseColors[i * 3 + 1] = 0.4;
-                colors[i * 3 + 2] = baseColors[i * 3 + 2] = 0.3;
+    function toggleStatus(btn) {
+        if (btn.innerText === "Pendente") {
+            btn.innerText = "Executado";
+            btn.className = "btn-status btn-ok";
+        } else {
+            btn.innerText = "Pendente";
+            // Retorna a cor original baseado na prioridade da linha
+            var prioridade = btn.parentElement.parentElement.children[3].innerText;
+            if (prioridade.includes("CRÍTICA")) {
+                btn.className = "btn-status btn-critic";
             } else {
-                // Massa Oceânica (Azul Escuro Radar)
-                colors[i * 3]     = baseColors[i * 3]     = 0.08;
-                colors[i * 3 + 1] = baseColors[i * 3 + 1] = 0.12;
-                colors[i * 3 + 2] = baseColors[i * 3 + 2] = 0.18;
+                btn.className = "btn-status btn-high";
             }
-
-            mapaGeodésicoMemoria.push({ lat: lat, lon: lon });
         }
+    }
+</script>
 
-        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-        const material = new THREE.PointsMaterial({
-            size: 0.015,
-            vertexColors: true,
-
-
-transparent: true,
-opacity: 0.85
-});
-const globe = new THREE.Points(geometry, material);
-scene.add(globe);
-// Esfera invisível de colisão dedicada para Raycasting rápido
-const hitSphereGeom = new THREE.SphereGeometry(globeRadius, 32, 32);
-const hitSphereMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
-const hitSphere = new THREE.Mesh(hitSphereGeom, hitSphereMat);
-scene.add(hitSphere);
-// ==========================================
-// 4. MOTOR DE TELEMETRIA E RAIO DE AÇÃO REAL
-// ==========================================
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-let activeRing = null;
-// Fórmula real de Haversine para medição balística/aérea sobre a curva do planeta
-function calcularDistanciaRealKM(lat1, lon1, lat2, lon2) {
-const toRad = Math.PI / 180;
-const dLat = (lat2 - lat1) * toRad;
-const dLon = (lon2 - lon1) * toRad;
-const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
-Math.sin(dLon / 2) * Math.sin(dLon / 2);
-return earthRadiusKm * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-}
-window.addEventListener('click', (event) => {
-// Ignora o clique se o usuário operar o cabeçalho/select
-if (event.target.closest('.vector-selector-container')) return;
-mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-raycaster.setFromCamera(mouse, camera);
-const intersects = raycaster.intersectObject(hitSphere);
-if (intersects.length > 0) {
-const point = intersects.point;
-const localPoint = hitSphere.worldToLocal(point.clone());
-const latClique = Math.asin(localPoint.y / globeRadius) * (180 / Math.PI);
-const lonClique = Math.atan2(-localPoint.x, localPoint.z) * (180 / Math.PI);
-// PREMISSA DO RAIO: O raio operacional real é METADE da autonomia total (Ida/Volta)
-const raioCombateRealKm = selectedVector.rangeKm / 2;
-// Desenha a linha perfeitamente calibrada em escala linear real
-desenharAnelProjecao(point, intersects.normal, raioCombateRealKm, selectedVector.color);
-// Atualização instantânea dos vetores de cor na GPU
-const colorAttribute = geometry.attributes.color;
-for (let i = 0; i < numPoints; i++) {
-const pontoGeo = mapaGeodésicoMemoria[i];
-const distanciaKM = calcularDistanciaRealKM(latClique, lonClique, pontoGeo.lat, pontoGeo.lon);
-if (distanciaKM <= raioCombateRealKm) {
-const c = new THREE.Color(selectedVector.color);
-colorAttribute.setXYZ(i, c.r, c.g, c.b);
-} else {
-// Retorna à paleta base nativa
-colorAttribute.setXYZ(i, baseColors[i * 3], baseColors[i * 3 + 1], baseColors[i * 3 + 2]);
-}
-}
-colorAttribute.needsUpdate = true;
-// Transmite os dados reais processados para os elementos do painel HUD
-document.getElementById('coords-display').innerHTML =
-BASE LAT: ${latClique.toFixed(4)}° | LON: ${lonClique.toFixed(4)}°;
-document.getElementById('target-display').innerHTML =
-COMBAT RADIUS: ${raioCombateRealKm.toFixed(0)} KM [IDA/VOLTA];
-}
-});
-function desenharAnelProjecao(position, normal, raioKm, hexColor) {
-if (activeRing) scene.remove(activeRing);
-// Regra de Proporção: Converte KM em unidades geométricas do Three.js
-const raioEscalonadoThree = (raioKm / earthRadiusKm) * globeRadius;
-const ringGeom = new THREE.RingGeometry(raioEscalonadoThree - 0.01, raioEscalonadoThree + 0.005, 64);
-const ringMat = new THREE.MeshBasicMaterial({
-color: hexColor,
-side: THREE.DoubleSide,
-transparent: true,
-opacity: 0.9,
-depthTest: false
-});
-activeRing = new THREE.Mesh(ringGeom, ringMat);
-activeRing.position.copy(position);
-activeRing.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
-scene.add(activeRing);
-}
-// ==========================================
-// 5. LOOP DE ATUALIZAÇÃO SÍNCRONA
-// ==========================================
-function animate() {
-requestAnimationFrame(animate);
-controls.update();
-// Sincroniza a rotação fina mantendo o alinhamento matricial intacto
-globe.rotation.y += 0.0003;
-hitSphere.rotation.y += 0.0003;
-renderer.render(scene, camera);
-}
-animate();
-window.addEventListener('resize', () => {
-camera.aspect = window.innerWidth / window.innerHeight;
-camera.updateProjectionMatrix();
-renderer.setSize(window.innerWidth, window.innerHeight);
-});
+</body>
+</html>
