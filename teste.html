@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Biblioteca de Projetos & Scripts</title>
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --accent: #38bdf8;
+            --accent-hover: #0284c7;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --card-hover: #26334d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        header {
+            max-width: 1200px;
+            margin: 0 auto 3rem auto;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+
+        header h1 span {
+            color: var(--accent);
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Controls: Search & Filters */
+        .controls {
+            max-width: 1200px;
+            margin: 0 auto 2rem auto;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.8rem 1.2rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-secondary);
+            color: var(--text-main);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            border-color: var(--accent);
+        }
+
+        .tags-filter {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tag-btn {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tag-btn.active, .tag-btn:hover {
+            background: var(--accent);
+            color: var(--bg-primary);
+            font-weight: bold;
+            border-color: var(--accent);
+        }
+
+        /* Grid de Cards */
+        .grid-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            background-color: var(--card-hover);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.6rem;
+            border-radius: 12px;
+            background-color: rgba(56, 189, 248, 0.1);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .card-desc {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+        }
+
+        .card-tech {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .btn-action {
+            background-color: var(--accent);
+            color: var(--bg-primary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+
+        .btn-action:hover {
+            background-color: var(--accent-hover);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Biblioteca <span>Dev</span></h1>
+        <p>Acervo centralizado de scripts, módulos e documentações técnicas</p>
+    </header>
+
+    <div class="controls">
+        <div class="search-box">
+            <input type="text" placeholder="Buscar por palavra-chave ou conceito...">
+        </div>
+        <div class="tags-filter">
+            <button class="tag-btn active">Todos</button>
+            <button class="tag-btn">PHP</button>
+            <button class="tag-btn">Python</button>
+            <button class="tag-btn">Automação</button>
+            <button class="tag-btn">SEO / Meta</button>
+        </div>
+    </div>
+
+    <main class="grid-container">
+        <!-- Card 1 -->
+        <article class="card">
+            <div>
+                <div class="card-header">
+                    <h2 class="card-title">Formatador PHP</h2>
+                    <span class="badge">PHP</span>
+                </div>
+                <p class="card-desc">Módulo de interpolação avançada de strings usando sintaxe complexa de chaves para evitar erros no parse.</p>
+            </div>
+            <div class="card-footer">
+                <span class="card-tech">v1.0.0</span>
+                <a href="#" class="btn-action">Acessar Código</a>
+            </div>
+        </article>
+
+        <!-- Card 2 -->
+        <article class="card">
+            <div>
+                <div class="card-header">
+                    <h2 class="card-title">Gerador de Metadados</h2>
+                    <span class="badge">SEO / Meta</span>
+                </div>
+                <p class="card-desc">Script de extração de termos técnicos e geração de tags otimizadas para motores de busca e retenção.</p>
+            </div>
+            <div class="card-footer">
+                <span class="card-tech">SEO / Algoritmos</span>
+                <a href="#" class="btn-action">Acessar Código</a>
+            </div>
+        </article>
+
+        <!-- Card 3 -->
+        <article class="card">
+            <div>
+                <div class="card-header">
+                    <h2 class="card-title">Pipeline de Render</h2>
+                    <span class="badge">Automação</span>
+                </div>
+                <p class="card-desc">Automação para processamento e exportação de vídeos em lote mantendo padrões rígidos de qualidade.</p>
+            </div>
+            <div class="card-footer">
+                <span class="card-tech">FFmpeg / Script</span>
+                <a href="#" class="btn-action">Acessar Código</a>
+            </div>
+        </article>
+    </main>
+
+</body>
+</html>
