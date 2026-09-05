@@ -1,9 +1,0 @@
-├── index.html
-├── fisica_classica/
-│   ├── 1.pdf
-│   └── 2.pdf
-├── termodinamica/
-│   └── 1.pdf
-└── eletrodinamica/
-    └── 1.pdf
-
