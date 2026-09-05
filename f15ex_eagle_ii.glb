@@ -1,0 +1,23 @@
+// Câmera aproximada para caber na tela do celular
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(12, 3, 10); 
+
+// Carregador com tratamento de erro
+const loader = new THREE.GLTFLoader();
+loader.load('f15ex_eagle_ii.glb', function (gltf) {
+    const f15ex = gltf.scene;
+    
+    // Centraliza e assenta no chão
+    const box = new THREE.Box3().setFromObject(f15ex);
+    const center = box.getCenter(new THREE.Vector3());
+    f15ex.position.x -= center.x;
+    f15ex.position.y -= box.min.y;
+    f15ex.position.z -= center.z;
+
+    scene.add(f15ex);
+    
+    // Esconde a mensagem de aviso após carregar
+    document.getElementById('status-bar').style.display = 'none';
+}, undefined, function (error) {
+    console.error("Erro ao carregar GLB:", error);
+});
