@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estúdio Técnico de Alinhamento - F-15EX Eagle II</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #0d0e12; }
+        #painel-tecnico {
+            position: absolute; top: 20px; left: 20px;
+            color: #00ff87; font-family: 'Courier New', monospace; font-size: 13px;
+            pointer-events: none; background: rgba(13, 14, 18, 0.85);
+            padding: 15px; border: 1px solid #00ff87; border-radius: 4px;
+        }
+    </style>
+    <script src="https://cloudflare.com"></script>
+    <script src="https://jsdelivr.net"></script>
+    <script src="https://jsdelivr.net"></script>
+</head>
+<body>
+
+    <div id="painel-tecnico">
+        <strong>ANALISADOR DE GEOMETRIA EXTERNA</strong><br>
+        PLATAFORMA: F-15EX EAGLE II<br>
+        VERIFICAÇÃO: NARIZ (RADOME) / DUTOS LATERAIS<br>
+        STATUS: <span id="carregamento-status">AGUARDANDO MALHA ORIGINAL...</span>
+    </div>
+
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(12, 6, 18); // Ângulo ideal para checar bico e dutos simultaneamente
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // --- GRADE TÉCNICA DE REFERÊNCIA ---
+        // Ajuda a checar se o bico está reto e se as entradas de ar mantêm a simetria exata
+        const gradeEspaço = new THREE.GridHelper(30, 30, 0x00ff87, 0x22332a);
+        gradeEspaço.position.y = -2;
+        scene.add(gradeEspaço);
+
+        // --- ILUMINAÇÃO DE DIAGNÓSTICO (Evita sombras pretas que escondem as curvas) ---
+        const luzAmbiente = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(luzAmbiente);
+
+        const luzSuperior = new THREE.DirectionalLight(0xffffff, 2.0);
+        luzSuperior.position.set(0, 30, 10);
+        scene.add(luzSuperior);
+
+        const luzLateralDireita = new THREE.DirectionalLight(0x00ff87, 0.6);
+        luzLateralDireita.position.set(20, 0, 0);
+        scene.add(luzLateralDireita);
+
+        const luzLateralEsquerda = new THREE.DirectionalLight(0x00ff87, 0.6);
+        luzLateralEsquerda.position.set(-20, 0, 0);
+        scene.add(luzLateralEsquerda);
+
+        // --- IMPORTAÇÃO DA MALHA DO F-15EX ---
+        const loader = new THREE.GLTFLoader();
+        let f15exModel;
+
+        // Altere para o nome do arquivo .glb do F-15EX que você baixar
+        loader.load('f15ex_eagle_ii.glb', function (gltf) {
+            f15exModel = gltf.scene;
+
+            // Centralização automática rígida
+            const box = new THREE.Box3().setFromObject(f15exModel);
+            const size = box.getSize(new THREE.Vector3()).length();
+            const center = box.getCenter(new THREE.Vector3());
+            
+            f15exModel.position.x += (f15exModel.position.x - center.x);
+            f15exModel.position.y += (f15exModel.position.y - center.y) - 0.5; // Ajusta altura ao grid
+            f15exModel.position.z += (f15exModel.position.z - center.z);
+            
+            const escalaPadrao = 9 / size;
+            f15exModel.scale.set(escalaPadrao, escalaPadrao, escalaPadrao);
+
+            scene.add(f15exModel);
+            document.getElementById('carregamento-status').innerText = "MALHA INTEGRADA - ANÁLISE LIBERADA";
+            document.getElementById('carregamento-status').style.color = "#00ff87";
+        }, 
+        undefined, 
+        function (error) {
+            console.error(error);
+            document.getElementById('carregamento-status').innerText = "ERRO: INSIRA O ARQUIVO 'f15ex_eagle_ii.glb'";
+            document.getElementById('carregamento-status').style.color = "#ff3333";
+        });
+
+        // --- LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
