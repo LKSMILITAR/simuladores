@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estúdio Técnico de Alinhamento - F-15EX Eagle II</title>
+    <title>F-15EX - Visualizador Linear Otimizado</title>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #0d0e12; }
-        #painel-tecnico {
-            position: absolute; top: 20px; left: 20px;
-            color: #00ff87; font-family: 'Courier New', monospace; font-size: 13px;
-            pointer-events: none; background: rgba(13, 14, 18, 0.85);
-            padding: 15px; border: 1px solid #00ff87; border-radius: 4px;
+        body { margin: 0; overflow: hidden; background-color: #0a0b0e; }
+        #painel-hud {
+            position: absolute; top: 15px; left: 15px;
+            color: #00ff87; font-family: monospace; font-size: 11px;
+            pointer-events: none; background: rgba(10, 11, 14, 0.9);
+            padding: 10px; border: 1px solid #00ff87; border-radius: 4px;
         }
     </style>
     <script src="https://cloudflare.com"></script>
@@ -19,83 +19,108 @@
 </head>
 <body>
 
-    <div id="painel-tecnico">
-        <strong>ANALISADOR DE GEOMETRIA EXTERNA</strong><br>
-        PLATAFORMA: F-15EX EAGLE II<br>
-        VERIFICAÇÃO: NARIZ (RADOME) / DUTOS LATERAIS<br>
-        STATUS: <span id="carregamento-status">AGUARDANDO MALHA ORIGINAL...</span>
+    <div id="painel-hud">
+        AERONAVE: F-15EX EAGLE II<br>
+        CÂMERA: TRAVADA (PERFIL LATERAL)<br>
+        INTERAÇÃO: APENAS ZOOM E PAN (BICO -> CAUDA)<br>
+        <span id="status">CARREGANDO GEOMETRIA...</span>
     </div>
 
     <script>
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(12, 6, 18); // Ângulo ideal para checar bico e dutos simultaneamente
+        
+        const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 100);
+        // Posiciona a câmera perfeitamente de perfil para pegar a silhueta lateral completa
+        camera.position.set(15, 1, 0); 
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
 
+        // --- ENGENHARIA DE CONTROLE DA CÂMERA (LIMITAÇÃO RÍGIDA) ---
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
 
-        // --- GRADE TÉCNICA DE REFERÊNCIA ---
-        // Ajuda a checar se o bico está reto e se as entradas de ar mantêm a simetria exata
-        const gradeEspaço = new THREE.GridHelper(30, 30, 0x00ff87, 0x22332a);
-        gradeEspaço.position.y = -2;
-        scene.add(gradeEspaço);
+        // 1. Bloqueia totalmente a rotação orbital de 360 graus (Eixo Horizontal)
+        // Travando o ângulo mínimo e máximo no mesmo valor, a câmera não gira para os lados
+        controls.minAzimuthAngle = Math.PI / 2; 
+        controls.maxAzimuthAngle = Math.PI / 2;
 
-        // --- ILUMINAÇÃO DE DIAGNÓSTICO (Evita sombras pretas que escondem as curvas) ---
+        // 2. Bloqueia a rotação vertical (Eixo de inclinação superior/inferior)
+        controls.minPolarAngle = Math.PI / 2;
+        controls.maxPolarAngle = Math.PI / 2;
+
+        // 3. Limita a aproximação e o afastamento do Zoom (Evita que o usuário atravesse a malha)
+        controls.minDistance = 8;   // Máximo de aproximação (Zoom In)
+        controls.maxDistance = 22;  // Máximo de afastamento (Zoom Out)
+
+        // 4. Configura o movimento linear (Pan) para focar no comprimento do caça
+        controls.enablePan = true;
+        // Permite mover a câmera apenas para os lados (focando do bico à traseira)
+        controls.screenSpacePanning = true; 
+
+        // --- ILUMINAÇÃO DIRECIONADA ---
         const luzAmbiente = new THREE.AmbientLight(0xffffff, 0.5);
         scene.add(luzAmbiente);
 
-        const luzSuperior = new THREE.DirectionalLight(0xffffff, 2.0);
-        luzSuperior.position.set(0, 30, 10);
-        scene.add(luzSuperior);
+        // Luz posicionada de frente para a lateral exposta do avião
+        const luzPerfil = new THREE.DirectionalLight(0xffffff, 1.8);
+        luzPerfil.position.set(20, 5, 0);
+        scene.add(luzPerfil);
 
-        const luzLateralDireita = new THREE.DirectionalLight(0x00ff87, 0.6);
-        luzLateralDireita.position.set(20, 0, 0);
-        scene.add(luzLateralDireita);
-
-        const luzLateralEsquerda = new THREE.DirectionalLight(0x00ff87, 0.6);
-        luzLateralEsquerda.position.set(-20, 0, 0);
-        scene.add(luzLateralEsquerda);
-
-        // --- IMPORTAÇÃO DA MALHA DO F-15EX ---
+        // --- CARREGADOR DO EX ---
         const loader = new THREE.GLTFLoader();
-        let f15exModel;
+        let f15ex;
 
-        // Altere para o nome do arquivo .glb do F-15EX que você baixar
         loader.load('f15ex_eagle_ii.glb', function (gltf) {
-            f15exModel = gltf.scene;
+            f15ex = gltf.scene;
 
-            // Centralização automática rígida
-            const box = new THREE.Box3().setFromObject(f15exModel);
+            // Alinha o caça de perfil para casar com o travamento da câmera
+            f15ex.rotation.y = 0; 
+
+            // Deixa os materiais foscos para destacar bem as linhas aerodinâmicas sem reflexos pesados
+            f15ex.traverse(function (child) {
+                if (child.isMesh) {
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: 0x414a5c,
+                        roughness: 0.5,
+                        metalness: 0.2
+                    });
+                }
+            });
+
+            // Centraliza o modelo no ponto zero do cenário
+            const box = new THREE.Box3().setFromObject(f15ex);
             const size = box.getSize(new THREE.Vector3()).length();
             const center = box.getCenter(new THREE.Vector3());
             
-            f15exModel.position.x += (f15exModel.position.x - center.x);
-            f15exModel.position.y += (f15exModel.position.y - center.y) - 0.5; // Ajusta altura ao grid
-            f15exModel.position.z += (f15exModel.position.z - center.z);
+            f15ex.position.x += (f15ex.position.x - center.x);
+            f15ex.position.y += (f15ex.position.y - center.y);
+            f15ex.position.z += (f15ex.position.z - center.z);
             
-            const escalaPadrao = 9 / size;
-            f15exModel.scale.set(escalaPadrao, escalaPadrao, escalaPadrao);
+            const escalaEscopo = 8 / size;
+            f15ex.scale.set(escalaEscopo, escalaEscopo, escalaEscopo);
 
-            scene.add(f15exModel);
-            document.getElementById('carregamento-status').innerText = "MALHA INTEGRADA - ANÁLISE LIBERADA";
-            document.getElementById('carregamento-status').style.color = "#00ff87";
-        }, 
-        undefined, 
-        function (error) {
-            console.error(error);
-            document.getElementById('carregamento-status').innerText = "ERRO: INSIRA O ARQUIVO 'f15ex_eagle_ii.glb'";
-            document.getElementById('carregamento-status').style.color = "#ff3333";
+            scene.add(f15ex);
+            document.getElementById('status').innerText = "SISTEMA ATIVO (MODO CLEAR)";
+        }, undefined, function (error) {
+            document.getElementById('status').innerText = "ERRO: COLOQUE O ARQUIVO 'f15ex_eagle_ii.glb'";
         });
 
-        // --- LOOP ---
+        // --- LOOP DE RENDERIZAÇÃO ---
         function animate() {
             requestAnimationFrame(animate);
+            
+            // Força o sistema a limitar o deslocamento lateral do Pan (Bico até a Traseira)
+            // Impede que o usuário arraste a câmera para o vazio infinito do cenário
+            if (controls.target.z > 3) controls.target.z = 3;   // Limite na direção da cauda
+            if (controls.target.z < -3) controls.target.z = -3; // Limite na direção do nariz
+            // Zera qualquer tentativa de movimento vertical indesejado no Pan
+            controls.target.y = 0;
+            controls.target.x = 0;
+
             controls.update();
             renderer.render(scene, camera);
         }
