@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKS MILITAR - Tactical Library</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+    <style>
+        :root {
+            --bg-main: #0a0d14;
+            --bg-sidebar: rgba(16, 22, 35, 0.85);
+            --bg-card: #111622;
+            --border-glow: #384f30;
+            --accent-green: #5c804f;
+            --accent-glow: #7ca86d;
+            --text-primary: #f1f5f9;
+            --text-muted: #475569;
+            --glass-blur: blur(12px);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #sidebar {
+            width: 70px;
+            background: var(--bg-sidebar);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 100;
+        }
+
+        #sidebar:hover {
+            width: 280px;
+            box-shadow: 15px 0 35px rgba(0, 0, 0, 0.5);
+            border-right: 1px solid var(--border-glow);
+        }
+
+        .sidebar-brand {
+            height: 70px;
+            display: flex;
+            align-items: center;
+            padding-left: 22px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .sidebar-brand i { font-size: 20px; color: var(--accent-green); min-width: 35px; }
+
+        .sidebar-brand span {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 2px;
+            color: #fff;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            white-space: nowrap;
+        }
+
+        #sidebar:hover .sidebar-brand span { opacity: 1; }
+
+        .menu-section { padding: 20px 0; overflow-y: auto; flex: 1; }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 22px;
+            color: #94a3b8;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            white-space: nowrap;
+            border-left: 3px solid transparent;
+            text-transform: capitalize;
+        }
+
+        .menu-item-info { display: flex; align-items: center; }
+        .menu-item i { font-size: 18px; min-width: 35px; }
+
+        .menu-item span.title {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .menu-item .badge-count {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 10px;
+            background: rgba(92, 128, 79, 0.3);
+            color: var(--accent-glow);
+            padding: 2px 8px;
+            border-radius: 10px;
+            border: 1px solid var(--border-glow);
+        }
+
+        #sidebar:hover .menu-item span.title,
+        #sidebar:hover .menu-item .badge-count { opacity: 1; }
+
+        .menu-item:hover, .menu-item.active {
+            color: #fff;
+            background: rgba(92, 128, 79, 0.15);
+            border-left-color: var(--accent-green);
+        }
+
+        .menu-item.active i { color: var(--accent-glow); }
+
+        #main-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            background: radial-gradient(circle at top right, #101626 0%, var(--bg-main) 60%);
+        }
+
+        header {
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 35px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            gap: 20px;
+        }
+
+        header h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px;
+            letter-spacing: 3px;
+            color: var(--text-muted);
+            white-space: nowrap;
+        }
+
+        .search-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            background: rgba(17, 22, 34, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            outline: none;
+            transition: all 0.25s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 12px rgba(92, 128, 79, 0.25);
+            background: rgba(17, 22, 34, 0.95);
+        }
+
+        .content-body { padding: 35px; max-width: 1400px; }
+
+        .category-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            text-transform: uppercase;
+        }
+
+        .category-header::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(92, 128, 79, 0.3) 0%, transparent 100%);
+        }
+
+        .grid-acervo {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 25px;
+        }
+
+        .slot-container {
+            position: relative;
+            background: var(--bg-card);
+            border-radius: 8px;
+            aspect-ratio: 1 / 1.45;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .slot-container.populated {
+            border: 1px solid rgba(92, 128, 79, 0.2);
+            background: linear-gradient(145deg, #151c2c 0%, #0d121f 100%);
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        .slot-container.populated:hover {
+            transform: translateY(-6px);
+            border-color: var(--accent-green);
+            box-shadow: 0 12px 35px rgba(92, 128, 79, 0.25);
+        }
+
+        .slot-cover-wrapper {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #0d121f;
+        }
+
+        .slot-cover-img {
+            width: 100%; height: 100%;
+            object-fit: cover; opacity: 0.55;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .slot-container.populated:hover .slot-cover-img {
+            opacity: 0.85; transform: scale(1.03);
+        }
+
+        .slot-overlay-gradient {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2;
+            background: linear-gradient(180deg, rgba(10, 13, 20, 0.4) 0%, rgba(10, 13, 20, 0.1) 40%, rgba(10, 13, 20, 0.95) 100%);
+        }
+
+        .slot-meta {
+            position: relative; z-index: 3;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .slot-index {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px; font-weight: 800; color: #ffffff;
+            background: rgba(0, 0, 0, 0.65); padding: 2px 6px;
+            border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .slot-status-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: #22c55e; box-shadow: 0 0 8px #22c55e;
+        }
+
+        .slot-footer { position: relative; z-index: 3; }
+
+        .slot-title {
+            font-size: 11px; font-weight: 600; color: #ffffff;
+            letter-spacing: 0.5px; line-height: 1.3;
+            word-break: break-word; text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+        }
+
+        #modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 7, 12, 0.92);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        #modal-overlay.active { display: flex; opacity: 1; }
+
+        .modal-container {
+            width: 95%; max-width: 950px; height: 92vh;
+            background: var(--bg-card);
+            border: 1px solid var(--border-glow);
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.85);
+            display: flex; flex-direction: column;
+            overflow: hidden;
+            transform: scale(0.96);
+            transition: transform 0.25s ease;
+        }
+
+        #modal-overlay.active .modal-container { transform: scale(1); }
+
+        .modal-header {
+            height: 60px;
+            background: rgba(16, 22, 35, 0.95);
+            padding: 0 25px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .modal-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px; letter-spacing: 2px;
+            color: var(--accent-glow);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            max-width: 70vw;
+        }
+
+        .modal-close-btn {
+            background: none; border: none; color: #64748b;
+            font-size: 24px; cursor: pointer; transition: color 0.2s ease;
+        }
+
+        .modal-close-btn:hover { color: #ef4444; }
+
+        .modal-body {
+            flex: 1; background: #070a10;
+            display: flex; justify-content: center; align-items: center;
+            position: relative; overflow: auto; padding: 20px;
+        }
+
+        #pdf-canvas {
+            max-width: 100%; max-height: 100%;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            border-radius: 4px; background: #fff; display: block;
+            transition: opacity 0.15s ease;
+        }
+
+        .nav-side-btn {
+            position: absolute; top: 0; height: 100%; width: 70px;
+            background: linear-gradient(90deg, rgba(0,0,0,0.5) 0%, transparent 100%);
+            border: none; color: rgba(255, 255, 255, 0.4);
+            font-size: 26px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s ease; z-index: 10;
+        }
+
+        .nav-side-btn.prev { left: 0; }
+        .nav-side-btn.next {
+            right: 0;
+            background: linear-gradient(-90deg, rgba(0,0,0,0.5) 0%, transparent 100%);
+        }
+
+        .nav-side-btn:hover {
+            color: var(--accent-glow);
+            background: rgba(92, 128, 79, 0.12);
+            font-size: 32px;
+        }
+
+        .modal-footer {
+            height: 50px; background: #0d121f;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            display: flex; align-items: center; justify-content: center;
+            gap: 15px; font-family: 'Orbitron', sans-serif;
+            font-size: 11px; color: #94a3b8;
+        }
+
+        #pdf-loader {
+            position: absolute; color: var(--accent-glow);
+            font-family: 'Orbitron', sans-serif; font-size: 13px;
+            letter-spacing: 2px; display: none;
+            flex-direction: column; align-items: center; gap: 12px; z-index: 20;
+        }
+
+        #pdf-loader i { font-size: 26px; animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>LKS MILITAR</span>
+        </div>
+        <div class="menu-section" id="container-menu"></div>
+    </div>
+
+    <div id="main-view">
+        <header>
+            <h2>ARCHIVE INTERFACE v2.0</h2>
+            <div class="search-wrapper">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="text" id="search-input" class="search-input" placeholder="Buscar manuais táticos...">
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="category-header" id="txt-categoria-atual">CARREGANDO ACERVO...</div>
+            <div class="grid-acervo" id="painel-slots"></div>
+        </div>
+    </div>
+
+    <div id="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title" id="pdf-modal-title">DECODIFICANDO DOCUMENTO...</div>
+                <button class="modal-close-btn" id="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <button class="nav-side-btn prev" id="prev-page-btn"><i class="fa-solid fa-chevron-left"></i></button>
+                <div id="pdf-loader">
+                    <i class="fa-solid fa-spinner"></i>
+                    <span>PROCESSANDO PÁGINA...</span>
+                </div>
+                <canvas id="pdf-canvas"></canvas>
+                <button class="nav-side-btn next" id="next-page-btn"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+            <div class="modal-footer">
+                <span>PÁGINA: <span id="current-page-num">0</span> / <span id="total-pages-count">0</span></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+        const GITHUB_USER = "lksmilitar";
+        const GITHUB_REPO = "simuladores";
+        const SUBPASTA   = "files";
+
+        const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${SUBPASTA}`;
+
+        let pdfDoc = null,
+            pageNum = 1,
+            pageIsRendering = false,
+            pageNumPending = null,
+            currentRenderTask = null,
+            listaDocumentosAtuais = [],
+            documentoAtualKey = '';
+
+        const canvas = document.getElementById('pdf-canvas'),
+              ctx = canvas.getContext('2d');
+
+        async function inicializarAcervo() {
+            try {
+                const resposta = await fetch(API_URL);
+                const dados = await resposta.json();
+                
+                const pastas = dados.filter(item => item.type === 'dir');
+                const containerMenu = $('#container-menu');
+                containerMenu.empty();
+
+                if (!Array.isArray(pastas) || pastas.length === 0) {
+                    $('#txt-categoria-atual').text("NENHUMA PASTA EM /FILES");
+                    $('#painel-slots').html('<div style="color: #475569;">Crie pastas dentro do diretório files/ para exibir os conteúdos.</div>');
+                    return;
+                }
+
+                let primeiraPasta = null;
+
+                for (let index = 0; index < pastas.length; index++) {
+                    const pasta = pastas[index];
+                    const nomeFormatado = pasta.name.replace(/_/g, ' ');
+                    if (index === 0) primeiraPasta = pasta.name;
+
+                    const idBadge = `badge-${pasta.name}`;
+                    const htmlMenuItem = `
+                        <div class="menu-item ${index === 0 ? 'active' : ''}" onclick="carregarPasta('${pasta.name}', this)">
+                            <div class="menu-item-info">
+                                <i class="fa-solid fa-folder"></i>
+                                <span class="title">${nomeFormatado}</span>
+                            </div>
+                            <span class="badge-count" id="${idBadge}">...</span>
+                        </div>`;
+                    containerMenu.append(htmlMenuItem);
+
+                    atualizarContadorDocs(pasta.name, idBadge);
+                }
+
+                if (primeiraPasta) {
+                    carregarPasta(primeiraPasta, $('.menu-item').first());
+                }
+
+            } catch (erro) {
+                console.error("Erro na API do GitHub:", erro);
+                $('#txt-categoria-atual').text("ERRO AO CARREGAR A PASTA FILES");
+            }
+        }
+
+        async function atualizarContadorDocs(nomePasta, badgeId) {
+            try {
+                const resp = await fetch(`${API_URL}/${nomePasta}`);
+                const arqs = await resp.json();
+                const pdfs = arqs.filter(arq => arq.name.toLowerCase().endsWith('.pdf'));
+                $(`#${badgeId}`).text(pdfs.length);
+            } catch (e) {
+                $(`#${badgeId}`).text('0');
+            }
+        }
+
+        async function carregarPasta(nomePasta, elemento) {
+            $('.menu-item').removeClass('active');
+            if (elemento) $(elemento).addClass('active');
+
+            const tituloFormatado = nomePasta.replace(/_/g, ' ');
+            $('#txt-categoria-atual').text(tituloFormatado);
+            $('#search-input').val('');
+
+            const painel = $('#painel-slots');
+            painel.html('<div style="color: #475569;">ESCANENADO DOCUMENTOS...</div>');
+
+            try {
+                const resposta = await fetch(`${API_URL}/${nomePasta}`);
+                const arquivos = await resposta.json();
+
+                listaDocumentosAtuais = arquivos.filter(arq => arq.name.toLowerCase().endsWith('.pdf'));
+                renderizarSlots(listaDocumentosAtuais);
+
+            } catch (erro) {
+                console.error("Erro ao carregar arquivos:", erro);
+                painel.html('<div style="color: #f43f5e;">FALHA AO LER CATEGORIA.</div>');
+            }
+        }
+
+        function renderizarSlots(documentos) {
+            const painel = $('#painel-slots');
+            painel.empty();
+
+            if (documentos.length === 0) {
+                painel.html('<div style="color: #475569;">NENHUM DOCUMENTO ENCONTRADO.</div>');
+                return;
+            }
+
+            documentos.forEach((pdf, index) => {
+                const nomeDocumento = pdf.name.replace('.pdf', '');
+                const slotId = `cover-canvas-${index}`;
+                
+                const htmlSlot = `
+                    <div class="slot-container populated" onclick="abrirModalPdf('${pdf.download_url}', '${nomeDocumento}')">
+                        <div class="slot-cover-wrapper" id="wrapper-${slotId}">
+                            <i class="fa-solid fa-file-pdf" style="font-size: 32px; color: rgba(255,255,255,0.1);"></i>
+                        </div>
+                        <div class="slot-overlay-gradient"></div>
+                        
+                        <div class="slot-meta">
+                            <div class="slot-index">${String(index + 1).padStart(2, '0')}</div>
+                            <div class="slot-status-dot"></div>
+                        </div>
+                        
+                        <div class="slot-footer">
+                            <div class="slot-title">${nomeDocumento}</div>
+                        </div>
+                    </div>`;
+                painel.append(htmlSlot);
+
+                gerarMiniaturaCapa(pdf.download_url, `wrapper-${slotId}`);
+            });
+        }
+
+        async function gerarMiniaturaCapa(urlPdf, targetWrapperId) {
+            try {
+                const carregandoPdf = pdfjsLib.getDocument(urlPdf);
+                const pdf = await carregandoPdf.promise;
+                const pagina = await pdf.getPage(1);
+
+                const viewport = pagina.getViewport({ scale: 0.35 });
+                const canvasTemp = document.createElement('canvas');
+                const contextTemp = canvasTemp.getContext('2d');
+                canvasTemp.height = viewport.height;
+                canvasTemp.width = viewport.width;
+
+                await pagina.render({ canvasContext: contextTemp, viewport: viewport }).promise;
+                
+                const imgUrl = canvasTemp.toDataURL('image/jpeg', 0.75);
+                const wrapper = document.getElementById(targetWrapperId);
+                if (wrapper) {
+                    wrapper.innerHTML = `<img src="${imgUrl}" class="slot-cover-img" alt="Capa">`;
+                }
+            } catch (e) {
+                console.warn("Capa indisponível para:", urlPdf);
+            }
+        }
+
+        function renderPage(num) {
+            pageIsRendering = true;
+            $('#current-page-num').text(num);
+
+            if (documentoAtualKey) {
+                localStorage.setItem(`lks_page_${documentoAtualKey}`, num);
+            }
+
+            if (currentRenderTask) {
+                currentRenderTask.cancel();
+                currentRenderTask = null;
+            }
+
+            pdfDoc.getPage(num).then(page => {
+                const containerWidth = $('.modal-body').width() - 40;
+                const unscaledViewport = page.getViewport({ scale: 1.0 });
+                const calculatedScale = Math.min(containerWidth / unscaledViewport.width, 1.6);
+
+                const dpr = window.devicePixelRatio || 1;
+                const baseScale = Math.max(calculatedScale, 0.8);
+                const viewport = page.getViewport({ scale: baseScale });
+
+                canvas.width = Math.floor(viewport.width * dpr);
+                canvas.height = Math.floor(viewport.height * dpr);
+
+                canvas.style.width = Math.floor(viewport.width) + 'px';
+                canvas.style.height = Math.floor(viewport.height) + 'px';
+
+                ctx.save();
+                ctx.scale(dpr, dpr);
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+
+                currentRenderTask = page.render(renderContext);
+
+                currentRenderTask.promise.then(() => {
+                    ctx.restore();
+                    pageIsRendering = false;
+                    currentRenderTask = null;
+
+                    $('#pdf-loader').hide();
+                    $('#pdf-canvas').css('opacity', '1');
+
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                }).catch(err => {
+                    ctx.restore();
+                    if (err.name !== 'RenderingCancelledException') {
+                        console.error("Erro na renderização:", err);
+                    }
+                });
+            });
+        }
+
+        function queueRenderPage(num) {
+            if (pageIsRendering) {
+                pageNumPending = num;
+            } else {
+                $('#pdf-canvas').css('opacity', '0.3');
+                renderPage(num);
+            }
+        }
+
+        function showPrevPage() {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+
+        function showNextPage() {
+            if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+
+        function abrirModalPdf(pdfUrl, pdfTitle) {
+            $('#pdf-modal-title').text(pdfTitle.toUpperCase());
+            $('#pdf-canvas').css('opacity', '0');
+            $('#pdf-loader').css('display', 'flex');
+            
+            documentoAtualKey = btoa(pdfTitle).replace(/=/g, '');
+
+            $('#modal-overlay').show(0, function() {
+                $(this).addClass('active');
+            });
+
+            const paginaSalva = parseInt(localStorage.getItem(`lks_page_${documentoAtualKey}`)) || 1;
+            pageNum = paginaSalva;
+
+            pdfjsLib.getDocument(pdfUrl).promise.then(pdfDoc_ => {
+                pdfDoc = pdfDoc_;
+                $('#total-pages-count').text(pdfDoc.numPages);
+                if (pageNum > pdfDoc.numPages) pageNum = 1;
+                renderPage(pageNum);
+            }).catch(err => {
+                alert('Erro na leitura do documento.');
+                $('#pdf-loader').hide();
+            });
+        }
+
+        $(document).ready(function() {
+            inicializarAcervo();
+
+            $('#search-input').on('input', function() {
+                const termo = $(this).val().toLowerCase().trim();
+                if (!termo) {
+                    renderizarSlots(listaDocumentosAtuais);
+                    return;
+                }
+                const filtrados = listaDocumentosAtuais.filter(doc => 
+                    doc.name.toLowerCase().includes(termo)
+                );
+                renderizarSlots(filtrados);
+            });
+
+            $('#prev-page-btn').on('click', showPrevPage);
+            $('#next-page-btn').on('click', showNextPage);
+
+            $(document).on('keydown', function(e) {
+                if (!$('#modal-overlay').hasClass('active')) return;
+                if (e.keyCode === 37) showPrevPage();
+                if (e.keyCode === 39) showNextPage();
+                if (e.keyCode === 27) $('#close-modal').click();
+            });
+
+            $('#close-modal, #modal-overlay').on('click', function(e) {
+                if (e.target !== this && e.target.id !== 'close-modal' && $(e.target).parents('#close-modal').length === 0) return;
+                $('#modal-overlay').removeClass('active');
+                setTimeout(() => { 
+                    $('#modal-overlay').hide();
+                    if (currentRenderTask) {
+                        currentRenderTask.cancel();
+                        currentRenderTask = null;
+                    }
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    pdfDoc = null;
+                }, 250);
+            });
+        });
+    </script>
+</body>
+</html>
