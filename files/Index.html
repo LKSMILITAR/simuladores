@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LKS MILITAR - Tactical Library v3.0</title>
+    <title>LKS MILITAR - Tactical Library v3.5 Stealth</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;800&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -13,17 +13,18 @@
 
     <style>
         :root {
-            --bg-main: #06080c;
-            --bg-sidebar: rgba(10, 14, 22, 0.92);
-            --bg-card: #0d121d;
-            --border-dim: rgba(92, 128, 79, 0.25);
-            --border-glow: #5c804f;
-            --accent-green: #22c55e;
-            --accent-glow: #4ade80;
-            --accent-amber: #f59e0b;
-            --text-primary: #f8fafc;
+            --bg-main: #f8fafc;
+            --bg-sidebar: #ffffff;
+            --bg-card: #ffffff;
+            --bg-hover: #f1f5f9;
+            --border-hairline: rgba(15, 23, 42, 0.12);
+            --border-accent: #10b981;
+            --text-primary: #0f172a;
             --text-muted: #64748b;
-            --glass-blur: blur(16px);
+            --accent-glow: #059669;
+            --accent-cyan: #0284c7;
+            --hud-corner: #10b981;
+            --glass-blur: blur(12px);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -36,125 +37,215 @@
             height: 100vh;
             overflow: hidden;
             background-image: 
-                radial-gradient(circle at 80% 10%, rgba(92, 128, 79, 0.08) 0%, transparent 40%),
-                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
-            background-size: 100% 100%, 30px 30px, 30px 30px;
+                radial-gradient(circle at 90% 10%, rgba(16, 185, 129, 0.04) 0%, transparent 40%),
+                linear-gradient(rgba(15, 23, 42, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(15, 23, 42, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 24px 24px, 24px 24px;
         }
 
-        /* MENU LATERAL TÁTICO */
+        /* SIDEBAR STEALTH SLATE */
         #sidebar {
-            width: 72px;
+            width: 280px;
             background: var(--bg-sidebar);
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
-            border-right: 1px solid var(--border-dim);
-            transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            border-right: 1px solid var(--border-hairline);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            box-shadow: 4px 0 24px rgba(15, 23, 42, 0.03);
             z-index: 100;
-        }
-
-        #sidebar:hover {
-            width: 290px;
-            box-shadow: 20px 0 40px rgba(0, 0, 0, 0.8);
-            border-right-color: var(--border-glow);
         }
 
         .sidebar-brand {
             height: 70px;
             display: flex;
             align-items: center;
-            padding: 0 22px;
-            border-bottom: 1px solid var(--border-dim);
-            background: rgba(0, 0, 0, 0.3);
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-hairline);
+            background: #ffffff;
+            position: relative;
         }
 
-        .sidebar-brand i { font-size: 22px; color: var(--accent-glow); min-width: 38px; }
+        .sidebar-brand::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 24px;
+            width: 40px;
+            height: 2px;
+            background: var(--accent-glow);
+        }
 
-        .sidebar-brand-text {
-            display: flex;
-            flex-direction: column;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            white-space: nowrap;
+        .sidebar-brand i { 
+            font-size: 20px; 
+            color: var(--accent-glow); 
+            margin-right: 14px; 
         }
 
         .sidebar-brand-text .title {
             font-family: 'Orbitron', sans-serif;
-            font-weight: 900;
-            font-size: 14px;
+            font-weight: 800;
+            font-size: 13px;
             letter-spacing: 2px;
-            color: #fff;
+            color: var(--text-primary);
         }
 
         .sidebar-brand-text .sub {
             font-family: 'JetBrains Mono', monospace;
             font-size: 9px;
-            color: var(--accent-glow);
+            color: var(--text-muted);
             letter-spacing: 1px;
         }
 
-        #sidebar:hover .sidebar-brand-text { opacity: 1; }
+        /* MENU SANFONA DE ALTA PRECISÃO */
+        .menu-section { 
+            padding: 12px 0; 
+            overflow-y: auto; 
+            flex: 1; 
+        }
 
-        .menu-section { padding: 15px 0; overflow-y: auto; flex: 1; }
+        .menu-group {
+            margin-bottom: 2px;
+            position: relative;
+        }
 
-        .menu-item {
+        .menu-parent {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 22px;
-            color: #94a3b8;
-            text-decoration: none;
+            padding: 12px 24px;
+            color: var(--text-primary);
             cursor: pointer;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-            border-left: 3px solid transparent;
-            font-size: 13px;
-        }
-
-        .menu-item-info { display: flex; align-items: center; }
-        .menu-item i { font-size: 16px; min-width: 38px; color: #64748b; transition: color 0.2s ease; }
-
-        .menu-item span.title {
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
+            background: transparent;
+            border-left: 3px solid transparent;
         }
 
-        .menu-item .badge-count {
-            opacity: 0;
-            transition: opacity 0.2s ease;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            background: rgba(92, 128, 79, 0.2);
+        .menu-parent:hover {
+            background: var(--bg-hover);
             color: var(--accent-glow);
-            padding: 2px 8px;
-            border-radius: 4px;
-            border: 1px solid var(--border-dim);
-        }
-
-        #sidebar:hover .menu-item span.title,
-        #sidebar:hover .menu-item .badge-count { opacity: 1; }
-
-        .menu-item:hover, .menu-item.active {
-            color: #fff;
-            background: rgba(92, 128, 79, 0.12);
             border-left-color: var(--accent-glow);
         }
 
-        .menu-item:hover i, .menu-item.active i { color: var(--accent-glow); }
+        .menu-parent-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-        /* ÁREA PRINCIPAL */
+        .menu-parent i.icon-main {
+            font-size: 13px;
+            color: var(--text-muted);
+            transition: color 0.2s ease;
+        }
+
+        .menu-parent:hover i.icon-main {
+            color: var(--accent-glow);
+        }
+
+        .menu-parent i.arrow-icon {
+            font-size: 10px;
+            color: var(--text-muted);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .menu-group.open .menu-parent i.arrow-icon {
+            transform: rotate(180deg);
+            color: var(--accent-glow);
+        }
+
+        .menu-group.open .menu-parent {
+            background: #f1f5f9;
+            border-left-color: var(--accent-glow);
+        }
+
+        /* SUBMENU COM GUIA VETORIAL LINEAR */
+        .sub-menu {
+            display: none;
+            background: #f8fafc;
+            padding: 6px 0;
+            position: relative;
+        }
+
+        .sub-menu::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 31px;
+            width: 1px;
+            height: 100%;
+            background: var(--border-hairline);
+        }
+
+        .sub-menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 24px 9px 48px;
+            color: var(--text-muted);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            position: relative;
+        }
+
+        .sub-menu-item::before {
+            content: '';
+            position: absolute;
+            left: 31px;
+            top: 50%;
+            width: 10px;
+            height: 1px;
+            background: var(--border-hairline);
+        }
+
+        .sub-menu-item:hover, .sub-menu-item.active {
+            color: var(--text-primary);
+            background: #ffffff;
+            font-weight: 600;
+        }
+
+        .sub-menu-item:hover::before, .sub-menu-item.active::before {
+            background: var(--accent-glow);
+        }
+
+        .sub-menu-item i {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-right: 8px;
+            transition: color 0.2s ease;
+        }
+
+        .sub-menu-item:hover i, .sub-menu-item.active i {
+            color: var(--accent-glow);
+        }
+
+        .sub-menu-item .badge-count {
+            font-size: 9px;
+            background: #e2e8f0;
+            color: var(--text-primary);
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-weight: 700;
+        }
+
+        .sub-menu-item.active .badge-count {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-glow);
+        }
+
+        /* ÁREA PRINCIPAL STEALTH */
         #main-view {
             flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            background: var(--bg-main);
         }
 
         header {
@@ -162,33 +253,33 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 30px;
-            border-bottom: 1px solid var(--border-dim);
-            background: rgba(10, 14, 22, 0.6);
-            backdrop-filter: blur(8px);
+            padding: 0 32px;
+            border-bottom: 1px solid var(--border-hairline);
+            background: #ffffff;
             gap: 20px;
-        }
-
-        .header-title-zone {
-            display: flex;
-            align-items: center;
-            gap: 15px;
         }
 
         .sys-status-tag {
             font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
-            background: rgba(34, 197, 94, 0.1);
-            color: var(--accent-green);
-            padding: 4px 8px;
-            border-radius: 4px;
-            border: 1px solid rgba(34, 197, 94, 0.3);
+            background: rgba(16, 185, 129, 0.08);
+            color: var(--accent-glow);
+            padding: 4px 10px;
+            border-radius: 2px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
             display: flex;
             align-items: center;
             gap: 6px;
+            font-weight: 600;
         }
 
-        .sys-status-tag .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
+        .sys-status-tag .dot { 
+            width: 6px; 
+            height: 6px; 
+            border-radius: 50%; 
+            background: var(--accent-glow); 
+            box-shadow: 0 0 6px var(--accent-glow); 
+        }
 
         .header-controls {
             display: flex;
@@ -210,33 +301,33 @@
             top: 50%;
             transform: translateY(-50%);
             color: var(--text-muted);
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .search-input {
             width: 100%;
             padding: 8px 14px 8px 38px;
-            background: rgba(13, 18, 29, 0.9);
-            border: 1px solid var(--border-dim);
-            border-radius: 4px;
-            color: #fff;
+            background: #f8fafc;
+            border: 1px solid var(--border-hairline);
+            border-radius: 2px;
+            color: var(--text-primary);
             font-family: 'JetBrains Mono', monospace;
             font-size: 12px;
             outline: none;
-            transition: all 0.25s ease;
+            transition: all 0.2s ease;
         }
 
         .search-input:focus {
             border-color: var(--accent-glow);
-            box-shadow: 0 0 15px rgba(92, 128, 79, 0.3);
-            background: #0d121d;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
         }
 
         .view-toggle-btns {
             display: flex;
-            background: rgba(13, 18, 29, 0.9);
-            border: 1px solid var(--border-dim);
-            border-radius: 4px;
+            background: #f1f5f9;
+            border: 1px solid var(--border-hairline);
+            border-radius: 2px;
             padding: 2px;
         }
 
@@ -246,29 +337,30 @@
             color: var(--text-muted);
             padding: 6px 12px;
             cursor: pointer;
-            border-radius: 3px;
+            border-radius: 2px;
             transition: all 0.2s ease;
             font-size: 12px;
         }
 
         .view-btn.active {
-            background: var(--border-glow);
-            color: #fff;
+            background: #ffffff;
+            color: var(--accent-glow);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
         .content-body {
             flex: 1;
-            padding: 30px;
+            padding: 32px;
             overflow-y: auto;
         }
 
         .category-header {
             font-family: 'Orbitron', sans-serif;
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 800;
-            letter-spacing: 2px;
-            margin-bottom: 25px;
-            color: #fff;
+            letter-spacing: 1.5px;
+            margin-bottom: 24px;
+            color: var(--text-primary);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -282,17 +374,17 @@
 
         .category-header-title::after {
             content: '';
-            width: 80px;
+            width: 60px;
             height: 2px;
-            background: var(--border-glow);
+            background: var(--accent-glow);
             display: inline-block;
             margin-left: 10px;
         }
 
-        /* GRID E LISTA DE SLOTS TÁTICOS */
+        /* GRID E CARDS STEALTH HUD */
         .grid-acervo {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 20px;
         }
 
@@ -302,59 +394,45 @@
             gap: 10px;
         }
 
-        /* CARD NO MODO GRID */
         .slot-container {
             position: relative;
-            background: var(--bg-card);
-            border-radius: 6px;
-            aspect-ratio: 1 / 1.42;
-            border: 1px solid var(--border-dim);
-            padding: 12px;
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            aspect-ratio: 1 / 1.4;
+            padding: 14px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            transition: all 0.25s ease;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
             overflow: hidden;
-        }
-
-        /* CORNERS TÁTICOS HUD */
-        .slot-container::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0;
-            width: 8px; height: 8px;
-            border-top: 2px solid var(--accent-glow);
-            border-left: 2px solid var(--accent-glow);
-            z-index: 4;
-            opacity: 0.5;
-            transition: opacity 0.2s ease;
         }
 
         .slot-container::after {
             content: '';
             position: absolute;
-            bottom: 0; right: 0;
-            width: 8px; height: 8px;
-            border-bottom: 2px solid var(--accent-glow);
-            border-right: 2px solid var(--accent-glow);
-            z-index: 4;
-            opacity: 0.5;
-            transition: opacity 0.2s ease;
+            top: 0;
+            right: 0;
+            width: 10px;
+            height: 10px;
+            background: var(--border-hairline);
+            transition: background 0.2s ease;
         }
 
         .slot-container.populated {
             cursor: pointer;
-            background: linear-gradient(160deg, #111827 0%, #080c14 100%);
         }
 
         .slot-container.populated:hover {
-            transform: translateY(-4px);
+            transform: translateY(-3px);
             border-color: var(--accent-glow);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(92, 128, 79, 0.2);
+            box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.08);
         }
 
-        .slot-container.populated:hover::before,
-        .slot-container.populated:hover::after { opacity: 1; }
+        .slot-container.populated:hover::after {
+            background: var(--accent-glow);
+        }
 
         .slot-cover-wrapper {
             position: absolute;
@@ -363,25 +441,24 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #080c14;
+            background-color: #f8fafc;
         }
 
         .slot-cover-img {
             width: 100%; height: 100%;
-            object-fit: cover; opacity: 0.45;
+            object-fit: cover; opacity: 0.85;
             transition: opacity 0.3s ease, transform 0.3s ease;
-            filter: grayscale(20%);
         }
 
         .slot-container.populated:hover .slot-cover-img {
-            opacity: 0.75; transform: scale(1.04); filter: grayscale(0%);
+            opacity: 1; transform: scale(1.03);
         }
 
         .slot-overlay-gradient {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             z-index: 2;
-            background: linear-gradient(180deg, rgba(6, 8, 12, 0.5) 0%, rgba(6, 8, 12, 0.1) 40%, rgba(6, 8, 12, 0.95) 100%);
+            background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(248,250,252,0.1) 40%, rgba(255,255,255,0.95) 100%);
         }
 
         .slot-meta {
@@ -391,33 +468,33 @@
 
         .slot-index {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 10px; font-weight: 800; color: var(--accent-glow);
-            background: rgba(6, 8, 12, 0.85); padding: 2px 6px;
-            border-radius: 3px; border: 1px solid var(--border-dim);
+            font-size: 9px; font-weight: 800; color: var(--accent-glow);
+            background: #ffffff; padding: 2px 6px;
+            border-radius: 2px; border: 1px solid var(--border-hairline);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
         .slot-status-dot {
             width: 6px; height: 6px; border-radius: 50%;
-            background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green);
+            background: var(--accent-glow);
         }
 
         .slot-footer { position: relative; z-index: 3; }
 
         .slot-title {
             font-family: 'Inter', sans-serif;
-            font-size: 11px; font-weight: 600; color: #ffffff;
-            letter-spacing: 0.3px; line-height: 1.35;
-            word-break: break-word; text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+            font-size: 11px; font-weight: 600; color: var(--text-primary);
+            line-height: 1.35; word-break: break-word;
         }
 
-        /* ESTILIZAÇÃO DO MODO LISTA COMPACTA */
+        /* MODO LISTA */
         .grid-acervo.list-mode .slot-container {
             aspect-ratio: auto;
-            height: 50px;
+            height: 48px;
             flex-direction: row;
             align-items: center;
             padding: 0 20px;
-            background: #0d121d;
+            clip-path: none;
         }
 
         .grid-acervo.list-mode .slot-cover-wrapper,
@@ -426,11 +503,11 @@
         .grid-acervo.list-mode .slot-meta { width: auto; gap: 15px; }
         .grid-acervo.list-mode .slot-footer { flex: 1; margin-left: 20px; }
 
-        /* MODAL E LEITOR TÁTICO */
+        /* MODAL E LEITOR STEALTH */
         #modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(4, 6, 10, 0.95);
+            background: rgba(15, 23, 42, 0.75);
             backdrop-filter: var(--glass-blur);
             -webkit-backdrop-filter: var(--glass-blur);
             z-index: 1000;
@@ -445,13 +522,13 @@
 
         .modal-container {
             width: 96%; max-width: 1100px; height: 94vh;
-            background: var(--bg-card);
-            border: 1px solid var(--border-glow);
-            border-radius: 8px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.9), 0 0 30px rgba(92, 128, 79, 0.15);
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            border-radius: 4px;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
             display: flex; flex-direction: column;
             overflow: hidden;
-            transform: scale(0.97);
+            transform: scale(0.98);
             transition: transform 0.2s ease;
         }
 
@@ -459,54 +536,45 @@
 
         .modal-header {
             height: 55px;
-            background: rgba(10, 14, 22, 0.95);
-            padding: 0 20px;
+            background: #ffffff;
+            padding: 0 24px;
             display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid var(--border-dim);
+            border-bottom: 1px solid var(--border-hairline);
         }
 
         .modal-title-zone {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            max-width: 60vw;
+            display: flex; align-items: center; gap: 10px; max-width: 60vw;
         }
 
         .modal-title-zone i { color: var(--accent-glow); font-size: 14px; }
 
         .modal-title {
             font-family: 'Orbitron', sans-serif;
-            font-size: 12px; letter-spacing: 1.5px;
-            color: #fff;
+            font-size: 12px; letter-spacing: 1px;
+            color: var(--text-primary); font-weight: 700;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
-        .modal-actions {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
+        .modal-actions { display: flex; align-items: center; gap: 10px; }
 
         .modal-tool-btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--border-dim);
-            color: #94a3b8;
+            background: #f8fafc;
+            border: 1px solid var(--border-hairline);
+            color: var(--text-muted);
             width: 32px; height: 32px;
-            border-radius: 4px;
-            cursor: pointer;
+            border-radius: 2px; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s ease;
-            font-size: 13px;
+            transition: all 0.2s ease; font-size: 12px;
         }
 
         .modal-tool-btn:hover {
-            color: #fff;
-            background: var(--border-glow);
+            color: var(--text-primary);
+            background: #f1f5f9;
             border-color: var(--accent-glow);
         }
 
         .modal-close-btn {
-            background: none; border: none; color: #64748b;
+            background: none; border: none; color: var(--text-muted);
             font-size: 22px; cursor: pointer; transition: color 0.2s ease;
             margin-left: 10px;
         }
@@ -514,22 +582,22 @@
         .modal-close-btn:hover { color: #ef4444; }
 
         .modal-body {
-            flex: 1; background: #04060a;
+            flex: 1; background: #f1f5f9;
             display: flex; justify-content: center; align-items: center;
             position: relative; overflow: auto; padding: 20px;
         }
 
         #pdf-canvas {
-            box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
             border-radius: 2px; background: #fff; display: block;
             transition: opacity 0.15s ease;
         }
 
         .nav-side-btn {
             position: absolute; top: 0; height: 100%; width: 60px;
-            background: linear-gradient(90deg, rgba(0,0,0,0.6) 0%, transparent 100%);
-            border: none; color: rgba(255, 255, 255, 0.3);
-            font-size: 22px; cursor: pointer;
+            background: linear-gradient(90deg, rgba(241,245,249,0.8) 0%, transparent 100%);
+            border: none; color: var(--text-muted);
+            font-size: 20px; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
             transition: all 0.2s ease; z-index: 10;
         }
@@ -537,51 +605,42 @@
         .nav-side-btn.prev { left: 0; }
         .nav-side-btn.next {
             right: 0;
-            background: linear-gradient(-90deg, rgba(0,0,0,0.6) 0%, transparent 100%);
+            background: linear-gradient(-90deg, rgba(241,245,249,0.8) 0%, transparent 100%);
         }
 
         .nav-side-btn:hover {
             color: var(--accent-glow);
-            background: rgba(92, 128, 79, 0.15);
-            font-size: 28px;
+            background: rgba(16, 185, 129, 0.08);
+            font-size: 26px;
         }
 
         .modal-footer {
-            height: 45px; background: #080c14;
-            border-top: 1px solid var(--border-dim);
+            height: 45px; background: #ffffff;
+            border-top: 1px solid var(--border-hairline);
             display: flex; align-items: center; justify-content: space-between;
-            padding: 0 20px;
+            padding: 0 24px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 11px; color: #94a3b8;
+            font-size: 11px; color: var(--text-muted);
         }
 
-        .page-jumper {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .page-jumper { display: flex; align-items: center; gap: 8px; }
 
         .page-input {
-            width: 45px;
-            background: #0d121d;
-            border: 1px solid var(--border-dim);
-            color: var(--accent-glow);
-            text-align: center;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            border-radius: 3px;
-            padding: 2px 0;
-            outline: none;
+            width: 45px; background: #f8fafc;
+            border: 1px solid var(--border-hairline);
+            color: var(--accent-glow); font-weight: 700;
+            text-align: center; font-family: 'JetBrains Mono', monospace;
+            font-size: 11px; border-radius: 2px; padding: 2px 0; outline: none;
         }
 
         #pdf-loader {
             position: absolute; color: var(--accent-glow);
-            font-family: 'Orbitron', sans-serif; font-size: 12px;
-            letter-spacing: 2px; display: none;
+            font-family: 'Orbitron', sans-serif; font-size: 11px;
+            letter-spacing: 1.5px; display: none;
             flex-direction: column; align-items: center; gap: 12px; z-index: 20;
         }
 
-        #pdf-loader i { font-size: 26px; animation: spin 1s linear infinite; }
+        #pdf-loader i { font-size: 24px; animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
@@ -592,7 +651,7 @@
             <i class="fa-solid fa-shield-halved"></i>
             <div class="sidebar-brand-text">
                 <span class="title">LKS MILITAR</span>
-                <span class="sub">TAC_LIBRARY v3.0</span>
+                <span class="sub">TAC_LIBRARY v3.5</span>
             </div>
         </div>
         <div class="menu-section" id="container-menu"></div>
@@ -685,56 +744,165 @@
               ctx = canvas.getContext('2d');
 
         async function inicializarAcervo() {
+            const containerMenu = $('#container-menu');
+            containerMenu.empty();
+
+            const urlManifesto = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${SUBPASTA}/catalog.json`;
+
             try {
-                const resposta = await fetch(API_URL);
-                const dados = await resposta.json();
-                
-                const pastas = dados.filter(item => item.type === 'dir');
-                const containerMenu = $('#container-menu');
-                containerMenu.empty();
-
-                if (!Array.isArray(pastas) || pastas.length === 0) {
-                    $('#txt-categoria-atual').text("NENHUMA PASTA EM /FILES");
-                    $('#painel-slots').html('<div style="color: #475569;">Crie pastas no diretório files/ do repositório.</div>');
-                    return;
+                let manifesto = null;
+                try {
+                    const respManifesto = await fetch(urlManifesto);
+                    if (respManifesto.ok) {
+                        manifesto = await respManifesto.json();
+                    }
+                } catch (e) {
+                    console.warn("Manifesto catalog.json não localizado. Executando varredura dinâmica.");
                 }
 
-                let primeiraPasta = null;
-
-                for (let index = 0; index < pastas.length; index++) {
-                    const pasta = pastas[index];
-                    const nomeFormatado = pasta.name.replace(/_/g, ' ');
-                    if (index === 0) primeiraPasta = pasta.name;
-
-                    const idBadge = `badge-${pasta.name}`;
-                    const htmlMenuItem = `
-                        <div class="menu-item ${index === 0 ? 'active' : ''}" onclick="carregarPasta('${pasta.name}', this)">
-                            <div class="menu-item-info">
-                                <i class="fa-solid fa-folder-closed"></i>
-                                <span class="title">${nomeFormatado}</span>
-                            </div>
-                            <span class="badge-count" id="${idBadge}">...</span>
-                        </div>`;
-                    containerMenu.append(htmlMenuItem);
-
-                    atualizarContadorDocs(pasta.name, idBadge);
-                }
-
-                if (primeiraPasta) {
-                    carregarPasta(primeiraPasta, $('.menu-item').first());
+                if (manifesto && manifesto.structure) {
+                    renderizarMenuManifesto(manifesto.structure);
+                } else {
+                    await renderizarMenuFallback();
                 }
 
             } catch (erro) {
-                console.error("Erro na API do GitHub:", erro);
+                console.error("Erro na inicialização do acervo:", erro);
                 $('#txt-categoria-atual').text("ERRO AO CARREGAR REPOSITÓRIO");
             }
         }
 
+        function renderizarMenuManifesto(estrutura) {
+            const containerMenu = $('#container-menu');
+            let primeiraSubcategoria = null;
+            let primeiroElemento = null;
+
+            estrutura.forEach((grupo, gIndex) => {
+                const isFirstGroup = gIndex === 0;
+                const groupId = `grp-${grupo.id}`;
+                const subMenuId = `sub-${grupo.id}`;
+
+                let htmlSubitens = '';
+                grupo.subcategories.forEach(sub => {
+                    if (!primeiraSubcategoria) primeiraSubcategoria = sub.slug;
+
+                    const badgeId = `badge-${sub.slug.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                    htmlSubitens += `
+                        <div class="sub-menu-item" data-slug="${sub.slug}" onclick="selecionarSubcategoria('${sub.slug}', this)">
+                            <div class="menu-item-info">
+                                <i class="fa-solid ${sub.icon || 'fa-folder-open'}"></i>
+                                <span>${sub.title}</span>
+                            </div>
+                            <span class="badge-count" id="${badgeId}">...</span>
+                        </div>`;
+
+                    atualizarContadorDocs(sub.slug, badgeId);
+                });
+
+                const htmlGrupo = `
+                    <div class="menu-group ${isFirstGroup ? 'open' : ''}" id="${groupId}">
+                        <div class="menu-parent" onclick="alternarGrupo('${groupId}', '${subMenuId}')">
+                            <div class="menu-parent-info">
+                                <i class="fa-solid ${grupo.icon || 'fa-layer-group'} icon-main"></i>
+                                <span>${grupo.title}</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                        </div>
+                        <div class="sub-menu" id="${subMenuId}" style="${isFirstGroup ? 'display: block;' : 'display: none;'}">
+                            ${htmlSubitens}
+                        </div>
+                    </div>`;
+
+                containerMenu.append(htmlGrupo);
+            });
+
+            const primeiroItem = $('.sub-menu-item').first();
+            if (primeiroItem.length && primeiraSubcategoria) {
+                primeiroItem.addClass('active');
+                carregarPasta(primeiraSubcategoria, primeiroItem);
+            }
+        }
+
+        async function renderizarMenuFallback() {
+            const containerMenu = $('#container-menu');
+            const resp = await fetch(API_URL);
+            const dados = await resp.json();
+            const pastas = dados.filter(item => item.type === 'dir');
+
+            if (!Array.isArray(pastas) || pastas.length === 0) {
+                $('#txt-categoria-atual').text("NENHUMA PASTA LOCALIZADA");
+                return;
+            }
+
+            let htmlSubitens = '';
+            let primeiraPasta = pastas[0].name;
+
+            pastas.forEach(pasta => {
+                const badgeId = `badge-${pasta.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                const nomeLimpo = pasta.name.replace(/^\d+[_-\s]*/, '').replace(/_/g, ' ').toUpperCase();
+
+                htmlSubitens += `
+                    <div class="sub-menu-item" data-slug="${pasta.name}" onclick="selecionarSubcategoria('${pasta.name}', this)">
+                        <div class="menu-item-info">
+                            <i class="fa-solid fa-folder-closed"></i>
+                            <span>${nomeLimpo}</span>
+                        </div>
+                        <span class="badge-count" id="${badgeId}">...</span>
+                    </div>`;
+
+                atualizarContadorDocs(pasta.name, badgeId);
+            });
+
+            const htmlGrupoUnico = `
+                <div class="menu-group open" id="grp-fallback">
+                    <div class="menu-parent" onclick="alternarGrupo('grp-fallback', 'sub-fallback')">
+                        <div class="menu-parent-info">
+                            <i class="fa-solid fa-database icon-main"></i>
+                            <span>DADOS DO REPOSITÓRIO</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                    </div>
+                    <div class="sub-menu" id="sub-fallback" style="display: block;">
+                        ${htmlSubitens}
+                    </div>
+                </div>`;
+
+            containerMenu.append(htmlGrupoUnico);
+
+            const primeiroItem = $('.sub-menu-item').first();
+            if (primeiroItem.length) {
+                primeiroItem.addClass('active');
+                carregarPasta(primeiraPasta, primeiroItem);
+            }
+        }
+
+        function alternarGrupo(groupId, subMenuId) {
+            const $grupo = $(`#${groupId}`);
+            const $subMenu = $(`#${subMenuId}`);
+
+            $('.menu-group').not($grupo).removeClass('open').find('.sub-menu').slideUp(180);
+
+            $grupo.toggleClass('open');
+            $subMenu.slideToggle(180);
+        }
+
+        function selecionarSubcategoria(slugPasta, elemento) {
+            $('.sub-menu-item').removeClass('active');
+            $(elemento).addClass('active');
+            carregarPasta(slugPasta, elemento);
+        }
+
         async function atualizarContadorDocs(nomePasta, badgeId) {
             try {
-                const resp = await fetch(`${API_URL}/${nomePasta}`);
+                const resp = await fetch(`${API_URL}/${encodeURIComponent(nomePasta)}`);
                 const arqs = await resp.json();
-                const pdfs = arqs.filter(arq => arq.name.toLowerCase().endsWith('.pdf'));
+
+                if (!Array.isArray(arqs)) {
+                    $(`#${badgeId}`).text('0');
+                    return;
+                }
+
+                const pdfs = arqs.filter(arq => arq.type === 'file' && arq.name.toLowerCase().endsWith('.pdf'));
                 $(`#${badgeId}`).text(pdfs.length);
             } catch (e) {
                 $(`#${badgeId}`).text('0');
@@ -742,26 +910,28 @@
         }
 
         async function carregarPasta(nomePasta, elemento) {
-            $('.menu-item').removeClass('active');
-            if (elemento) $(elemento).addClass('active');
-
-            const tituloFormatado = nomePasta.replace(/_/g, ' ');
+            const tituloFormatado = nomePasta.replace(/^\d+[_-\s]*/, '').replace(/_/g, ' ').toUpperCase();
             $('#txt-categoria-atual').text(tituloFormatado);
             $('#search-input').val('');
 
             const painel = $('#painel-slots');
-            painel.html('<div style="color: #475569; font-family: \'JetBrains Mono\'; font-size: 12px;">VARRENDO DIRETÓRIO...</div>');
+            painel.html('<div style="color: #64748b; font-family: \'JetBrains Mono\'; font-size: 12px;">VARRENDO DIRETÓRIO...</div>');
 
             try {
-                const resposta = await fetch(`${API_URL}/${nomePasta}`);
+                const resposta = await fetch(`${API_URL}/${encodeURIComponent(nomePasta)}`);
                 const arquivos = await resposta.json();
 
-                listaDocumentosAtuais = arquivos.filter(arq => arq.name.toLowerCase().endsWith('.pdf'));
+                if (!Array.isArray(arquivos)) {
+                    painel.html('<div style="color: #ef4444; font-family: \'JetBrains Mono\'; font-size: 12px;">FALHA NO MAPEAMENTO DA CATEGORIA.</div>');
+                    return;
+                }
+
+                listaDocumentosAtuais = arquivos.filter(arq => arq.type === 'file' && arq.name.toLowerCase().endsWith('.pdf'));
                 renderizarSlots(listaDocumentosAtuais);
 
             } catch (erro) {
                 console.error("Erro ao carregar arquivos:", erro);
-                painel.html('<div style="color: #f43f5e; font-family: \'JetBrains Mono\'; font-size: 12px;">FALHA NO MAPEAMENTO DA CATEGORIA.</div>');
+                painel.html('<div style="color: #ef4444; font-family: \'JetBrains Mono\'; font-size: 12px;">FALHA NO MAPEAMENTO DA CATEGORIA.</div>');
             }
         }
 
@@ -770,7 +940,7 @@
             painel.empty();
 
             if (documentos.length === 0) {
-                painel.html('<div style="color: #475569; font-family: \'JetBrains Mono\'; font-size: 12px;">NENHUM DOCUMENTO LOCALIZADO.</div>');
+                painel.html('<div style="color: #64748b; font-family: \'JetBrains Mono\'; font-size: 12px;">NENHUM DOCUMENTO LOCALIZADO.</div>');
                 return;
             }
 
@@ -781,7 +951,7 @@
                 const htmlSlot = `
                     <div class="slot-container populated" onclick="abrirModalPdf('${pdf.download_url}', '${nomeDocumento}')">
                         <div class="slot-cover-wrapper" id="wrapper-${slotId}">
-                            <i class="fa-solid fa-file-pdf" style="font-size: 28px; color: rgba(255,255,255,0.08);"></i>
+                            <i class="fa-solid fa-file-pdf" style="font-size: 28px; color: rgba(15, 23, 42, 0.15);"></i>
                         </div>
                         <div class="slot-overlay-gradient"></div>
                         
@@ -814,7 +984,7 @@
 
                 await pagina.render({ canvasContext: contextTemp, viewport: viewport }).promise;
                 
-                const imgUrl = canvasTemp.toDataURL('image/jpeg', 0.75);
+                const imgUrl = canvasTemp.toDataURL('image/jpeg', 0.8);
                 const wrapper = document.getElementById(targetWrapperId);
                 if (wrapper) {
                     wrapper.innerHTML = `<img src="${imgUrl}" class="slot-cover-img" alt="Capa">`;
@@ -934,7 +1104,7 @@
         $(document).ready(function() {
             inicializarAcervo();
 
-            // MODO DE VISUALIZAÇÃO (GRADE / LISTA)
+            // MODO DE VISUALIZAÇÃO
             $('#btn-view-grid').on('click', function() {
                 $('.view-btn').removeClass('active');
                 $(this).addClass('active');
@@ -960,7 +1130,7 @@
                 renderizarSlots(filtrados);
             });
 
-            // CONTROLES DE ZOOM NO LEITOR
+            // CONTROLES DE ZOOM
             $('#btn-zoom-in').on('click', function() {
                 pdfScaleModifier += 0.15;
                 queueRenderPage(pageNum);
@@ -992,9 +1162,9 @@
 
             $(document).on('keydown', function(e) {
                 if (!$('#modal-overlay').hasClass('active')) return;
-                if (e.keyCode === 37) showPrevPage(); // Seta Esquerda
-                if (e.keyCode === 39) showNextPage(); // Seta Direita
-                if (e.keyCode === 27) $('#close-modal').click(); // ESC
+                if (e.keyCode === 37) showPrevPage();
+                if (e.keyCode === 39) showNextPage();
+                if (e.keyCode === 27) $('#close-modal').click();
             });
 
             $('#close-modal, #modal-overlay').on('click', function(e) {
@@ -1008,7 +1178,7 @@
                     }
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     pdfDoc = null;
-                }, 250);
+                }, 200);
             });
         });
     </script>
