@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKS DATA CENTER - HANGAR & OFICINA DE SISTEMAS</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { margin: 0; overflow: hidden; background-color: #050608; font-family: 'Segoe UI', monospace, sans-serif; }
+        
+        /* INTERFACE HUD TÁTICA SOBREPOSTA */
+        #interface-hud {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; justify-content: space-between; padding: 20px;
+        }
+
+        .painel-lateral {
+            width: 320px; background: rgba(10, 14, 20, 0.85);
+            border: 1px solid rgba(0, 255, 135, 0.3); border-radius: 6px;
+            padding: 15px; color: #a0acba; pointer-events: auto;
+            backdrop-filter: blur(8px); display: flex; flex-direction: column; gap: 12px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .titulo-painel {
+            color: #00ff87; font-size: 14px; font-weight: bold;
+            letter-spacing: 1.5px; border-bottom: 1px solid rgba(0, 255, 135, 0.2);
+            padding-bottom: 8px; text-transform: uppercase;
+        }
+
+        /* NAVEGADOR DE CATEGORIAS DINÂMICO */
+        .tree-view { overflow-y: auto; max-height: calc(100vh - 120px); }
+        .tree-view details { margin-bottom: 6px; }
+        .tree-view summary {
+            cursor: pointer; padding: 6px 8px; background: rgba(255,255,255,0.03);
+            border-radius: 4px; color: #e1e7ed; font-size: 12px; transition: 0.2s;
+            list-style: none; display: flex; align-items: center; justify-content: space-between;
+        }
+        .tree-view summary:hover { background: rgba(0, 255, 135, 0.15); color: #00ff87; }
+        .tree-content { padding-left: 12px; border-left: 1px dashed rgba(0, 255, 135, 0.3); margin-left: 6px; margin-top: 4px; }
+        .file-item {
+            display: block; padding: 4px 6px; color: #7f8c9b; font-size: 11px;
+            text-decoration: none; border-radius: 3px; cursor: pointer; transition: 0.2s;
+        }
+        .file-item:hover { color: #ffffff; background: rgba(255, 255, 255, 0.05); }
+
+        /* STATUS INFERIOR */
+        #status-bar {
+            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+            background: rgba(8, 10, 14, 0.9); border: 1px solid #00ff87;
+            color: #00ff87; padding: 6px 18px; font-size: 11px; border-radius: 20px;
+            pointer-events: none; text-transform: uppercase; letter-spacing: 1px;
+        }
+    </style>
+
+    <!-- TRÊS DEPENDÊNCIAS OFICIAIS THREE.JS (R128) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+<body>
+
+    <div id="interface-hud">
+        <div class="painel-lateral">
+            <div class="titulo-painel">LKS DATA CENTER // ARCHIVE</div>
+            <div class="tree-view" id="tree-container">
+                <!-- ESTRUTURA POPULADA AUTOMATICAMENTE VIA SCRIPT -->
+            </div>
+        </div>
+    </div>
+
+    <div id="status-bar">SISTEMA INICIALIZANDO: CARREGANDO HANGAR...</div>
+
+    <script>
+        // 1. CONFIGURAÇÃO BÁSICA DE CENA E CÂMERA
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050608);
+        scene.fog = new THREE.FogExp2(0x050608, 0.018); // Névoa industrial para sensação de profundidade
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 200);
+        camera.position.set(22, 6, 18); // Ângulo de visualização realista de chão de oficina
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.01; // Impede que a câmera passe para baixo do chão
+        controls.minDistance = 2;
+        controls.maxDistance = 50;
+
+        // 2. CONSTRUÇÃO DO AMBIENTE (CHÃO DE OFICINA + HANGAR)
+        // Chão industrial concreto com acabamento e brilho de resina epóxi
+        const floorGeo = new THREE.PlaneGeometry(100, 100);
+        const floorMat = new THREE.MeshStandardMaterial({
+            color: 0x12151c,
+            roughness: 0.35,
+            metalness: 0.5,
+            envMapIntensity: 0.5
+        });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // Grade tática sobre o chão da oficina
+        const gridHelper = new THREE.GridHelper(100, 50, 0x00ff87, 0x1e2633);
+        gridHelper.position.y = 0.01; // Leve deslocamento para evitar Z-fighting
+        scene.add(gridHelper);
+
+        // 3. ILUMINAÇÃO DE HANGAR INDUSTRIAL
+        const luzAmbiente = new THREE.AmbientLight(0x8ab4f8, 0.4);
+        scene.add(luzAmbiente);
+
+        // Lâmpada industrial suspensa superior (Simulando calha de iluminação)
+        const luzTeto = new THREE.DirectionalLight(0xffffff, 1.5);
+        luzTeto.position.set(5, 20, 5);
+        luzTeto.castShadow = true;
+        luzTeto.shadow.mapSize.width = 2048;
+        luzTeto.shadow.mapSize.height = 2048;
+        scene.add(luzTeto);
+
+        // Luz azulada lateral de realce (Estilo iluminação de oficina militar)
+        const luzAcento = new THREE.PointLight(0x00a2ff, 3, 30);
+        luzAcento.position.set(-15, 4, -10);
+        scene.add(luzAcento);
+
+        // 4. NODOS 3D REPRESENTANDO AS BANCADAS/CATEGORIAS NA OFICINA
+        const categoriasData = [
+            { id: "cat1", nome: "01_Fisica_e_Termodinamica", pos: [-10, 0, 8], cor: 0xff6600, arquivos: ["Ciclo_Brayton_F100.pdf", "Transferencia_Calor_Bocal.doc", "Equacoes_Maxwell_Radar.sys"] },
+            { id: "cat2", nome: "02_Magazines_e_Publicacoes", pos: [10, 0, 8], cor: 0x00a2ff, arquivos: ["Aviation_Week_2026.pdf", "Defense_Technical_Report.pdf"] },
+            { id: "cat3", nome: "03_Engenharia_e_Sistemas", pos: [-10, 0, -8], cor: 0x00ff87, arquivos: ["APG_82_Radar_Specs.json", "Hydraulic_Actuators_F15.cad"] },
+            { id: "cat4", nome: "04_Manual_Oficina_LKS", pos: [10, 0, -8], cor: 0xff0055, arquivos: ["Procedimentos_Manutencao.pdf", "Tabelas_Torque.xlsx"] }
+        ];
+
+        // Geração dos objetos geométricos de bancada no chão
+        categoriasData.forEach(cat => {
+            const meshGroup = new THREE.Group();
+            meshGroup.position.set(...cat.pos);
+
+            // Marcador de base no solo
+            const ringGeo = new THREE.RingGeometry(0.8, 1.2, 32);
+            const ringMat = new THREE.MeshBasicMaterial({ color: cat.cor, side: THREE.DoubleSide });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.y = 0.02;
+            meshGroup.add(ring);
+
+            // Núcleo flutuante de dados
+            const coreGeo = new THREE.OctahedronGeometry(0.6, 0);
+            const coreMat = new THREE.MeshStandardMaterial({ color: cat.cor, wireframe: true, emissive: cat.cor, emissiveIntensity: 0.5 });
+            const core = new THREE.Mesh(coreGeo, coreMat);
+            core.position.y = 1.5;
+            meshGroup.add(core);
+
+            scene.add(meshGroup);
+        });
+
+        // 5. CARREGAMENTO DO CAÇA F-15EX (ESCALA REAL 1:1 NA ORIGEM)
+        const loader = new THREE.GLTFLoader();
+        loader.load('f15ex_eagle_ii.glb', function (gltf) {
+            const f15ex = gltf.scene;
+            
+            f15ex.traverse(function (child) {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                }
+            });
+
+            // Ajuste de centralização e alinhamento do caça ao solo do hangar
+            const box = new THREE.Box3().setFromObject(f15ex);
+            const center = box.getCenter(new THREE.Vector3());
+            f15ex.position.x -= center.x;
+            f15ex.position.y -= box.min.y; // Assenta as rodas do trem de pouso no chão zero
+            f15ex.position.z -= center.z;
+
+            scene.add(f15ex);
+            document.getElementById('status-bar').innerText = "HANGAR PRONTO // F-15EX CARREGADO // LKS DATA CENTER ATIVO";
+        }, undefined, function (error) {
+            document.getElementById('status-bar').innerText = "MODO DE ESPERA: INSIRA O ARQUIVO 'f15ex_eagle_ii.glb' NO DIRETÓRIO";
+        });
+
+        // 6. POPULAÇÃO AUTOMÁTICA DA ÁRVORE DE ARQUIVOS NO HUD
+        const treeContainer = document.getElementById('tree-container');
+        categoriasData.forEach(cat => {
+            const details = document.createElement('details');
+            details.open = true;
+
+            const summary = document.createElement('summary');
+            summary.innerHTML = `<span>${cat.nome}</span><small style="color:${'#' + cat.cor.toString(16)}">●</small>`;
+            details.appendChild(summary);
+
+            const content = document.createElement('div');
+            content.className = 'tree-content';
+
+            cat.arquivos.forEach(arq => {
+                const fileLink = document.createElement('a');
+                fileLink.className = 'file-item';
+                fileLink.innerText = `📄 ${arq}`;
+                content.appendChild(fileLink);
+            });
+
+            details.appendChild(content);
+            treeContainer.appendChild(details);
+        });
+
+        // 7. LOOP DE RENDERIZAÇÃO E ANIMAÇÃO
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // REDIMENSIONAMENTO ADAPTATIVO
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
