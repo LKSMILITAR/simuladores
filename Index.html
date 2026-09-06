@@ -3,248 +3,1184 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LKS MILITAR | Simulador de Equação de Radar</title>
+    <title>LKS MILITAR - Tactical Library v3.5 Stealth</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;800&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
     <style>
         :root {
-            --bg-main: #0a0d14;
-            --bg-panel: #131824;
-            --bg-input: #1b2333;
-            --border-color: #27344d;
-            --accent-orange: #ff5500;
-            --accent-blue: #00ccff;
-            --accent-green: #00ff66;
-            --text-primary: #e2e8f0;
-            --text-muted: #8492a6;
+            --bg-main: #f8fafc;
+            --bg-sidebar: #ffffff;
+            --bg-card: #ffffff;
+            --bg-hover: #f1f5f9;
+            --border-hairline: rgba(15, 23, 42, 0.12);
+            --border-accent: #10b981;
+            --text-primary: #0f172a;
+            --text-muted: #64748b;
+            --accent-glow: #059669;
+            --accent-cyan: #0284c7;
+            --hud-corner: #10b981;
+            --glass-blur: blur(12px);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Inter', sans-serif;
             background-color: var(--bg-main);
             color: var(--text-primary);
-            padding: 30px;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 90% 10%, rgba(16, 185, 129, 0.04) 0%, transparent 40%),
+                linear-gradient(rgba(15, 23, 42, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(15, 23, 42, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 24px 24px, 24px 24px;
+        }
+
+        /* SIDEBAR STEALTH SLATE */
+        #sidebar {
+            width: 280px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border-hairline);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 24px rgba(15, 23, 42, 0.03);
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            height: 70px;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            border-bottom: 1px solid var(--border-hairline);
+            background: #ffffff;
+            position: relative;
+        }
+
+        .sidebar-brand::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 24px;
+            width: 40px;
+            height: 2px;
+            background: var(--accent-glow);
+        }
+
+        .sidebar-brand i { 
+            font-size: 20px; 
+            color: var(--accent-glow); 
+            margin-right: 14px; 
+        }
+
+        .sidebar-brand-text .title {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            font-size: 13px;
+            letter-spacing: 2px;
+            color: var(--text-primary);
+        }
+
+        .sidebar-brand-text .sub {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px;
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+
+        /* MENU SANFONA DE ALTA PRECISÃO */
+        .menu-section { 
+            padding: 12px 0; 
+            overflow-y: auto; 
+            flex: 1; 
+        }
+
+        .menu-group {
+            margin-bottom: 2px;
+            position: relative;
+        }
+
+        .menu-parent {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            font-size: 11px;
+            font-weight: 700;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            background: transparent;
+            border-left: 3px solid transparent;
+        }
+
+        .menu-parent:hover {
+            background: var(--bg-hover);
+            color: var(--accent-glow);
+            border-left-color: var(--accent-glow);
+        }
+
+        .menu-parent-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .menu-parent i.icon-main {
+            font-size: 13px;
+            color: var(--text-muted);
+            transition: color 0.2s ease;
+        }
+
+        .menu-parent:hover i.icon-main {
+            color: var(--accent-glow);
+        }
+
+        .menu-parent i.arrow-icon {
+            font-size: 10px;
+            color: var(--text-muted);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .menu-group.open .menu-parent i.arrow-icon {
+            transform: rotate(180deg);
+            color: var(--accent-glow);
+        }
+
+        .menu-group.open .menu-parent {
+            background: #f1f5f9;
+            border-left-color: var(--accent-glow);
+        }
+
+        /* SUBMENU COM GUIA VETORIAL LINEAR */
+        .sub-menu {
+            display: none;
+            background: #f8fafc;
+            padding: 6px 0;
+            position: relative;
+        }
+
+        .sub-menu::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 31px;
+            width: 1px;
+            height: 100%;
+            background: var(--border-hairline);
+        }
+
+        .sub-menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 24px 9px 48px;
+            color: var(--text-muted);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            position: relative;
+        }
+
+        .sub-menu-item::before {
+            content: '';
+            position: absolute;
+            left: 31px;
+            top: 50%;
+            width: 10px;
+            height: 1px;
+            background: var(--border-hairline);
+        }
+
+        .sub-menu-item:hover, .sub-menu-item.active {
+            color: var(--text-primary);
+            background: #ffffff;
+            font-weight: 600;
+        }
+
+        .sub-menu-item:hover::before, .sub-menu-item.active::before {
+            background: var(--accent-glow);
+        }
+
+        .sub-menu-item i {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-right: 8px;
+            transition: color 0.2s ease;
+        }
+
+        .sub-menu-item:hover i, .sub-menu-item.active i {
+            color: var(--accent-glow);
+        }
+
+        .sub-menu-item .badge-count {
+            font-size: 9px;
+            background: #e2e8f0;
+            color: var(--text-primary);
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-weight: 700;
+        }
+
+        .sub-menu-item.active .badge-count {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-glow);
+        }
+
+        /* ÁREA PRINCIPAL STEALTH */
+        #main-view {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-main);
+        }
+
+        header {
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            border-bottom: 1px solid var(--border-hairline);
+            background: #ffffff;
+            gap: 20px;
+        }
+
+        .sys-status-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            background: rgba(16, 185, 129, 0.08);
+            color: var(--accent-glow);
+            padding: 4px 10px;
+            border-radius: 2px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+        }
+
+        .sys-status-tag .dot { 
+            width: 6px; 
+            height: 6px; 
+            border-radius: 50%; 
+            background: var(--accent-glow); 
+            box-shadow: 0 0 6px var(--accent-glow); 
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+            justify-content: flex-end;
+        }
+
+        .search-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 360px;
+        }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 8px 14px 8px 38px;
+            background: #f8fafc;
+            border: 1px solid var(--border-hairline);
+            border-radius: 2px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-glow);
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .view-toggle-btns {
+            display: flex;
+            background: #f1f5f9;
+            border: 1px solid var(--border-hairline);
+            border-radius: 2px;
+            padding: 2px;
+        }
+
+        .view-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 6px 12px;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: all 0.2s ease;
+            font-size: 12px;
+        }
+
+        .view-btn.active {
+            background: #ffffff;
+            color: var(--accent-glow);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .content-body {
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+        }
+
+        .category-header {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .category-header-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .category-header-title::after {
+            content: '';
+            width: 60px;
+            height: 2px;
+            background: var(--accent-glow);
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        /* GRID E CARDS STEALTH HUD */
+        .grid-acervo {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .grid-acervo.list-mode {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .slot-container {
+            position: relative;
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            aspect-ratio: 1 / 1.4;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
+            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+            overflow: hidden;
+        }
+
+        .slot-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 10px;
+            height: 10px;
+            background: var(--border-hairline);
+            transition: background 0.2s ease;
+        }
+
+        .slot-container.populated {
+            cursor: pointer;
+        }
+
+        .slot-container.populated:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent-glow);
+            box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.08);
+        }
+
+        .slot-container.populated:hover::after {
+            background: var(--accent-glow);
+        }
+
+        .slot-cover-wrapper {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
             display: flex;
             justify-content: center;
+            align-items: center;
+            background-color: #f8fafc;
         }
 
-        .wrapper {
-            width: 100%;
-            max-width: 950px;
-            background-color: var(--bg-panel);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 30px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.8);
+        .slot-cover-img {
+            width: 100%; height: 100%;
+            object-fit: cover; opacity: 0.85;
+            transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
-        header h1 {
-            font-size: 1.4rem;
-            color: var(--accent-orange);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 5px;
+        .slot-container.populated:hover .slot-cover-img {
+            opacity: 1; transform: scale(1.03);
         }
 
-        header p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 25px; }
-
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 35px; }
-        @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
-
-        .control-group { margin-bottom: 20px; }
-        
-        label {
-            display: flex; justify-content: space-between;
-            font-size: 0.75rem; font-weight: bold; color: var(--text-muted);
-            text-transform: uppercase; margin-bottom: 8px;
+        .slot-overlay-gradient {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 2;
+            background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(248,250,252,0.1) 40%, rgba(255,255,255,0.95) 100%);
         }
 
-        .label-val { color: var(--accent-blue); font-family: monospace; font-size: 0.9rem; }
-
-        input[type="range"] {
-            -webkit-appearance: none; width: 100%; height: 6px;
-            background: var(--bg-input); border-radius: 3px; outline: none;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
-            background: var(--accent-orange); cursor: pointer; border: 2px solid var(--bg-panel);
+        .slot-meta {
+            position: relative; z-index: 3;
+            display: flex; justify-content: space-between; align-items: center;
         }
 
-        .results {
-            background-color: #07090e;
-            border-left: 3px solid var(--accent-orange);
-            padding: 25px; border-radius: 6px;
-            display: flex; flex-direction: column; gap: 20px;
+        .slot-index {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 9px; font-weight: 800; color: var(--accent-glow);
+            background: #ffffff; padding: 2px 6px;
+            border-radius: 2px; border: 1px solid var(--border-hairline);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
-        .metric { border-bottom: 1px solid #1a2233; padding-bottom: 15px; }
-        .metric:last-child { border-bottom: none; padding-bottom: 0; }
-        
-        .metric-title { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;}
-        .metric-value { font-size: 1.3rem; font-weight: bold; font-family: monospace; color: var(--accent-blue); margin-top: 5px; }
-        .metric-sub { font-size: 0.7rem; color: #ff3333; margin-top: 4px; }
-
-        .disclaimer-panel {
-            margin-top: 40px;
-            padding: 20px;
-            background-color: #0d111a;
-            border: 1px solid #27344d;
-            border-radius: 6px;
-            font-size: 0.7rem;
-            color: #64748b;
-            line-height: 1.4;
+        .slot-status-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--accent-glow);
         }
-        .disclaimer-panel h4 { color: #ff5500; text-transform: uppercase; margin-bottom: 10px; }
+
+        .slot-footer { position: relative; z-index: 3; }
+
+        .slot-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 11px; font-weight: 600; color: var(--text-primary);
+            line-height: 1.35; word-break: break-word;
+        }
+
+        /* MODO LISTA */
+        .grid-acervo.list-mode .slot-container {
+            aspect-ratio: auto;
+            height: 48px;
+            flex-direction: row;
+            align-items: center;
+            padding: 0 20px;
+            clip-path: none;
+        }
+
+        .grid-acervo.list-mode .slot-cover-wrapper,
+        .grid-acervo.list-mode .slot-overlay-gradient { display: none; }
+
+        .grid-acervo.list-mode .slot-meta { width: auto; gap: 15px; }
+        .grid-acervo.list-mode .slot-footer { flex: 1; margin-left: 20px; }
+
+        /* MODAL E LEITOR STEALTH */
+        #modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        #modal-overlay.active { display: flex; opacity: 1; }
+
+        .modal-container {
+            width: 96%; max-width: 1100px; height: 94vh;
+            background: #ffffff;
+            border: 1px solid var(--border-hairline);
+            border-radius: 4px;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+            display: flex; flex-direction: column;
+            overflow: hidden;
+            transform: scale(0.98);
+            transition: transform 0.2s ease;
+        }
+
+        #modal-overlay.active .modal-container { transform: scale(1); }
+
+        .modal-header {
+            height: 55px;
+            background: #ffffff;
+            padding: 0 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border-hairline);
+        }
+
+        .modal-title-zone {
+            display: flex; align-items: center; gap: 10px; max-width: 60vw;
+        }
+
+        .modal-title-zone i { color: var(--accent-glow); font-size: 14px; }
+
+        .modal-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 12px; letter-spacing: 1px;
+            color: var(--text-primary); font-weight: 700;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .modal-actions { display: flex; align-items: center; gap: 10px; }
+
+        .modal-tool-btn {
+            background: #f8fafc;
+            border: 1px solid var(--border-hairline);
+            color: var(--text-muted);
+            width: 32px; height: 32px;
+            border-radius: 2px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s ease; font-size: 12px;
+        }
+
+        .modal-tool-btn:hover {
+            color: var(--text-primary);
+            background: #f1f5f9;
+            border-color: var(--accent-glow);
+        }
+
+        .modal-close-btn {
+            background: none; border: none; color: var(--text-muted);
+            font-size: 22px; cursor: pointer; transition: color 0.2s ease;
+            margin-left: 10px;
+        }
+
+        .modal-close-btn:hover { color: #ef4444; }
+
+        .modal-body {
+            flex: 1; background: #f1f5f9;
+            display: flex; justify-content: center; align-items: center;
+            position: relative; overflow: auto; padding: 20px;
+        }
+
+        #pdf-canvas {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            border-radius: 2px; background: #fff; display: block;
+            transition: opacity 0.15s ease;
+        }
+
+        .nav-side-btn {
+            position: absolute; top: 0; height: 100%; width: 60px;
+            background: linear-gradient(90deg, rgba(241,245,249,0.8) 0%, transparent 100%);
+            border: none; color: var(--text-muted);
+            font-size: 20px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s ease; z-index: 10;
+        }
+
+        .nav-side-btn.prev { left: 0; }
+        .nav-side-btn.next {
+            right: 0;
+            background: linear-gradient(-90deg, rgba(241,245,249,0.8) 0%, transparent 100%);
+        }
+
+        .nav-side-btn:hover {
+            color: var(--accent-glow);
+            background: rgba(16, 185, 129, 0.08);
+            font-size: 26px;
+        }
+
+        .modal-footer {
+            height: 45px; background: #ffffff;
+            border-top: 1px solid var(--border-hairline);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px; color: var(--text-muted);
+        }
+
+        .page-jumper { display: flex; align-items: center; gap: 8px; }
+
+        .page-input {
+            width: 45px; background: #f8fafc;
+            border: 1px solid var(--border-hairline);
+            color: var(--accent-glow); font-weight: 700;
+            text-align: center; font-family: 'JetBrains Mono', monospace;
+            font-size: 11px; border-radius: 2px; padding: 2px 0; outline: none;
+        }
+
+        #pdf-loader {
+            position: absolute; color: var(--accent-glow);
+            font-family: 'Orbitron', sans-serif; font-size: 11px;
+            letter-spacing: 1.5px; display: none;
+            flex-direction: column; align-items: center; gap: 12px; z-index: 20;
+        }
+
+        #pdf-loader i { font-size: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<div class="wrapper">
-    <header>
-        <h1>LKS MILITAR | Dinâmica de Equação de Radar & Geometria do Feixe</h1>
-        <p>Análise Vetorial de Poynting, Tensão de Maxwell e Expansão do Lóbulo Principal</p>
-    </header>
-
-    <div class="grid">
-        <div class="controls">
-            <div class="control-group">
-                <label>Potência de Transmissão (Pt) <span id="val-pt" class="label-val">100 kW</span></label>
-                <input type="range" id="slider-pt" min="1" max="1000" step="1" value="100" oninput="calcularFisica()">
-            </div>
-            <div class="control-group">
-                <label>Ganho da Antena (G) <span id="val-g" class="label-val">35 dBi</span></label>
-                <input type="range" id="slider-g" min="10" max="50" step="1" value="35" oninput="calcularFisica()">
-            </div>
-            <div class="control-group">
-                <label>Abertura do Feixe (Beamwidth θ) <span id="val-theta" class="label-val" style="color: var(--accent-green);">2.0°</span></label>
-                <input type="range" id="slider-theta" min="0.5" max="15" step="0.1" value="2.0" oninput="calcularFisica()">
-            </div>
-            <div class="control-group">
-                <label>Frequência Operacional (f) <span id="val-f" class="label-val">10 GHz</span></label>
-                <input type="range" id="slider-f" min="1" max="20" step="0.5" value="10" oninput="calcularFisica()">
-            </div>
-            <div class="control-group">
-                <label>RCS do Alvo <span id="val-rcs" class="label-val">5 m²</span></label>
-                <input type="range" id="slider-rcs" min="-30" max="20" step="1" value="7" oninput="calcularFisica()">
-            </div>
-            <div class="control-group">
-                <label>Distância (R) <span id="val-r" class="label-val">150 km</span></label>
-                <input type="range" id="slider-r" min="5" max="500" step="5" value="150" oninput="calcularFisica()">
+    <div id="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-shield-halved"></i>
+            <div class="sidebar-brand-text">
+                <span class="title">LKS MILITAR</span>
+                <span class="sub">TAC_LIBRARY v3.5</span>
             </div>
         </div>
+        <div class="menu-section" id="container-menu"></div>
+    </div>
 
-        <div class="results">
-            <div class="metric">
-                <div class="metric-title">Diâmetro do Feixe no Alvo</div>
-                <div id="res-footprint" class="metric-value" style="color: var(--accent-green);">0.00 km</div>
+    <div id="main-view">
+        <header>
+            <div class="header-title-zone">
+                <div class="sys-status-tag">
+                    <div class="dot"></div>
+                    <span>SYS_ONLINE</span>
+                </div>
             </div>
-            <div class="metric">
-                <div class="metric-title">Vetor de Poynting (W/m²)</div>
-                <div id="res-poynting" class="metric-value">0.00</div>
+
+            <div class="header-controls">
+                <div class="search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="search-input" class="search-input" placeholder="BUSCAR MANUAL TÁTICO...">
+                </div>
+
+                <div class="view-toggle-btns">
+                    <button class="view-btn active" id="btn-view-grid" title="Visão em Grade"><i class="fa-solid fa-border-all"></i></button>
+                    <button class="view-btn" id="btn-view-list" title="Visão em Lista"><i class="fa-solid fa-list"></i></button>
+                </div>
             </div>
-            <div class="metric">
-                <div class="metric-title">Pressão de Radiação (µPa)</div>
-                <div id="res-pressao" class="metric-value">0.00</div>
+        </header>
+
+        <div class="content-body">
+            <div class="category-header">
+                <div class="category-header-title" id="txt-categoria-atual">INICIALIZANDO...</div>
             </div>
-            <div class="metric">
-                <div class="metric-title">Potência de Retorno (dBm)</div>
-                <div id="res-pr-dbm" class="metric-value" style="color: var(--accent-orange);">0.00</div>
+            <div class="grid-acervo" id="painel-slots"></div>
+        </div>
+    </div>
+
+    <div id="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title-zone">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <div class="modal-title" id="pdf-modal-title">DECODIFICANDO...</div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="modal-tool-btn" id="btn-zoom-out" title="Reduzir Zoom"><i class="fa-solid fa-minus"></i></button>
+                    <button class="modal-tool-btn" id="btn-zoom-in" title="Aumentar Zoom"><i class="fa-solid fa-plus"></i></button>
+                    <button class="modal-tool-btn" id="btn-zoom-reset" title="Ajustar à Tela"><i class="fa-solid fa-expand"></i></button>
+                    <button class="modal-close-btn" id="close-modal">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <button class="nav-side-btn prev" id="prev-page-btn"><i class="fa-solid fa-chevron-left"></i></button>
+                <div id="pdf-loader">
+                    <i class="fa-solid fa-spinner"></i>
+                    <span>PROCESSANDO PÁGINA...</span>
+                </div>
+                <canvas id="pdf-canvas"></canvas>
+                <button class="nav-side-btn next" id="next-page-btn"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+            <div class="modal-footer">
+                <div class="page-jumper">
+                    <span>PÁGINA</span>
+                    <input type="number" id="input-page-num" class="page-input" value="1" min="1">
+                    <span>DE <span id="total-pages-count">0</span></span>
+                </div>
+                <div id="doc-status-info">LEITOR VETORIAL ATIVO</div>
             </div>
         </div>
     </div>
 
-    <div class="disclaimer-panel">
-        <h4>Nota Técnica: Limitações e Aproximações do Modelo</h4>
-        <p>
-            Este motor de cálculo é uma simplificação analítica focada na propagação do lóbulo principal em altas frequências (Banda S a X). 
-            Não foram computados nesta versão: 
-            <strong>(1) Difração de Borda (Cones de Keller)</strong>; 
-            <strong>(2) Padrões de Difração de Fraunhofer</strong> para o campo distante; 
-            <strong>(3) Perdas de eficiência de abertura</strong>. 
-            A propagação assume expansão geométrica cônica e dispersão pelo inverso do quadrado da distância (1/R²).
-        </p>
-    </div>
-</div>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-    <div style="margin-top: 25px; background-color: var(--bg-input); border: 1px solid var(--border-color); border-radius: 6px; padding: 20px;">
-        <details style="cursor: pointer;">
-            <summary style="font-size: 0.75rem; color: var(--accent-orange); text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; outline: none; user-select: none;">
-                [+] EXPANDIR FUNDAMENTAÇÃO MATEMÁTICA E ELETRODINÂMICA VETORIAL
-            </summary>
+        const GITHUB_USER = "lksmilitar";
+        const GITHUB_REPO = "simuladores";
+        const SUBPASTA   = "files";
+
+        const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${SUBPASTA}`;
+
+        let pdfDoc = null,
+            pageNum = 1,
+            pdfScaleModifier = 1.0,
+            pageIsRendering = false,
+            pageNumPending = null,
+            currentRenderTask = null,
+            listaDocumentosAtuais = [],
+            documentoAtualKey = '';
+
+        const canvas = document.getElementById('pdf-canvas'),
+              ctx = canvas.getContext('2d');
+
+        async function inicializarAcervo() {
+            const containerMenu = $('#container-menu');
+            containerMenu.empty();
+
+            const urlManifesto = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${SUBPASTA}/catalog.json`;
+
+            try {
+                let manifesto = null;
+                try {
+                    const respManifesto = await fetch(urlManifesto);
+                    if (respManifesto.ok) {
+                        manifesto = await respManifesto.json();
+                    }
+                } catch (e) {
+                    console.warn("Manifesto catalog.json não localizado. Executando varredura dinâmica.");
+                }
+
+                if (manifesto && manifesto.structure) {
+                    renderizarMenuManifesto(manifesto.structure);
+                } else {
+                    await renderizarMenuFallback();
+                }
+
+            } catch (erro) {
+                console.error("Erro na inicialização do acervo:", erro);
+                $('#txt-categoria-atual').text("ERRO AO CARREGAR REPOSITÓRIO");
+            }
+        }
+
+        function renderizarMenuManifesto(estrutura) {
+            const containerMenu = $('#container-menu');
+            let primeiraSubcategoria = null;
+            let primeiroElemento = null;
+
+            estrutura.forEach((grupo, gIndex) => {
+                const isFirstGroup = gIndex === 0;
+                const groupId = `grp-${grupo.id}`;
+                const subMenuId = `sub-${grupo.id}`;
+
+                let htmlSubitens = '';
+                grupo.subcategories.forEach(sub => {
+                    if (!primeiraSubcategoria) primeiraSubcategoria = sub.slug;
+
+                    const badgeId = `badge-${sub.slug.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                    htmlSubitens += `
+                        <div class="sub-menu-item" data-slug="${sub.slug}" onclick="selecionarSubcategoria('${sub.slug}', this)">
+                            <div class="menu-item-info">
+                                <i class="fa-solid ${sub.icon || 'fa-folder-open'}"></i>
+                                <span>${sub.title}</span>
+                            </div>
+                            <span class="badge-count" id="${badgeId}">...</span>
+                        </div>`;
+
+                    atualizarContadorDocs(sub.slug, badgeId);
+                });
+
+                const htmlGrupo = `
+                    <div class="menu-group ${isFirstGroup ? 'open' : ''}" id="${groupId}">
+                        <div class="menu-parent" onclick="alternarGrupo('${groupId}', '${subMenuId}')">
+                            <div class="menu-parent-info">
+                                <i class="fa-solid ${grupo.icon || 'fa-layer-group'} icon-main"></i>
+                                <span>${grupo.title}</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                        </div>
+                        <div class="sub-menu" id="${subMenuId}" style="${isFirstGroup ? 'display: block;' : 'display: none;'}">
+                            ${htmlSubitens}
+                        </div>
+                    </div>`;
+
+                containerMenu.append(htmlGrupo);
+            });
+
+            const primeiroItem = $('.sub-menu-item').first();
+            if (primeiroItem.length && primeiraSubcategoria) {
+                primeiroItem.addClass('active');
+                carregarPasta(primeiraSubcategoria, primeiroItem);
+            }
+        }
+
+        async function renderizarMenuFallback() {
+            const containerMenu = $('#container-menu');
+            const resp = await fetch(API_URL);
+            const dados = await resp.json();
+            const pastas = dados.filter(item => item.type === 'dir');
+
+            if (!Array.isArray(pastas) || pastas.length === 0) {
+                $('#txt-categoria-atual').text("NENHUMA PASTA LOCALIZADA");
+                return;
+            }
+
+            let htmlSubitens = '';
+            let primeiraPasta = pastas[0].name;
+
+            pastas.forEach(pasta => {
+                const badgeId = `badge-${pasta.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                const nomeLimpo = pasta.name.replace(/^\d+[_-\s]*/, '').replace(/_/g, ' ').toUpperCase();
+
+                htmlSubitens += `
+                    <div class="sub-menu-item" data-slug="${pasta.name}" onclick="selecionarSubcategoria('${pasta.name}', this)">
+                        <div class="menu-item-info">
+                            <i class="fa-solid fa-folder-closed"></i>
+                            <span>${nomeLimpo}</span>
+                        </div>
+                        <span class="badge-count" id="${badgeId}">...</span>
+                    </div>`;
+
+                atualizarContadorDocs(pasta.name, badgeId);
+            });
+
+            const htmlGrupoUnico = `
+                <div class="menu-group open" id="grp-fallback">
+                    <div class="menu-parent" onclick="alternarGrupo('grp-fallback', 'sub-fallback')">
+                        <div class="menu-parent-info">
+                            <i class="fa-solid fa-database icon-main"></i>
+                            <span>DADOS DO REPOSITÓRIO</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down arrow-icon"></i>
+                    </div>
+                    <div class="sub-menu" id="sub-fallback" style="display: block;">
+                        ${htmlSubitens}
+                    </div>
+                </div>`;
+
+            containerMenu.append(htmlGrupoUnico);
+
+            const primeiroItem = $('.sub-menu-item').first();
+            if (primeiroItem.length) {
+                primeiroItem.addClass('active');
+                carregarPasta(primeiraPasta, primeiroItem);
+            }
+        }
+
+        function alternarGrupo(groupId, subMenuId) {
+            const $grupo = $(`#${groupId}`);
+            const $subMenu = $(`#${subMenuId}`);
+
+            $('.menu-group').not($grupo).removeClass('open').find('.sub-menu').slideUp(180);
+
+            $grupo.toggleClass('open');
+            $subMenu.slideToggle(180);
+        }
+
+        function selecionarSubcategoria(slugPasta, elemento) {
+            $('.sub-menu-item').removeClass('active');
+            $(elemento).addClass('active');
+            carregarPasta(slugPasta, elemento);
+        }
+
+        async function atualizarContadorDocs(nomePasta, badgeId) {
+            try {
+                const resp = await fetch(`${API_URL}/${encodeURIComponent(nomePasta)}`);
+                const arqs = await resp.json();
+
+                if (!Array.isArray(arqs)) {
+                    $(`#${badgeId}`).text('0');
+                    return;
+                }
+
+                const pdfs = arqs.filter(arq => arq.type === 'file' && arq.name.toLowerCase().endsWith('.pdf'));
+                $(`#${badgeId}`).text(pdfs.length);
+            } catch (e) {
+                $(`#${badgeId}`).text('0');
+            }
+        }
+
+        async function carregarPasta(nomePasta, elemento) {
+            const tituloFormatado = nomePasta.replace(/^\d+[_-\s]*/, '').replace(/_/g, ' ').toUpperCase();
+            $('#txt-categoria-atual').text(tituloFormatado);
+            $('#search-input').val('');
+
+            const painel = $('#painel-slots');
+            painel.html('<div style="color: #64748b; font-family: \'JetBrains Mono\'; font-size: 12px;">VARRENDO DIRETÓRIO...</div>');
+
+            try {
+                const resposta = await fetch(`${API_URL}/${encodeURIComponent(nomePasta)}`);
+                const arquivos = await resposta.json();
+
+                if (!Array.isArray(arquivos)) {
+                    painel.html('<div style="color: #ef4444; font-family: \'JetBrains Mono\'; font-size: 12px;">FALHA NO MAPEAMENTO DA CATEGORIA.</div>');
+                    return;
+                }
+
+                listaDocumentosAtuais = arquivos.filter(arq => arq.type === 'file' && arq.name.toLowerCase().endsWith('.pdf'));
+                renderizarSlots(listaDocumentosAtuais);
+
+            } catch (erro) {
+                console.error("Erro ao carregar arquivos:", erro);
+                painel.html('<div style="color: #ef4444; font-family: \'JetBrains Mono\'; font-size: 12px;">FALHA NO MAPEAMENTO DA CATEGORIA.</div>');
+            }
+        }
+
+        function renderizarSlots(documentos) {
+            const painel = $('#painel-slots');
+            painel.empty();
+
+            if (documentos.length === 0) {
+                painel.html('<div style="color: #64748b; font-family: \'JetBrains Mono\'; font-size: 12px;">NENHUM DOCUMENTO LOCALIZADO.</div>');
+                return;
+            }
+
+            documentos.forEach((pdf, index) => {
+                const nomeDocumento = pdf.name.replace('.pdf', '');
+                const slotId = `cover-canvas-${index}`;
+                
+                const htmlSlot = `
+                    <div class="slot-container populated" onclick="abrirModalPdf('${pdf.download_url}', '${nomeDocumento}')">
+                        <div class="slot-cover-wrapper" id="wrapper-${slotId}">
+                            <i class="fa-solid fa-file-pdf" style="font-size: 28px; color: rgba(15, 23, 42, 0.15);"></i>
+                        </div>
+                        <div class="slot-overlay-gradient"></div>
+                        
+                        <div class="slot-meta">
+                            <div class="slot-index">DOC_${String(index + 1).padStart(2, '0')}</div>
+                            <div class="slot-status-dot"></div>
+                        </div>
+                        
+                        <div class="slot-footer">
+                            <div class="slot-title">${nomeDocumento}</div>
+                        </div>
+                    </div>`;
+                painel.append(htmlSlot);
+
+                gerarMiniaturaCapa(pdf.download_url, `wrapper-${slotId}`);
+            });
+        }
+
+        async function gerarMiniaturaCapa(urlPdf, targetWrapperId) {
+            try {
+                const carregandoPdf = pdfjsLib.getDocument(urlPdf);
+                const pdf = await carregandoPdf.promise;
+                const pagina = await pdf.getPage(1);
+
+                const viewport = pagina.getViewport({ scale: 0.35 });
+                const canvasTemp = document.createElement('canvas');
+                const contextTemp = canvasTemp.getContext('2d');
+                canvasTemp.height = viewport.height;
+                canvasTemp.width = viewport.width;
+
+                await pagina.render({ canvasContext: contextTemp, viewport: viewport }).promise;
+                
+                const imgUrl = canvasTemp.toDataURL('image/jpeg', 0.8);
+                const wrapper = document.getElementById(targetWrapperId);
+                if (wrapper) {
+                    wrapper.innerHTML = `<img src="${imgUrl}" class="slot-cover-img" alt="Capa">`;
+                }
+            } catch (e) {
+                console.warn("Capa indisponível para:", urlPdf);
+            }
+        }
+
+        function renderPage(num) {
+            pageIsRendering = true;
+            $('#input-page-num').val(num);
+
+            if (documentoAtualKey) {
+                localStorage.setItem(`lks_page_${documentoAtualKey}`, num);
+            }
+
+            if (currentRenderTask) {
+                currentRenderTask.cancel();
+                currentRenderTask = null;
+            }
+
+            pdfDoc.getPage(num).then(page => {
+                const containerWidth = $('.modal-body').width() - 40;
+                const unscaledViewport = page.getViewport({ scale: 1.0 });
+                const calculatedScale = Math.min(containerWidth / unscaledViewport.width, 1.6);
+
+                const dpr = window.devicePixelRatio || 1;
+                const baseScale = Math.max(calculatedScale, 0.8) * pdfScaleModifier;
+                const viewport = page.getViewport({ scale: baseScale });
+
+                canvas.width = Math.floor(viewport.width * dpr);
+                canvas.height = Math.floor(viewport.height * dpr);
+
+                canvas.style.width = Math.floor(viewport.width) + 'px';
+                canvas.style.height = Math.floor(viewport.height) + 'px';
+
+                ctx.save();
+                ctx.scale(dpr, dpr);
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+
+                currentRenderTask = page.render(renderContext);
+
+                currentRenderTask.promise.then(() => {
+                    ctx.restore();
+                    pageIsRendering = false;
+                    currentRenderTask = null;
+
+                    $('#pdf-loader').hide();
+                    $('#pdf-canvas').css('opacity', '1');
+
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                }).catch(err => {
+                    ctx.restore();
+                    if (err.name !== 'RenderingCancelledException') {
+                        console.error("Erro na renderização:", err);
+                    }
+                });
+            });
+        }
+
+        function queueRenderPage(num) {
+            if (pageIsRendering) {
+                pageNumPending = num;
+            } else {
+                $('#pdf-canvas').css('opacity', '0.3');
+                renderPage(num);
+            }
+        }
+
+        function showPrevPage() {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+
+        function showNextPage() {
+            if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+
+        function abrirModalPdf(pdfUrl, pdfTitle) {
+            $('#pdf-modal-title').text(pdfTitle.toUpperCase());
+            $('#pdf-canvas').css('opacity', '0');
+            $('#pdf-loader').css('display', 'flex');
+            pdfScaleModifier = 1.0;
             
-            <div style="margin-top: 20px; font-size: 0.8rem; line-height: 1.6; color: #cbd5e1; text-align: justify; display: flex; flex-direction: column; gap: 15px; border-top: 1px solid var(--border-color); padding-top: 15px;">
-                <p>
-                    <strong style="color: var(--accent-blue);">1. Formulação Vetorial Integral e o Limite Assintótico de Fraunhofer</strong><br>
-                    A modelagem matemática do feixe eletromagnético radiado por uma abertura circular baseia-se na formulação integral vetorial de <strong>Stratton-Chu</strong>, que atua como o propagador tensorial universal da perturbação no espaço livre. O motor de cálculo deste simulador valida a transição da zona de Fresnel para a região de campo distante de Fraunhofer através do critério da distância crítica de Rayleigh (R_f = 2D²/λ). Como a distância de operação estipulada em sistemas de radar de longo alcance atende ao limite de alta frequência onde R >> R_f, o termo de amplitude degenera monotonamente para o decaimento esférico regulamentar de 1/R, satisfazendo a Condição de Radiação de Sommerfeld e assumindo a característica de uma onda plana local TEM.
-                </p>
+            documentoAtualKey = btoa(pdfTitle).replace(/=/g, '');
 
-                <p>
-                    <strong style="color: var(--accent-blue);">2. Densidade de Fluxo de Potência e o Vetor de Poynting Real</strong><br>
-                    A energia transportada pela onda eletromagnética por unidade de tempo e área é descrita pelo componente real do Vetor de Poynting complexo (S = Re{E x H*}). Em campo distante, a magnitude da densidade de fluxo de potência radiada no vácuo ao longo do eixo de boresight, considerando uma antena diretiva com Ganho linear (G) e Potência de transmissão (Pt), é calculada de forma exata por:
-                    <div style="font-family: monospace; background: #07090e; padding: 12px; border-radius: 4px; color: var(--accent-green); text-align: center; border: 1px solid var(--border-color);">
-                        S = (Pt * G) / (4 * pi * R²)
-                    </div>
-                    Esta equação governa a dispersão da densidade de energia do campo elétrico e magnético integrada no simulador, provando que a divergência do fluxo ativo é nula (∇ · S = 0) em meio ideal não-dissipativo, garantindo a conservação estrita da energia injetada no sistema.
-                </p>
+            $('#modal-overlay').show(0, function() {
+                $(this).addClass('active');
+            });
 
-                <p>
-                    <strong style="color: var(--accent-blue);">3. Conservação do Tensor de Tensão de Maxwell e Pressão de Radiação</strong><br>
-                    O feixe de rádio não apenas difunde energia, mas transporta momento linear mecânico macroscópico. A densidade de momento linear (p) contida na radiação contínua é proporcional ao vetor de Poynting pela causalidade relativística do vácuo (p = S/c). O impacto e a absorção ou reflexão dessa frente de onda sobre um alvo condutor acionam a arquitetura de segunda ordem do <strong>Tensor de Tensão de Maxwell</strong> (T_ij). Sob a condição de incidência normal de onda plana e reflexão ideal, as tensões de cisalhamento cruzadas minimizam-se, e a pressão escalar volumétrica exercida pelo feixe de radar (pressão de radiação) é computada analiticamente por:
-                    <div style="font-family: monospace; background: #07090e; padding: 12px; border-radius: 4px; color: var(--accent-green); text-align: center; border: 1px solid var(--border-color);">
-                        p_rad = (2 * S) / c
-                    </div>
-                </p>
+            const paginaSalva = parseInt(localStorage.getItem(`lks_page_${documentoAtualKey}`)) || 1;
+            pageNum = paginaSalva;
 
-                <p>
-                    <strong style="color: var(--accent-blue);">4. Equação Monostática do Radar e Geometria de Retorno</strong><br>
-                    A potência eletromagnética que efetivamente retorna à antena interceptadora após colidir com a Seção Reta do Radar (RCS / σ) do alvo sofre uma dupla penalização geométrica pelo inverso do quadrado da distância (1/R⁴). O acoplamento final que dita o limiar de potência de recepção (Pr) sintetiza a equação clássica do radar monostático:
-                    <div style="font-family: monospace; background: #07090e; padding: 12px; border-radius: 4px; color: var(--accent-green); text-align: center; border: 1px solid var(--border-color);">
-                        Pr = (Pt * G² * λ² * σ) / ((4 * pi)³ * R⁴)
-                    </div>
-                    A conversão logarítmica subsequente para dBm estabelece a assinatura real de detecção contra o ruído térmico de fundo do sistema receptor.
-                </p>
-            </div>
-        </details>
-    </div>
+            pdfjsLib.getDocument(pdfUrl).promise.then(pdfDoc_ => {
+                pdfDoc = pdfDoc_;
+                $('#total-pages-count').text(pdfDoc.numPages);
+                $('#input-page-num').attr('max', pdfDoc.numPages);
+                if (pageNum > pdfDoc.numPages) pageNum = 1;
+                renderPage(pageNum);
+            }).catch(err => {
+                alert('Erro na leitura do documento.');
+                $('#pdf-loader').hide();
+            });
+        }
 
-    
-<script>
-    function calcularFisica() {
-        const Pt_kW = parseFloat(document.getElementById("slider-pt").value);
-        const G_dBi = parseFloat(document.getElementById("slider-g").value);
-        const theta_deg = parseFloat(document.getElementById("slider-theta").value);
-        const f_GHz = parseFloat(document.getElementById("slider-f").value);
-        const rcs_dBsm = parseFloat(document.getElementById("slider-rcs").value);
-        const R_km = parseFloat(document.getElementById("slider-r").value);
+        $(document).ready(function() {
+            inicializarAcervo();
 
-        const c = 299792458; 
-        const Pt = Pt_kW * 1000; 
-        const G = Math.pow(10, G_dBi / 10); 
-        const f = f_GHz * 1e9; 
-        const lambda = c / f; 
-        const sigma = Math.pow(10, rcs_dBsm / 10); 
-        const R = R_km * 1000; 
+            // MODO DE VISUALIZAÇÃO
+            $('#btn-view-grid').on('click', function() {
+                $('.view-btn').removeClass('active');
+                $(this).addClass('active');
+                $('#painel-slots').removeClass('list-mode');
+            });
 
-        document.getElementById("val-pt").innerText = `${Pt_kW} kW`;
-        document.getElementById("val-g").innerText = `${G_dBi} dBi`;
-        document.getElementById("val-theta").innerText = `${theta_deg.toFixed(1)}°`;
-        document.getElementById("val-f").innerText = `${f_GHz.toFixed(1)} GHz`;
-        document.getElementById("val-rcs").innerText = `${sigma.toFixed(3)} m²`;
-        document.getElementById("val-r").innerText = `${R_km} km`;
+            $('#btn-view-list').on('click', function() {
+                $('.view-btn').removeClass('active');
+                $(this).addClass('active');
+                $('#painel-slots').addClass('list-mode');
+            });
 
-        const theta_rad = theta_deg * (Math.PI / 180);
-        const diametro_feixe_m = 2 * R * Math.tan(theta_rad / 2);
-        const S = (Pt * G) / (4 * Math.PI * Math.pow(R, 2));
-        const p_rad = ((2 * S) / c) * 1e6; 
-        const Pr = (Pt * Math.pow(G, 2) * Math.pow(lambda, 2) * sigma) / (Math.pow(4 * Math.PI, 3) * Math.pow(R, 4));
-        const Pr_dBm = 10 * Math.log10(Pr * 1000);
+            // PESQUISA EM TEMPO REAL
+            $('#search-input').on('input', function() {
+                const termo = $(this).val().toLowerCase().trim();
+                if (!termo) {
+                    renderizarSlots(listaDocumentosAtuais);
+                    return;
+                }
+                const filtrados = listaDocumentosAtuais.filter(doc => 
+                    doc.name.toLowerCase().includes(termo)
+                );
+                renderizarSlots(filtrados);
+            });
 
-        document.getElementById("res-footprint").innerText = (diametro_feixe_m / 1000).toFixed(2) + " km";
-        document.getElementById("res-poynting").innerText = S.toExponential(2) + " W/m²";
-        document.getElementById("res-pressao").innerText = p_rad.toFixed(6) + " µPa";
-        document.getElementById("res-pr-dbm").innerText = Pr_dBm.toFixed(2) + " dBm";
-    }
-    calcularFisica();
-</script>
+            // CONTROLES DE ZOOM
+            $('#btn-zoom-in').on('click', function() {
+                pdfScaleModifier += 0.15;
+                queueRenderPage(pageNum);
+            });
+
+            $('#btn-zoom-out').on('click', function() {
+                if (pdfScaleModifier <= 0.5) return;
+                pdfScaleModifier -= 0.15;
+                queueRenderPage(pageNum);
+            });
+
+            $('#btn-zoom-reset').on('click', function() {
+                pdfScaleModifier = 1.0;
+                queueRenderPage(pageNum);
+            });
+
+            // SALTO DIRETO DE PÁGINA
+            $('#input-page-num').on('change', function() {
+                let val = parseInt($(this).val());
+                if (isNaN(val) || val < 1) val = 1;
+                if (pdfDoc && val > pdfDoc.numPages) val = pdfDoc.numPages;
+                pageNum = val;
+                queueRenderPage(pageNum);
+            });
+
+            // NAVEGAÇÃO E TECLADO
+            $('#prev-page-btn').on('click', showPrevPage);
+            $('#next-page-btn').on('click', showNextPage);
+
+            $(document).on('keydown', function(e) {
+                if (!$('#modal-overlay').hasClass('active')) return;
+                if (e.keyCode === 37) showPrevPage();
+                if (e.keyCode === 39) showNextPage();
+                if (e.keyCode === 27) $('#close-modal').click();
+            });
+
+            $('#close-modal, #modal-overlay').on('click', function(e) {
+                if (e.target !== this && e.target.id !== 'close-modal' && $(e.target).parents('#close-modal').length === 0) return;
+                $('#modal-overlay').removeClass('active');
+                setTimeout(() => { 
+                    $('#modal-overlay').hide();
+                    if (currentRenderTask) {
+                        currentRenderTask.cancel();
+                        currentRenderTask = null;
+                    }
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    pdfDoc = null;
+                }, 200);
+            });
+        });
+    </script>
 </body>
 </html>
