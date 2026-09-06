@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LKS MILITAR - Tactical Library v3.5 Stealth</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;800&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600;800&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- MOTOR MATEMÁTICO KATEX PARA LIVROS DIGITAIS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -95,7 +99,6 @@
             letter-spacing: 1px;
         }
 
-        /* MENU SANFONA DE ALTA PRECISÃO */
         .menu-section { 
             padding: 12px 0; 
             overflow-y: auto; 
@@ -162,7 +165,6 @@
             border-left-color: var(--accent-glow);
         }
 
-        /* SUBMENU COM GUIA VETORIAL LINEAR */
         .sub-menu {
             display: none;
             background: #f8fafc;
@@ -446,7 +448,7 @@
 
         .slot-cover-img {
             width: 100%; height: 100%;
-            object-fit: cover; opacity: 0.85;
+            object-fit: cover; opacity: 0.9;
             transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
@@ -458,7 +460,7 @@
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             z-index: 2;
-            background: linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(248,250,252,0.1) 40%, rgba(255,255,255,0.95) 100%);
+            background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(248,250,252,0.1) 40%, rgba(255,255,255,0.95) 100%);
         }
 
         .slot-meta {
@@ -503,7 +505,7 @@
         .grid-acervo.list-mode .slot-meta { width: auto; gap: 15px; }
         .grid-acervo.list-mode .slot-footer { flex: 1; margin-left: 20px; }
 
-        /* MODAL E LEITOR STEALTH */
+        /* MODAL E LEITORES (PDF & E-BOOK TXT) */
         #modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -593,6 +595,78 @@
             transition: opacity 0.15s ease;
         }
 
+        /* ESTILIZAÇÃO DO E-READER ENGINE PARA TXT */
+        .reader-book-container {
+            width: 100%;
+            max-width: 900px;
+            height: 100%;
+            margin: 0 auto;
+            padding: 40px 60px;
+            background: #ffffff;
+            color: #1e293b;
+            font-family: 'Inter', Georgia, serif;
+            font-size: 15px;
+            line-height: 1.8;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+            border: 1px solid var(--border-hairline);
+        }
+
+        .reader-book-container h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 18px;
+            color: #0f172a;
+            border-bottom: 2px solid #10b981;
+            padding-bottom: 8px;
+            margin-top: 32px;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .reader-book-container h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            color: #059669;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+        }
+
+        .reader-book-container p {
+            margin-bottom: 16px;
+            text-align: justify;
+            hyphens: auto;
+        }
+
+        .reader-book-container blockquote {
+            border-left: 4px solid #10b981;
+            padding: 12px 16px;
+            margin: 20px 0;
+            color: #475569;
+            font-style: italic;
+            background: #f8fafc;
+        }
+
+        .reader-book-container ul {
+            margin-left: 24px;
+            margin-bottom: 16px;
+        }
+
+        .reader-book-container li {
+            margin-bottom: 6px;
+        }
+
+        .math-rendered {
+            display: block;
+            text-align: center;
+            margin: 20px 0;
+            padding: 10px;
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
         .nav-side-btn {
             position: absolute; top: 0; height: 100%; width: 60px;
             background: linear-gradient(90deg, rgba(241,245,249,0.8) 0%, transparent 100%);
@@ -658,7 +732,7 @@
     </div>
 
     <div id="main-view">
-        <header>
+        header>
             <div class="header-title-zone">
                 <div class="sys-status-tag">
                     <div class="dot"></div>
@@ -691,28 +765,29 @@
         <div class="modal-container">
             <div class="modal-header">
                 <div class="modal-title-zone">
-                    <i class="fa-solid fa-file-pdf"></i>
+                    <i class="fa-solid fa-file-pdf" id="modal-type-icon"></i>
                     <div class="modal-title" id="pdf-modal-title">DECODIFICANDO...</div>
                 </div>
 
                 <div class="modal-actions">
-                    <button class="modal-tool-btn" id="btn-zoom-out" title="Reduzir Zoom"><i class="fa-solid fa-minus"></i></button>
-                    <button class="modal-tool-btn" id="btn-zoom-in" title="Aumentar Zoom"><i class="fa-solid fa-plus"></i></button>
-                    <button class="modal-tool-btn" id="btn-zoom-reset" title="Ajustar à Tela"><i class="fa-solid fa-expand"></i></button>
+                    <button class="modal-tool-btn pdf-only-ctrl" id="btn-zoom-out" title="Reduzir Zoom"><i class="fa-solid fa-minus"></i></button>
+                    <button class="modal-tool-btn pdf-only-ctrl" id="btn-zoom-in" title="Aumentar Zoom"><i class="fa-solid fa-plus"></i></button>
+                    <button class="modal-tool-btn pdf-only-ctrl" id="btn-zoom-reset" title="Ajustar à Tela"><i class="fa-solid fa-expand"></i></button>
                     <button class="modal-close-btn" id="close-modal">&times;</button>
                 </div>
             </div>
             <div class="modal-body">
-                <button class="nav-side-btn prev" id="prev-page-btn"><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="nav-side-btn prev pdf-only-ctrl" id="prev-page-btn"><i class="fa-solid fa-chevron-left"></i></button>
                 <div id="pdf-loader">
                     <i class="fa-solid fa-spinner"></i>
-                    <span>PROCESSANDO PÁGINA...</span>
+                    <span id="loader-status-text">PROCESSANDO PÁGINA...</span>
                 </div>
                 <canvas id="pdf-canvas"></canvas>
-                <button class="nav-side-btn next" id="next-page-btn"><i class="fa-solid fa-chevron-right"></i></button>
+                <div id="digital-reader-body" style="width: 100%; height: 100%; display: none;"></div>
+                <button class="nav-side-btn next pdf-only-ctrl" id="next-page-btn"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
             <div class="modal-footer">
-                <div class="page-jumper">
+                <div class="page-jumper pdf-only-ctrl">
                     <span>PÁGINA</span>
                     <input type="number" id="input-page-num" class="page-input" value="1" min="1">
                     <span>DE <span id="total-pages-count">0</span></span>
@@ -725,6 +800,7 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
+        // AJUSTE DE ROTA REPOSITÓRIO GITHUB (CASE-SENSITIVE FIX)
         const GITHUB_USER = "LKSMILITAR";
         const GITHUB_REPO = "simuladores";
         const SUBPASTA   = "Files";
@@ -742,6 +818,71 @@
 
         const canvas = document.getElementById('pdf-canvas'),
               ctx = canvas.getContext('2d');
+
+        // FORMATADOR AUTOMÁTICO DE TÍTULOS DE DOCUMENTOS (REGEX)
+        function formatarTituloDocumento(nomeBruto) {
+            let titulo = nomeBruto.replace(/\.(pdf|txt)$/i, '');
+            titulo = titulo.replace(/[-_]\d+$/g, '');
+            titulo = titulo.replace(/[-_]+/g, ' ');
+            titulo = titulo.replace(/[^\w\sÀ-ÿ]/gi, ' ');
+            return titulo.trim().replace(/\s+/g, ' ').toUpperCase();
+        }
+
+        // PARSER DE TEXTO PARA LIVRO DIGITAL (E-READER ENGINE COM KATEX)
+        function processarTextoParaLivroDigital(textoBruto) {
+            let linhas = textoBruto.split(/\r?\n/);
+            let htmlResultado = '<div class="reader-book-container">';
+            let emLista = false;
+
+            linhas.forEach(linha => {
+                let linhaLimpa = linha.trim();
+
+                if (!linhaLimpa) {
+                    if (emLista) { htmlResultado += '</ul>'; emLista = false; }
+                    return;
+                }
+
+                // Detecta títulos principais em caixa alta
+                if (/^[A-Z0-9\s\-\.\:\,]{4,80}$/.test(linhaLimpa) && !linhaLimpa.startsWith('*') && !linhaLimpa.startsWith('e ')) {
+                    if (emLista) { htmlResultado += '</ul>'; emLista = false; }
+                    htmlResultado += `<h1>${linhaLimpa}</h1>`;
+                    return;
+                }
+
+                // Detecta subcabeçalhos
+                if (linhaLimpa.endsWith(':') && linhaLimpa.length < 60) {
+                    if (emLista) { htmlResultado += '</ul>'; emLista = false; }
+                    htmlResultado += `<h2>${linhaLimpa}</h2>`;
+                    return;
+                }
+
+                // Detecta itens de listas
+                if (/^[\*\-\bullet\e]\s+/.test(linhaLimpa) || /^\d+\.\s+/.test(linhaLimpa)) {
+                    if (!emLista) { htmlResultado += '<ul>'; emLista = true; }
+                    let itemTexto = linhaLimpa.replace(/^[\*\-\bullet\e]\s+/, '').replace(/^\d+\.\s+/, '');
+                    htmlResultado += `<li>${itemTexto}</li>`;
+                    return;
+                }
+
+                if (emLista) { htmlResultado += '</ul>'; emLista = false; }
+
+                // Renderiza equações LaTeX ($...$ ou $$...$$) via KaTeX se houver
+                let textoFormatado = linhaLimpa.replace(/\$\$(.*?)\$\$/g, function(match, equacao) {
+                    try {
+                        return `<span class="math-rendered">${katex.renderToString(equacao, { displayMode: true })}</span>`;
+                    } catch (e) {
+                        return match;
+                    }
+                });
+
+                htmlResultado += `<p>${textoFormatado}</p>`;
+            });
+
+            if (emLista) htmlResultado += '</ul>';
+            htmlResultado += '</div>';
+
+            return htmlResultado;
+        }
 
         async function inicializarAcervo() {
             const containerMenu = $('#container-menu');
@@ -775,7 +916,6 @@
         function renderizarMenuManifesto(estrutura) {
             const containerMenu = $('#container-menu');
             let primeiraSubcategoria = null;
-            let primeiroElemento = null;
 
             estrutura.forEach((grupo, gIndex) => {
                 const isFirstGroup = gIndex === 0;
@@ -902,8 +1042,10 @@
                     return;
                 }
 
-                const pdfs = arqs.filter(arq => arq.type === 'file' && arq.name.toLowerCase().endsWith('.pdf'));
-                $(`#${badgeId}`).text(pdfs.length);
+                const docsValidos = arqs.filter(arq => 
+                    arq.type === 'file' && (arq.name.toLowerCase().endsWith('.pdf') || arq.name.toLowerCase().endsWith('.txt'))
+                );
+                $(`#${badgeId}`).text(docsValidos.length);
             } catch (e) {
                 $(`#${badgeId}`).text('0');
             }
@@ -926,7 +1068,9 @@
                     return;
                 }
 
-                listaDocumentosAtuais = arquivos.filter(arq => arq.type === 'file' && arq.name.toLowerCase().endsWith('.pdf'));
+                listaDocumentosAtuais = arquivos.filter(arq => 
+                    arq.type === 'file' && (arq.name.toLowerCase().endsWith('.pdf') || arq.name.toLowerCase().endsWith('.txt'))
+                );
                 renderizarSlots(listaDocumentosAtuais);
 
             } catch (erro) {
@@ -935,6 +1079,7 @@
             }
         }
 
+        // MONTAGEM DE CARDS COM CAPA PADRÃO E HIGIENIZAÇÃO DE TÍTULO
         function renderizarSlots(documentos) {
             const painel = $('#painel-slots');
             painel.empty();
@@ -944,53 +1089,83 @@
                 return;
             }
 
-            documentos.forEach((pdf, index) => {
-                const nomeDocumento = pdf.name.replace('.pdf', '');
-                const slotId = `cover-canvas-${index}`;
-                
+            documentos.forEach((doc, index) => {
+                const eTxt = doc.name.toLowerCase().endsWith('.txt');
+                const nomeExibicao = formatarTituloDocumento(doc.name);
+                const imagemCapaPadrao = 'capa_padrao.png';
+                const iconeTipo = eTxt ? 'fa-file-lines' : 'fa-file-pdf';
+
                 const htmlSlot = `
-                    <div class="slot-container populated" onclick="abrirModalPdf('${pdf.download_url}', '${nomeDocumento}')">
-                        <div class="slot-cover-wrapper" id="wrapper-${slotId}">
-                            <i class="fa-solid fa-file-pdf" style="font-size: 28px; color: rgba(15, 23, 42, 0.15);"></i>
+                    <div class="slot-container populated" onclick="abrirDocumento('${doc.download_url}', '${nomeExibicao}', ${eTxt})">
+                        <div class="slot-cover-wrapper">
+                            <img src="${imagemCapaPadrao}" class="slot-cover-img" alt="Capa LKS MILITAR" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\"fa-solid ${iconeTipo}\" style=\"font-size: 28px; color: rgba(15, 23, 42, 0.15);\"></i>';">
                         </div>
                         <div class="slot-overlay-gradient"></div>
                         
                         <div class="slot-meta">
-                            <div class="slot-index">DOC_${String(index + 1).padStart(2, '0')}</div>
-                            <div class="slot-status-dot"></div>
+                            <div class="slot-index">${eTxt ? 'TXT' : 'PDF'}_${String(index + 1).padStart(2, '0')}</div>
+                            <div class="slot-status-dot" style="${eTxt ? 'background: #0284c7;' : ''}"></div>
                         </div>
                         
                         <div class="slot-footer">
-                            <div class="slot-title">${nomeDocumento}</div>
+                            <div class="slot-title">${nomeExibicao}</div>
                         </div>
                     </div>`;
                 painel.append(htmlSlot);
-
-                gerarMiniaturaCapa(pdf.download_url, `wrapper-${slotId}`);
             });
         }
 
-        async function gerarMiniaturaCapa(urlPdf, targetWrapperId) {
-            try {
-                const carregandoPdf = pdfjsLib.getDocument(urlPdf);
-                const pdf = await carregandoPdf.promise;
-                const pagina = await pdf.getPage(1);
+        // LEITOR UNIFICADO (PDF VETORIAL E E-BOOK TXT)
+        async function abrirDocumento(urlArquivo, tituloDoc, ehTxt) {
+            $('#pdf-modal-title').text(tituloDoc.toUpperCase());
+            $('#pdf-loader').css('display', 'flex');
+            
+            // Gerencia exibição de controles
+            $('.pdf-only-ctrl').toggle(!ehTxt);
+            $('#modal-type-icon').attr('class', ehTxt ? 'fa-solid fa-file-lines' : 'fa-solid fa-file-pdf');
 
-                const viewport = pagina.getViewport({ scale: 0.35 });
-                const canvasTemp = document.createElement('canvas');
-                const contextTemp = canvasTemp.getContext('2d');
-                canvasTemp.height = viewport.height;
-                canvasTemp.width = viewport.width;
+            $('#modal-overlay').show(0, function() {
+                $(this).addClass('active');
+            });
 
-                await pagina.render({ canvasContext: contextTemp, viewport: viewport }).promise;
-                
-                const imgUrl = canvasTemp.toDataURL('image/jpeg', 0.8);
-                const wrapper = document.getElementById(targetWrapperId);
-                if (wrapper) {
-                    wrapper.innerHTML = `<img src="${imgUrl}" class="slot-cover-img" alt="Capa">`;
+            if (ehTxt) {
+                $('#pdf-canvas').hide();
+                const $reader = $('#digital-reader-body');
+                $reader.show().html('<div style="color: #10b981; font-family: \'JetBrains Mono\'; padding: 20px;">PROCESSANDO LIVRO DIGITAL...</div>');
+
+                try {
+                    const resposta = await fetch(urlArquivo);
+                    const textoBruto = await resposta.text();
+                    
+                    const htmlLivro = processarTextoParaLivroDigital(textoBruto);
+                    $reader.html(htmlLivro);
+                    $('#doc-status-info').text('E-READER ENG. ATIVO');
+                } catch (e) {
+                    $reader.html('<div style="color: #ef4444; font-family: \'JetBrains Mono\'; padding: 20px;">ERRO AO CARREGAR O LIVRO DIGITAL.</div>');
+                } finally {
+                    $('#pdf-loader').hide();
                 }
-            } catch (e) {
-                console.warn("Capa indisponível para:", urlPdf);
+
+            } else {
+                $('#digital-reader-body').hide();
+                $('#pdf-canvas').show();
+                $('#doc-status-info').text('LEITOR VETORIAL ATIVO');
+                pdfScaleModifier = 1.0;
+
+                documentoAtualKey = btoa(tituloDoc).replace(/=/g, '');
+                const paginaSalva = parseInt(localStorage.getItem(`lks_page_${documentoAtualKey}`)) || 1;
+                pageNum = paginaSalva;
+
+                pdfjsLib.getDocument(urlArquivo).promise.then(pdfDoc_ => {
+                    pdfDoc = pdfDoc_;
+                    $('#total-pages-count').text(pdfDoc.numPages);
+                    $('#input-page-num').attr('max', pdfDoc.numPages);
+                    if (pageNum > pdfDoc.numPages) pageNum = 1;
+                    renderPage(pageNum);
+                }).catch(err => {
+                    alert('Erro na leitura do documento.');
+                    $('#pdf-loader').hide();
+                });
             }
         }
 
@@ -1074,33 +1249,6 @@
             queueRenderPage(pageNum);
         }
 
-        function abrirModalPdf(pdfUrl, pdfTitle) {
-            $('#pdf-modal-title').text(pdfTitle.toUpperCase());
-            $('#pdf-canvas').css('opacity', '0');
-            $('#pdf-loader').css('display', 'flex');
-            pdfScaleModifier = 1.0;
-            
-            documentoAtualKey = btoa(pdfTitle).replace(/=/g, '');
-
-            $('#modal-overlay').show(0, function() {
-                $(this).addClass('active');
-            });
-
-            const paginaSalva = parseInt(localStorage.getItem(`lks_page_${documentoAtualKey}`)) || 1;
-            pageNum = paginaSalva;
-
-            pdfjsLib.getDocument(pdfUrl).promise.then(pdfDoc_ => {
-                pdfDoc = pdfDoc_;
-                $('#total-pages-count').text(pdfDoc.numPages);
-                $('#input-page-num').attr('max', pdfDoc.numPages);
-                if (pageNum > pdfDoc.numPages) pageNum = 1;
-                renderPage(pageNum);
-            }).catch(err => {
-                alert('Erro na leitura do documento.');
-                $('#pdf-loader').hide();
-            });
-        }
-
         $(document).ready(function() {
             inicializarAcervo();
 
@@ -1162,8 +1310,8 @@
 
             $(document).on('keydown', function(e) {
                 if (!$('#modal-overlay').hasClass('active')) return;
-                if (e.keyCode === 37) showPrevPage();
-                if (e.keyCode === 39) showNextPage();
+                if (e.keyCode === 37 && $('.pdf-only-ctrl').is(':visible')) showPrevPage();
+                if (e.keyCode === 39 && $('.pdf-only-ctrl').is(':visible')) showNextPage();
                 if (e.keyCode === 27) $('#close-modal').click();
             });
 
