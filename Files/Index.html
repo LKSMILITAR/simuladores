@@ -1,1334 +1,568 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LKS MILITAR - Tactical Library v3.5 Stealth</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600;800&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <!-- MOTOR MATEMÁTICO KATEX PARA LIVROS DIGITAIS -->
+    <title>NWC TP 7207 - Computational Fluid Dynamics Capability for Internally Carried Store Separation</title>
+
+    <!-- Parser de Markdown (Marked) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- Motor de Renderização Matemática (KaTeX) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
     <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
 
     <style>
         :root {
-            --bg-main: #f8fafc;
-            --bg-sidebar: #ffffff;
-            --bg-card: #ffffff;
-            --bg-hover: #f1f5f9;
-            --border-hairline: rgba(15, 23, 42, 0.12);
-            --border-accent: #10b981;
-            --text-primary: #0f172a;
-            --text-muted: #64748b;
-            --accent-glow: #059669;
-            --accent-cyan: #0284c7;
-            --hud-corner: #10b981;
-            --glass-blur: blur(12px);
+            --tb-bg: #1e293b;
+            --tb-card: #0f172a;
+            --tb-border: #334155;
+            --tb-text: #f8fafc;
+            --tb-accent: #2563eb;
         }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-main);
-            color: var(--text-primary);
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            background-image: 
-                radial-gradient(circle at 90% 10%, rgba(16, 185, 129, 0.04) 0%, transparent 40%),
-                linear-gradient(rgba(15, 23, 42, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(15, 23, 42, 0.02) 1px, transparent 1px);
-            background-size: 100% 100%, 24px 24px, 24px 24px;
+            font-family: 'Times New Roman', Times, serif;
+            line-height: 1.6;
+            color: #111;
+            background-color: #fcfcfc;
+            margin: 0;
+            padding: 0;
         }
 
-        /* SIDEBAR STEALTH SLATE */
-        #sidebar {
-            width: 280px;
-            background: var(--bg-sidebar);
-            border-right: 1px solid var(--border-hairline);
-            display: flex;
-            flex-direction: column;
-            box-shadow: 4px 0 24px rgba(15, 23, 42, 0.03);
-            z-index: 100;
-        }
-
-        .sidebar-brand {
-            height: 70px;
-            display: flex;
-            align-items: center;
-            padding: 0 24px;
-            border-bottom: 1px solid var(--border-hairline);
-            background: #ffffff;
-            position: relative;
-        }
-
-        .sidebar-brand::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 24px;
-            width: 40px;
-            height: 2px;
-            background: var(--accent-glow);
-        }
-
-        .sidebar-brand i { 
-            font-size: 20px; 
-            color: var(--accent-glow); 
-            margin-right: 14px; 
-        }
-
-        .sidebar-brand-text .title {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 800;
-            font-size: 13px;
-            letter-spacing: 2px;
-            color: var(--text-primary);
-        }
-
-        .sidebar-brand-text .sub {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 9px;
-            color: var(--text-muted);
-            letter-spacing: 1px;
-        }
-
-        .menu-section { 
-            padding: 12px 0; 
-            overflow-y: auto; 
-            flex: 1; 
-        }
-
-        .menu-group {
-            margin-bottom: 2px;
-            position: relative;
-        }
-
-        .menu-parent {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 24px;
-            color: var(--text-primary);
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-            font-size: 11px;
-            font-weight: 700;
-            font-family: 'Orbitron', sans-serif;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            background: transparent;
-            border-left: 3px solid transparent;
-        }
-
-        .menu-parent:hover {
-            background: var(--bg-hover);
-            color: var(--accent-glow);
-            border-left-color: var(--accent-glow);
-        }
-
-        .menu-parent-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .menu-parent i.icon-main {
-            font-size: 13px;
-            color: var(--text-muted);
-            transition: color 0.2s ease;
-        }
-
-        .menu-parent:hover i.icon-main {
-            color: var(--accent-glow);
-        }
-
-        .menu-parent i.arrow-icon {
-            font-size: 10px;
-            color: var(--text-muted);
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .menu-group.open .menu-parent i.arrow-icon {
-            transform: rotate(180deg);
-            color: var(--accent-glow);
-        }
-
-        .menu-group.open .menu-parent {
-            background: #f1f5f9;
-            border-left-color: var(--accent-glow);
-        }
-
-        .sub-menu {
-            display: none;
-            background: #f8fafc;
-            padding: 6px 0;
-            position: relative;
-        }
-
-        .sub-menu::before {
-            content: '';
-            position: absolute;
+        /* BARRA SUPERIOR INTEGRADA (TOOLBAR) - Restrições de tamanho estritas */
+        .app-toolbar {
+            position: sticky;
             top: 0;
-            left: 31px;
-            width: 1px;
-            height: 100%;
-            background: var(--border-hairline);
-        }
-
-        .sub-menu-item {
+            z-index: 1000;
+            background-color: var(--tb-bg);
+            color: var(--tb-text);
+            padding: 8px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 9px 24px 9px 48px;
-            color: var(--text-muted);
-            text-decoration: none;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            font-size: 11px;
-            font-family: 'JetBrains Mono', monospace;
-            position: relative;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 0.85rem;
         }
 
-        .sub-menu-item::before {
-            content: '';
-            position: absolute;
-            left: 31px;
-            top: 50%;
-            width: 10px;
-            height: 1px;
-            background: var(--border-hairline);
-        }
-
-        .sub-menu-item:hover, .sub-menu-item.active {
-            color: var(--text-primary);
-            background: #ffffff;
-            font-weight: 600;
-        }
-
-        .sub-menu-item:hover::before, .sub-menu-item.active::before {
-            background: var(--accent-glow);
-        }
-
-        .sub-menu-item i {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-right: 8px;
-            transition: color 0.2s ease;
-        }
-
-        .sub-menu-item:hover i, .sub-menu-item.active i {
-            color: var(--accent-glow);
-        }
-
-        .sub-menu-item .badge-count {
-            font-size: 9px;
-            background: #e2e8f0;
-            color: var(--text-primary);
-            padding: 2px 6px;
-            border-radius: 2px;
-            font-weight: 700;
-        }
-
-        .sub-menu-item.active .badge-count {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--accent-glow);
-        }
-
-        /* ÁREA PRINCIPAL STEALTH */
-        #main-view {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            background: var(--bg-main);
-        }
-
-        header {
-            height: 70px;
+        .toolbar-group {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 0 32px;
-            border-bottom: 1px solid var(--border-hairline);
-            background: #ffffff;
-            gap: 20px;
-        }
-
-        .sys-status-tag {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            background: rgba(16, 185, 129, 0.08);
-            color: var(--accent-glow);
-            padding: 4px 10px;
-            border-radius: 2px;
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-weight: 600;
-        }
-
-        .sys-status-tag .dot { 
-            width: 6px; 
-            height: 6px; 
-            border-radius: 50%; 
-            background: var(--accent-glow); 
-            box-shadow: 0 0 6px var(--accent-glow); 
-        }
-
-        .header-controls {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex: 1;
-            justify-content: flex-end;
-        }
-
-        .search-wrapper {
-            position: relative;
-            width: 100%;
-            max-width: 360px;
-        }
-
-        .search-wrapper i {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            font-size: 12px;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 8px 14px 8px 38px;
-            background: #f8fafc;
-            border: 1px solid var(--border-hairline);
-            border-radius: 2px;
-            color: var(--text-primary);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
-            outline: none;
-            transition: all 0.2s ease;
-        }
-
-        .search-input:focus {
-            border-color: var(--accent-glow);
-            background: #ffffff;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-        }
-
-        .view-toggle-btns {
-            display: flex;
-            background: #f1f5f9;
-            border: 1px solid var(--border-hairline);
-            border-radius: 2px;
-            padding: 2px;
-        }
-
-        .view-btn {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            padding: 6px 12px;
-            cursor: pointer;
-            border-radius: 2px;
-            transition: all 0.2s ease;
-            font-size: 12px;
-        }
-
-        .view-btn.active {
-            background: #ffffff;
-            color: var(--accent-glow);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        .content-body {
-            flex: 1;
-            padding: 32px;
-            overflow-y: auto;
-        }
-
-        .category-header {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 18px;
-            font-weight: 800;
-            letter-spacing: 1.5px;
-            margin-bottom: 24px;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .category-header-title {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .category-header-title::after {
-            content: '';
-            width: 60px;
-            height: 2px;
-            background: var(--accent-glow);
-            display: inline-block;
-            margin-left: 10px;
-        }
-
-        /* GRID E CARDS STEALTH HUD */
-        .grid-acervo {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        .grid-acervo.list-mode {
-            display: flex;
-            flex-direction: column;
             gap: 10px;
         }
 
-        .slot-container {
-            position: relative;
-            background: #ffffff;
-            border: 1px solid var(--border-hairline);
-            aspect-ratio: 1 / 1.4;
-            padding: 14px;
+        /* CAMPO DE BUSCA COMPACTO (Tamanho travado para não quebrar a tela) */
+        .search-container {
             display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
-            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
-            overflow: hidden;
-        }
-
-        .slot-container::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 10px;
-            height: 10px;
-            background: var(--border-hairline);
-            transition: background 0.2s ease;
-        }
-
-        .slot-container.populated {
-            cursor: pointer;
-        }
-
-        .slot-container.populated:hover {
-            transform: translateY(-3px);
-            border-color: var(--accent-glow);
-            box-shadow: 0 12px 24px -6px rgba(15, 23, 42, 0.08);
-        }
-
-        .slot-container.populated:hover::after {
-            background: var(--accent-glow);
-        }
-
-        .slot-cover-wrapper {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 1;
-            display: flex;
-            justify-content: center;
             align-items: center;
-            background-color: #f8fafc;
-        }
-
-        .slot-cover-img {
-            width: 100%; height: 100%;
-            object-fit: cover; opacity: 0.9;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-        }
-
-        .slot-container.populated:hover .slot-cover-img {
-            opacity: 1; transform: scale(1.03);
-        }
-
-        .slot-overlay-gradient {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 2;
-            background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(248,250,252,0.1) 40%, rgba(255,255,255,0.95) 100%);
-        }
-
-        .slot-meta {
-            position: relative; z-index: 3;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-
-        .slot-index {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 9px; font-weight: 800; color: var(--accent-glow);
-            background: #ffffff; padding: 2px 6px;
-            border-radius: 2px; border: 1px solid var(--border-hairline);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-
-        .slot-status-dot {
-            width: 6px; height: 6px; border-radius: 50%;
-            background: var(--accent-glow);
-        }
-
-        .slot-footer { position: relative; z-index: 3; }
-
-        .slot-title {
-            font-family: 'Inter', sans-serif;
-            font-size: 11px; font-weight: 600; color: var(--text-primary);
-            line-height: 1.35; word-break: break-word;
-        }
-
-        /* MODO LISTA */
-        .grid-acervo.list-mode .slot-container {
-            aspect-ratio: auto;
-            height: 48px;
-            flex-direction: row;
-            align-items: center;
-            padding: 0 20px;
-            clip-path: none;
-        }
-
-        .grid-acervo.list-mode .slot-cover-wrapper,
-        .grid-acervo.list-mode .slot-overlay-gradient { display: none; }
-
-        .grid-acervo.list-mode .slot-meta { width: auto; gap: 15px; }
-        .grid-acervo.list-mode .slot-footer { flex: 1; margin-left: 20px; }
-
-        /* MODAL E LEITORES (PDF & E-BOOK TXT) */
-        #modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: var(--glass-blur);
-            -webkit-backdrop-filter: var(--glass-blur);
-            z-index: 1000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-
-        #modal-overlay.active { display: flex; opacity: 1; }
-
-        .modal-container {
-            width: 96%; max-width: 1100px; height: 94vh;
-            background: #ffffff;
-            border: 1px solid var(--border-hairline);
+            background-color: var(--tb-card);
+            border: 1px solid var(--tb-border);
             border-radius: 4px;
-            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
-            display: flex; flex-direction: column;
-            overflow: hidden;
-            transform: scale(0.98);
-            transition: transform 0.2s ease;
+            padding: 2px 8px;
+            width: 300px; /* Largura delimitada */
+            box-sizing: border-box;
         }
 
-        #modal-overlay.active .modal-container { transform: scale(1); }
-
-        .modal-header {
-            height: 55px;
-            background: #ffffff;
-            padding: 0 24px;
-            display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid var(--border-hairline);
-        }
-
-        .modal-title-zone {
-            display: flex; align-items: center; gap: 10px; max-width: 60vw;
-        }
-
-        .modal-title-zone i { color: var(--accent-glow); font-size: 14px; }
-
-        .modal-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 12px; letter-spacing: 1px;
-            color: var(--text-primary); font-weight: 700;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-
-        .modal-actions { display: flex; align-items: center; gap: 10px; }
-
-        .modal-tool-btn {
-            background: #f8fafc;
-            border: 1px solid var(--border-hairline);
-            color: var(--text-muted);
-            width: 32px; height: 32px;
-            border-radius: 2px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s ease; font-size: 12px;
-        }
-
-        .modal-tool-btn:hover {
-            color: var(--text-primary);
-            background: #f1f5f9;
-            border-color: var(--accent-glow);
-        }
-
-        .modal-close-btn {
-            background: none; border: none; color: var(--text-muted);
-            font-size: 22px; cursor: pointer; transition: color 0.2s ease;
-            margin-left: 10px;
-        }
-
-        .modal-close-btn:hover { color: #ef4444; }
-
-        .modal-body {
-            flex: 1; background: #f1f5f9;
-            display: flex; justify-content: center; align-items: center;
-            position: relative; overflow: auto; padding: 20px;
-        }
-
-        #pdf-canvas {
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            border-radius: 2px; background: #fff; display: block;
-            transition: opacity 0.15s ease;
-        }
-
-        /* ESTILIZAÇÃO DO E-READER ENGINE PARA TXT */
-        .reader-book-container {
+        .search-container input {
+            background: transparent;
+            border: none;
+            color: #fff;
+            padding: 4px;
+            font-size: 0.85rem;
             width: 100%;
-            max-width: 900px;
-            height: 100%;
-            margin: 0 auto;
-            padding: 40px 60px;
-            background: #ffffff;
-            color: #1e293b;
-            font-family: 'Inter', Georgia, serif;
-            font-size: 15px;
-            line-height: 1.8;
-            overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            outline: none;
+        }
+
+        .search-count {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            white-space: nowrap;
+            margin-left: 5px;
+        }
+
+        .btn-tb {
+            background-color: var(--tb-accent);
+            color: white;
+            border: none;
+            padding: 5px 12px;
             border-radius: 4px;
-            border: 1px solid var(--border-hairline);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: background 0.2s;
         }
 
-        .reader-book-container h1 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 18px;
-            color: #0f172a;
-            border-bottom: 2px solid #10b981;
-            padding-bottom: 8px;
-            margin-top: 32px;
-            margin-bottom: 16px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .btn-tb:hover {
+            background-color: #1d4ed8;
         }
 
-        .reader-book-container h2 {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 14px;
-            color: #059669;
-            margin-top: 24px;
-            margin-bottom: 12px;
-            text-transform: uppercase;
+        .btn-tb-secondary {
+            background-color: transparent;
+            border: 1px solid var(--tb-border);
+            color: #cbd5e1;
         }
 
-        .reader-book-container p {
-            margin-bottom: 16px;
-            text-align: justify;
-            hyphens: auto;
+        .btn-tb-secondary:hover {
+            background-color: rgba(255,255,255,0.05);
         }
 
-        .reader-book-container blockquote {
-            border-left: 4px solid #10b981;
-            padding: 12px 16px;
-            margin: 20px 0;
-            color: #475569;
-            font-style: italic;
-            background: #f8fafc;
+        /* PAINEL RETRÁTIL PARA CARREGAR TEXTO BRUTO (DRAWER) */
+        .drawer-panel {
+            display: none;
+            background-color: var(--tb-card);
+            border-bottom: 2px solid var(--tb-accent);
+            padding: 15px 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
-        .reader-book-container ul {
-            margin-left: 24px;
-            margin-bottom: 16px;
-        }
-
-        .reader-book-container li {
-            margin-bottom: 6px;
-        }
-
-        .math-rendered {
+        .drawer-panel.active {
             display: block;
-            text-align: center;
-            margin: 20px 0;
-            padding: 10px;
-            background: #f1f5f9;
+        }
+
+        .drawer-panel textarea {
+            width: 100%;
+            height: 120px;
+            max-height: 250px;
+            background-color: #1e293b;
+            color: #f8fafc;
+            border: 1px solid var(--tb-border);
             border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            box-sizing: border-box;
+            resize: vertical;
+            margin-bottom: 8px;
+            outline: none;
         }
 
-        .nav-side-btn {
-            position: absolute; top: 0; height: 100%; width: 60px;
-            background: linear-gradient(90deg, rgba(241,245,249,0.8) 0%, transparent 100%);
-            border: none; color: var(--text-muted);
-            font-size: 20px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s ease; z-index: 10;
+        /* ESTRUTURA DO DOCUMENTO */
+        .container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: #ffffff;
+            padding: 60px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            border: 1px solid #e1e1e1;
         }
 
-        .nav-side-btn.prev { left: 0; }
-        .nav-side-btn.next {
-            right: 0;
-            background: linear-gradient(-90deg, rgba(241,245,249,0.8) 0%, transparent 100%);
+        header {
+            text-align: center;
+            border-bottom: 2px solid #222;
+            padding-bottom: 30px;
+            margin-bottom: 40px;
         }
 
-        .nav-side-btn:hover {
-            color: var(--accent-glow);
-            background: rgba(16, 185, 129, 0.08);
-            font-size: 26px;
+        .doc-number {
+            font-size: 1.1em;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: #444;
         }
 
-        .modal-footer {
-            height: 45px; background: #ffffff;
-            border-top: 1px solid var(--border-hairline);
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 24px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px; color: var(--text-muted);
+        h1.doc-title {
+            font-size: 1.8em;
+            text-transform: uppercase;
+            margin: 20px 0;
+            line-height: 1.3;
         }
 
-        .page-jumper { display: flex; align-items: center; gap: 8px; }
-
-        .page-input {
-            width: 45px; background: #f8fafc;
-            border: 1px solid var(--border-hairline);
-            color: var(--accent-glow); font-weight: 700;
-            text-align: center; font-family: 'JetBrains Mono', monospace;
-            font-size: 11px; border-radius: 2px; padding: 2px 0; outline: none;
+        .authors, .affiliation {
+            font-size: 1.05em;
+            margin: 5px 0;
         }
 
-        #pdf-loader {
-            position: absolute; color: var(--accent-glow);
-            font-family: 'Orbitron', sans-serif; font-size: 11px;
-            letter-spacing: 1.5px; display: none;
-            flex-direction: column; align-items: center; gap: 12px; z-index: 20;
+        .date {
+            font-size: 0.95em;
+            font-style: italic;
+            margin-top: 15px;
+            color: #555;
         }
 
-        #pdf-loader i { font-size: 24px; animation: spin 1s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+        h1 {
+            font-size: 1.5em;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+            margin-top: 40px;
+            text-transform: uppercase;
+        }
+
+        h2 {
+            font-size: 1.25em;
+            margin-top: 30px;
+            text-transform: uppercase;
+            color: #222;
+        }
+
+        h3 {
+            font-size: 1.1em;
+            margin-top: 20px;
+            font-style: italic;
+        }
+
+        p {
+            text-align: justify;
+            text-indent: 2em;
+            margin: 12px 0;
+        }
+
+        p.no-indent {
+            text-indent: 0;
+        }
+
+        ul, ol {
+            margin: 12px 0 12px 2em;
+        }
+
+        li {
+            margin-bottom: 6px;
+            text-align: justify;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            font-size: 0.95em;
+        }
+
+        table, th, td {
+            border: 1px solid #888;
+        }
+
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .equation {
+            text-align: center;
+            margin: 18px 0;
+            font-family: 'Georgia', serif;
+            font-style: italic;
+        }
+
+        .cite-tag {
+            font-size: 0.8em;
+            color: #666;
+            vertical-align: super;
+        }
+
+        /* HIGHLIGHT DA BUSCA */
+        mark.search-highlight {
+            background-color: #fef08a;
+            color: #000;
+            padding: 1px 3px;
+            border-radius: 2px;
+        }
     </style>
 </head>
 <body>
 
-    <div id="sidebar">
-        <div class="sidebar-brand">
-            <i class="fa-solid fa-shield-halved"></i>
-            <div class="sidebar-brand-text">
-                <span class="title">LKS MILITAR</span>
-                <span class="sub">TAC_LIBRARY v3.5</span>
-            </div>
+    <!-- BARRA DE FERRAMENTAS SUPERIOR (INTEGRADA) -->
+    <div class="app-toolbar">
+        <div class="toolbar-group">
+            <button class="btn-tb btn-tb-secondary" onclick="toggleDrawer()">+ Carregar Texto Bruto</button>
         </div>
-        <div class="menu-section" id="container-menu"></div>
+
+        <div class="toolbar-group">
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Localizar no documento..." oninput="executarBusca()">
+                <span id="search-count" class="search-count"></span>
+            </div>
+            <button class="btn-tb btn-tb-secondary" onclick="navegarBusca(-1)">&lt;</button>
+            <button class="btn-tb btn-tb-secondary" onclick="navegarBusca(1)">&gt;</button>
+        </div>
     </div>
 
-    <div id="main-view">
-        header>
-            <div class="header-title-zone">
-                <div class="sys-status-tag">
-                    <div class="dot"></div>
-                    <span>SYS_ONLINE</span>
-                </div>
-            </div>
+    <!-- PAINEL RETRÁTIL PARA PROCESSAR NOVO TEXTO NA HORA -->
+    <div id="drawer-panel" class="drawer-panel">
+        <textarea id="raw-input-text" placeholder="Cole o texto bruto (com marcações ou equações $...$) aqui para renderizar nesta página..."></textarea>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-tb" onclick="processarTextoBruto()">Renderizar no Documento</button>
+            <button class="btn-tb btn-tb-secondary" onclick="toggleDrawer()">Cancelar</button>
+        </div>
+    </div>
 
-            <div class="header-controls">
-                <div class="search-wrapper">
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    <input type="text" id="search-input" class="search-input" placeholder="BUSCAR MANUAL TÁTICO...">
-                </div>
+    <!-- CONTEÚDO PRINCIPAL DO DOCUMENTO -->
+    <div id="document-content" class="container">
 
-                <div class="view-toggle-btns">
-                    <button class="view-btn active" id="btn-view-grid" title="Visão em Grade"><i class="fa-solid fa-border-all"></i></button>
-                    <button class="view-btn" id="btn-view-list" title="Visão em Lista"><i class="fa-solid fa-list"></i></button>
-                </div>
-            </div>
+        <header>
+            <div class="doc-number">NWC TP 7207 <span class="cite-tag">[span_0](start_span)[span_0](end_span)</span></div>
+            <h1 class="doc-title">Computational Fluid Dynamics Capability for Internally Carried Store Separation <span class="cite-tag">[span_1](start_span)[span_1](end_span)</span></h1>
+            <div class="authors">by <strong>Sukumar R. Chakravarthy</strong> and <strong>Kuo-Yen Szema</strong> <span class="cite-tag">[span_2](start_span)[span_2](end_span)</span></div>
+            <div class="affiliation">Computational Fluid Dynamics Department<br>Rockwell International Science Center <span class="cite-tag">[span_3](start_span)[span_3](end_span)</span></div>
+            <div class="affiliation">for Attack Weapons Department, Naval Weapons Center <span class="cite-tag">[span_4](start_span)[span_4](end_span)</span></div>
+            <div class="date">NAVAL WEAPONS CENTER, CHINA LAKE, CA 93555-6001 — DECEMBER 1991 <span class="cite-tag">[span_5](start_span)[span_5](end_span)</span></div>
         </header>
 
-        <div class="content-body">
-            <div class="category-header">
-                <div class="category-header-title" id="txt-categoria-atual">INICIALIZANDO...</div>
+        <section id="foreword">
+            <h2>Foreword <span class="cite-tag">[span_6](start_span)[span_6](end_span)</span></h2>
+            <p>This report documents a program having as its objective the conduct of an algorithm research and development effort that would result in the demonstrated capability to provide accurate numerical flowfield data for situations typical of weapon carriage and release from an internal weapon bay[span_7](start_span)[span_7](end_span). This research was sponsored by the Naval Weapons Center (NWC), China Lake, Calif[span_8](start_span)[span_8](end_span).</p>
+            <p>This work was performed by Rockwell International Science Center (RISC) under Contract No. N60530-90-C-0393 during the period from 26 September 1990 to 26 September 1991[span_9](start_span)[span_9](end_span). Technical direction was provided by Dr. Robert Burman of the Naval Weapons Center[span_10](start_span)[span_10](end_span). Funding for this effort was provided by the airframes technology portion of the Air Launched Weaponry Technology Block Program at the Naval Weapons Center under the sponsorship of the AAW/SSUW/SAT Division of the Office of Naval Technology (OCNR-213)[span_11](start_span)[span_11](end_span).</p>
+            <p>The principal investigators at RISC were Sukumar R. Chakravarthy and Kuo-Yen Szema[span_12](start_span)[span_12](end_span). Other personnel of the RISC Computational Fluid Dynamics Department supported the effort[span_13](start_span)[span_13](end_span).</p>
+            <p>In the interest of cost savings, the document prepared by RISC was used without change for this NWC technical publication[span_14](start_span)[span_14](end_span). Consequently, there are deviations from standard NWC style and format[span_15](start_span)[span_15](end_span).</p>
+            <p>The report was reviewed for technical accuracy at NWC by Dr. Burman[span_16](start_span)[span_16](end_span). It is released for information only[span_17](start_span)[span_17](end_span). The views and conclusions are those of the authors and should not be interpreted as representing the official policies, either expressed or implied, of the Naval Weapons Center[span_18](start_span)[span_18](end_span).</p>
+        </section>
+
+        <section id="contents">
+            <h2>Contents <span class="cite-tag">[span_19](start_span)[span_19](end_span)</span></h2>
+            <ul>
+                <li><strong>SECTION I — SYNOPSIS</strong> <span class="cite-tag">[span_20](start_span)[span_20](end_span)</span>
+                    <ul>
+                        <li>1.0 Introduction</li>
+                        <li>2.0 Summary</li>
+                        <li>3.0 Conclusions</li>
+                    </ul>
+                </li>
+                <li><strong>SECTION II — TECHNICAL DISCUSSION</strong> <span class="cite-tag">[span_21](start_span)[span_21](end_span)</span>
+                    <ul>
+                        <li>4.0 Numerical Framework for Universe-Series Codes</li>
+                        <li>5.0 Constitutive Equations</li>
+                        <li>6.0 Riemann Solvers</li>
+                        <li>7.0 Geometry Formulation Details</li>
+                        <li>8.0 Topology Treatment</li>
+                        <li>9.0 Grid Generation Methodology</li>
+                        <li>10.0 Store Tracking and Grid Adaptation</li>
+                        <li>11.0 Boundary Condition Procedures</li>
+                        <li>12.0 Software Architectural Issues</li>
+                        <li>13.0 Discussion of Options and Features</li>
+                        <li>14.0 Illustrative Examples</li>
+                        <li>15.0 References</li>
+                    </ul>
+                </li>
+            </ul>
+        </section>
+
+        <section id="section-1">
+            <h1>SECTION I — SYNOPSIS <span class="cite-tag">[span_22](start_span)[span_22](end_span)</span></h1>
+
+            <h2>1.0 Introduction <span class="cite-tag">[span_23](start_span)[span_23](end_span)</span></h2>
+            <p>The design of modern aerospace vehicle concepts increasingly requires the detailed understanding and synergistic use of ever more complex fluid phenomena[span_24](start_span)[span_24](end_span). Both industry and government view Computational Fluid Dynamics (CFD) as a critical, potentially efficient and cost-effective technology for the development of advanced aerospace configurations[span_25](start_span)[span_25](end_span). The overall technical problem in CFD is to devise reliable numerical approaches to simulate the complex fluid physics arising in flow about complex shapes/topologies[span_26](start_span)[span_26](end_span). Any approach to the solution of this problem must address the following issues: (a) appropriate modeling of the physics, (b) proper match between physics and numerics, (c) accuracy, (d) geometric flexibility, and (e) ease of use[span_27](start_span)[span_27](end_span). In today’s environment, these issues must also be treated in ways which are compatible and synergistic with both proven and emerging high-performance computer architectures[span_28](start_span)[span_28](end_span). The major thrust of the Science Center’s CFD program is to effect rapid but sustained strides in algorithm and code development to exploit the increasing power of supercomputers, super-minicomputers, parallel computers, and graphics workstations in order to systematically and continually improve the use of CFD in state-of-the-art design and analysis scenarios[span_29](start_span)[span_29](end_span).</p>
+
+            <p>In FY 90, we embarked on an ambitious plan to begin the development of the next generation of CFD codes and technology — the successors to the proven and successful USA-series (Unified Solution Algorithms) of codes that are currently in widespread use in Rockwell and in Government agencies[span_30](start_span)[span_30](end_span). The new generation is based on very significant developments in computational algorithms accomplished in past and present research and will also benefit from the considerable experience the CFD Department’s researchers have acquired in working with more than one hundred users throughout Rockwell and in other DoD agencies[span_31](start_span)[span_31](end_span).</p>
+
+            <p>In this endeavor, we looked forward to participate in Government-sponsored research programs which are particularly well matched with our quest for the next higher plateau in CFD capability[span_32](start_span)[span_32](end_span). The current contract (awarded September, 1990 by NWC to Rockwell International Science Center) fits that category extremely well[span_33](start_span)[span_33](end_span). The general objective of this program is to conduct an algorithm research and development effort that will result in the demonstrated capability to provide accurate numerical flowfield data for situations typical of weapon carriage and release from an internal weapon bay[span_34](start_span)[span_34](end_span). This program permits us to apply and specialize the very general algorithmic capability that we have developed to the challenging problem of computing the airloads and separation characteristics of internally carried weapons[span_35](start_span)[span_35](end_span). It will serve as a key demonstration of the flexibility of the new capability that we have built[span_36](start_span)[span_36](end_span). In turn, we hope to provide NWC with a very powerful new CFD capability that will serve them well for years to come[span_37](start_span)[span_37](end_span). During the first phase of the program, the goal is to demonstrate inviscid 3-D static and 2-D dynamic capability[span_38](start_span)[span_38](end_span). In the next phase, the focus will be on viscous static 3-D and inviscid dynamic 3-D capability[span_39](start_span)[span_39](end_span). The third phase deals with 3-D viscous and dynamic CFD analysis of a missile emerging from a weapon bay for which the missile trajectory is determined by integrating the CFD flowfield solver with a six degree-of-freedom trajectory algorithm[span_40](start_span)[span_40](end_span). This report presents work done during Phase I along with detailed reference material for the overall computational framework[span_41](start_span)[span_41](end_span).</p>
+
+            <h2>2.0 Summary <span class="cite-tag">[span_42](start_span)[span_42](end_span)</span></h2>
+            <p>During Phase I, the focus was on inviscid flows (2-D dynamic and 3-D static)[span_43](start_span)[span_43](end_span). A summary of progress for Phase I follows[span_44](start_span)[span_44](end_span):</p>
+            <ol>
+                <li>Three versions of a UNIVERSE-series flow solver were delivered to NWC[span_45](start_span)[span_45](end_span). The first is UNIV1 and is written entirely in Fortran[span_46](start_span)[span_46](end_span). The second is UNIVCF and includes sections in C which can be linked with the Fortran routines in UNIV1[span_47](start_span)[span_47](end_span). The third is UNIVC which is almost totally written in the C language[span_48](start_span)[span_48](end_span). It is expected that UNIVC will be the version to grow into Phase II[span_49](start_span)[span_49](end_span).</li>
+                <li>A 2-D unstructured grid generation software (TRIM2D) has been delivered to NWC[span_50](start_span)[span_50](end_span).</li>
+                <li>A 3-D unstructured grid generation software (TRIM3D) has been delivered to NWC[span_51](start_span)[span_51](end_span).</li>
+                <li>The UNIVC flow solver includes a built-in 2-D plotting capability that can display results on Tektronix terminals[span_52](start_span)[span_52](end_span). A pilot version of 3-D visualization software running on Silicon Graphics workstations has also been delivered[span_53](start_span)[span_53](end_span).</li>
+                <li>A 3-D static inviscid CFD flow field computation around an F-18 configuration with pylon, rack, and bombs has been demonstrated[span_54](start_span)[span_54](end_span).</li>
+                <li>The inviscid flowfield for a 3-D missile in a 3-D cavity has been completed[span_55](start_span)[span_55](end_span).</li>
+                <li>A store-tracking approach exploiting local grid adaptation has been developed[span_56](start_span)[span_56](end_span).</li>
+                <li>A 2-D case of a weapon in a bomb bay has been computed as a static case and the dynamic computation is in progress[span_57](start_span)[span_57](end_span).</li>
+                <li>Multiple unit problems were solved and documented in Section 14[span_58](start_span)[span_58](end_span).</li>
+                <li>Manuals and version description documents were delivered for UNIVC, TRIM3D, and TRIM2D[span_59](start_span)[span_59](end_span).</li>
+            </ol>
+
+            <h2>3.0 Conclusions <span class="cite-tag">[span_60](start_span)[span_60](end_span)</span></h2>
+            <p>Section II shows that a new CFD framework has been developed which is more accurate and versatile than the previous state of the art for solving fluid dynamics problems involving complex geometries and complex flow phenomena such as shock waves[span_61](start_span)[span_61](end_span). Key aspects include[span_62](start_span)[span_62](end_span):</p>
+            <ul>
+                <li>Automatic tetrahedral mesh generation for complex geometries (Space Shuttle, F-18, missile cavity)[span_63](start_span)[span_63](end_span).</li>
+                <li>Flexible spatial accuracy up to 6th order in 1-D and up to 4th order in 2-D and 3-D[span_64](start_span)[span_64](end_span).</li>
+                <li>Higher-order shape functions for accurate geometry representation matching solution order[span_65](start_span)[span_65](end_span).</li>
+                <li>Implementation of unrestricted Essentially Non-Oscillatory (ENO) interpolation schemes[span_66](start_span)[span_66](end_span).</li>
+                <li>Inclusion of exact and approximate Riemann Solvers (Godunov, Roe, Osher, Rusanov, Harten-Lax)[span_67](start_span)[span_67](end_span).</li>
+                <li>Unified solver capability for 1-D, 2-D, axisymmetric, and 3-D formulations within a single code architecture[span_68](start_span)[span_68](end_span).</li>
+                <li>Support for hexahedral, triangular prism, and tetrahedral conservation cells[span_69](start_span)[span_69](end_span).</li>
+            </ul>
+        </section>
+
+        <section id="section-2">
+            <h1>SECTION II — TECHNICAL DISCUSSION <span class="cite-tag">[span_70](start_span)[span_70](end_span)</span></h1>
+
+            <h2>4.0 Numerical Framework for UNIVERSE-Series Codes <span class="cite-tag">[span_71](start_span)[span_71](end_span)</span></h2>
+            <p>UNIVERSE denotes a Unification of Essentially Non-oscillatory Interpolation techniques with a geometrically VERSatile implementation[span_72](start_span)[span_72](end_span). The ENO interpolation facilitates the construction of numerical algorithms which can "capture" discontinuities such as shock waves and which are of arbitrarily high orders of accuracy[span_73](start_span)[span_73](end_span). UNIVERSE codes implement a truly multidimensional unrestricted version of ENO schemes that work with arbitrary cell shapes[span_74](start_span)[span_74](end_span).</p>
+
+            <h3>Integral Form of Conservation Laws <span class="cite-tag">[span_75](start_span)[span_75](end_span)</span></h3>
+            <p>The system of conservation laws is represented by[span_76](start_span)[span_76](end_span):</p>
+            <div class="equation">
+                $$\frac{\partial q}{\partial t} + \frac{\partial f_1}{\partial x} + \frac{\partial f_2}{\partial y} + \frac{\partial f_3}{\partial z} = 0$$ <span class="cite-tag">[span_77](start_span)[span_77](end_span)</span>
             </div>
-            <div class="grid-acervo" id="painel-slots"></div>
-        </div>
+            <p>Applying the Gauss divergence theorem over a volume $V$ with surface $S$ yields the integral form[span_78](start_span)[span_78](end_span):</p>
+            <div class="equation">
+                $$\frac{\partial}{\partial t}\left(\bar{q}V\right) + \iint_{S} \left(\mathbf{F} \cdot \mathbf{n}\right) dS = 0$$ <span class="cite-tag">[span_79](start_span)[span_79](end_span)</span>
+            </div>
+            <p>where $\bar{q}$ is the cell average value of the dependent variables, $\mathbf{F} = f_1 \mathbf{i} + f_2 \mathbf{j} + f_3 \mathbf{k}$, and $\mathbf{n}$ is the outward unit normal[span_80](start_span)[span_80](end_span).</p>
+
+            <h2>5.0 Constitutive Equations <span class="cite-tag">[span_81](start_span)[span_81](end_span)</span></h2>
+            <p>The code framework supports multiple constitutive model systems[span_82](start_span)[span_82](end_span):</p>
+            <ul>
+                <li><strong>Linear Wave Equation:</strong> $f_1 = aq, f_2 = bq, f_3 = cq$[span_83](start_span)[span_83](end_span).</li>
+                <li><strong>Inviscid Burgers' Equation:</strong> $f_1 = aq^2/2, f_2 = bq^2/2, f_3 = cq^2/2$[span_84](start_span)[span_84](end_span).</li>
+                <li><strong>Euler & Navier-Stokes Equations:</strong> Governing mass, momentum, and energy conservation for perfect gas flow[span_85](start_span)[span_85](end_span).</li>
+            </ul>
+
+            <h2>6.0 Riemann Solvers <span class="cite-tag">[span_86](start_span)[span_86](end_span)</span></h2>
+            <p>At every cell interface quadrature point, a local 1-D Riemann problem is solved along the cell boundary normal direction[span_87](start_span)[span_87](end_span). The solution provides exact or approximate flux evaluation ($F_R$) using left ($q_l$) and right ($q_r$) reconstructed states[span_88](start_span)[span_88](end_span). Built-in solvers include Godunov (exact), Roe (approximate linear), Osher (rarefaction-based), Rusanov, and Lax-Friedrichs schemes[span_89](start_span)[span_89](end_span).</p>
+
+            <h2>7.0 Geometry Formulation Details <span class="cite-tag">[span_90](start_span)[span_90](end_span)</span></h2>
+            <p>Geometry transformations maps local coordinates $(\xi, \eta, \zeta)$ to physical space $(x, y, z)$ via shape functions $N_i(\xi, \eta, \zeta)$[span_91](start_span)[span_91](end_span). Integrations over cell faces use 4-point Gaussian quadrature formulas for high spatial accuracy[span_92](start_span)[span_92](end_span).</p>
+
+            <h2>8.0 Topology Treatment <span class="cite-tag">[span_93](start_span)[span_93](end_span)</span></h2>
+            <p>Unstructured connectivity maintains data structures for node-aligned and surface-aligned cells[span_94](start_span)[span_94](end_span). Local cell division and link-removal procedures allow dynamic mesh editing when tracking moving objects[span_95](start_span)[span_95](end_span).</p>
+
+            <h2>9.0 Grid Generation Methodology <span class="cite-tag">[span_96](start_span)[span_96](end_span)</span></h2>
+            <p>Two automated grid generators are integrated[span_97](start_span)[span_97](end_span):</p>
+            <ul>
+                <li><strong>TRIM2D:</strong> 2-D Delaunay triangulation generator using an advancing front technique[span_98](start_span)[span_98](end_span).</li>
+                <li><strong>TRIM3D:</strong> 3-D advancing-front generator utilizing binary tree (heap-sort) face tracking and octree spatial data structures for efficient 3-D tetrahedral mesh creation[span_99](start_span)[span_99](end_span).</li>
+            </ul>
+
+            <h2>10.0 Store Tracking and Grid Adaptation <span class="cite-tag">[span_100](start_span)[span_100](end_span)</span></h2>
+            <p>Dynamic store separation is modeled by integrating unsteady fluid flow solver outputs with 6-DOF dynamic trajectory equations[span_101](start_span)[span_101](end_span). Mesh movement uses spring-analogy smoothing combined with localized cell division/addition and link removal[span_102](start_span)[span_102](end_span).</p>
+
+            <h2>11.0 Boundary Condition Procedures <span class="cite-tag">[span_103](start_span)[span_103](end_span)</span></h2>
+            <p>Boundary conditions are applied by setting local characteristic conditions or ghost-cell values mapped to boundary surface patch nodes[span_104](start_span)[span_104](end_span).</p>
+
+            <h2>12.0 Software Architectural Issues <span class="cite-tag">[span_105](start_span)[span_105](end_span)</span></h2>
+            <p>UNIVC is constructed in ANSI C to leverage dynamic memory allocation, flexible data structures, clean modularity, recursive search structures, and portable sockets/RPC graphics integration across UNIX supercomputers and graphics workstations[span_106](start_span)[span_106](end_span).</p>
+
+            <h2>13.0 Discussion of Options and Features <span class="cite-tag">[span_107](start_span)[span_107](end_span)</span></h2>
+            <p>Features include selectable spatial/temporal accuracy order, optional saving of least-squares polynomial constructors, flux masks for dimensional reduction, and built-in 2-D/3-D plotting drivers[span_108](start_span)[span_108](end_span).</p>
+
+            <h2>14.0 Illustrative Examples <span class="cite-tag">[span_109](start_span)[span_109](end_span)</span></h2>
+            <p>Validation cases documented in the report include 1-D linear/nonlinear wave propagation, Ringleb flow accuracy studies, subsonic/hypersonic cylinder flows, axisymmetric sphere-cylinder flow, 2-D store release, full 3-D F-18 aircraft with store pylons, and 3-D Space Shuttle Orbiter/ET/SRB multibody flow simulations[span_110](start_span)[span_110](end_span).</p>
+
+            <h2>15.0 References <span class="cite-tag">[span_111](start_span)[span_111](end_span)</span></h2>
+            <p class="no-indent">Contains 42 primary citations on ENO schemes, Riemann solvers, unstructured grid generation, and CFD trajectory algorithms[span_112](start_span)[span_112](end_span).</p>
+        </section>
+
     </div>
 
-    <div id="modal-overlay">
-        <div class="modal-container">
-            <div class="modal-header">
-                <div class="modal-title-zone">
-                    <i class="fa-solid fa-file-pdf" id="modal-type-icon"></i>
-                    <div class="modal-title" id="pdf-modal-title">DECODIFICANDO...</div>
-                </div>
-
-                <div class="modal-actions">
-                    <button class="modal-tool-btn pdf-only-ctrl" id="btn-zoom-out" title="Reduzir Zoom"><i class="fa-solid fa-minus"></i></button>
-                    <button class="modal-tool-btn pdf-only-ctrl" id="btn-zoom-in" title="Aumentar Zoom"><i class="fa-solid fa-plus"></i></button>
-                    <button class="modal-tool-btn pdf-only-ctrl" id="btn-zoom-reset" title="Ajustar à Tela"><i class="fa-solid fa-expand"></i></button>
-                    <button class="modal-close-btn" id="close-modal">&times;</button>
-                </div>
-            </div>
-            <div class="modal-body">
-                <button class="nav-side-btn prev pdf-only-ctrl" id="prev-page-btn"><i class="fa-solid fa-chevron-left"></i></button>
-                <div id="pdf-loader">
-                    <i class="fa-solid fa-spinner"></i>
-                    <span id="loader-status-text">PROCESSANDO PÁGINA...</span>
-                </div>
-                <canvas id="pdf-canvas"></canvas>
-                <div id="digital-reader-body" style="width: 100%; height: 100%; display: none;"></div>
-                <button class="nav-side-btn next pdf-only-ctrl" id="next-page-btn"><i class="fa-solid fa-chevron-right"></i></button>
-            </div>
-            <div class="modal-footer">
-                <div class="page-jumper pdf-only-ctrl">
-                    <span>PÁGINA</span>
-                    <input type="number" id="input-page-num" class="page-input" value="1" min="1">
-                    <span>DE <span id="total-pages-count">0</span></span>
-                </div>
-                <div id="doc-status-info">LEITOR VETORIAL ATIVO</div>
-            </div>
-        </div>
-    </div>
-
+    <!-- SCRIPTS INTEGRADOS DE PROCESSAMENTO E INTERAÇÃO -->
     <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-
-        // AJUSTE DE ROTA REPOSITÓRIO GITHUB (CASE-SENSITIVE FIX)
-        const GITHUB_USER = "LKSMILITAR";
-        const GITHUB_REPO = "simuladores";
-        const SUBPASTA   = "Files";
-
-        const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${SUBPASTA}`;
-
-        let pdfDoc = null,
-            pageNum = 1,
-            pdfScaleModifier = 1.0,
-            pageIsRendering = false,
-            pageNumPending = null,
-            currentRenderTask = null,
-            listaDocumentosAtuais = [],
-            documentoAtualKey = '';
-
-        const canvas = document.getElementById('pdf-canvas'),
-              ctx = canvas.getContext('2d');
-
-        // FORMATADOR AUTOMÁTICO DE TÍTULOS DE DOCUMENTOS (REGEX)
-        function formatarTituloDocumento(nomeBruto) {
-            let titulo = nomeBruto.replace(/\.(pdf|txt)$/i, '');
-            titulo = titulo.replace(/[-_]\d+$/g, '');
-            titulo = titulo.replace(/[-_]+/g, ' ');
-            titulo = titulo.replace(/[^\w\sÀ-ÿ]/gi, ' ');
-            return titulo.trim().replace(/\s+/g, ' ').toUpperCase();
-        }
-
-        // PARSER DE TEXTO PARA LIVRO DIGITAL (E-READER ENGINE COM KATEX)
-        function processarTextoParaLivroDigital(textoBruto) {
-            let linhas = textoBruto.split(/\r?\n/);
-            let htmlResultado = '<div class="reader-book-container">';
-            let emLista = false;
-
-            linhas.forEach(linha => {
-                let linhaLimpa = linha.trim();
-
-                if (!linhaLimpa) {
-                    if (emLista) { htmlResultado += '</ul>'; emLista = false; }
-                    return;
-                }
-
-                // Detecta títulos principais em caixa alta
-                if (/^[A-Z0-9\s\-\.\:\,]{4,80}$/.test(linhaLimpa) && !linhaLimpa.startsWith('*') && !linhaLimpa.startsWith('e ')) {
-                    if (emLista) { htmlResultado += '</ul>'; emLista = false; }
-                    htmlResultado += `<h1>${linhaLimpa}</h1>`;
-                    return;
-                }
-
-                // Detecta subcabeçalhos
-                if (linhaLimpa.endsWith(':') && linhaLimpa.length < 60) {
-                    if (emLista) { htmlResultado += '</ul>'; emLista = false; }
-                    htmlResultado += `<h2>${linhaLimpa}</h2>`;
-                    return;
-                }
-
-                // Detecta itens de listas
-                if (/^[\*\-\bullet\e]\s+/.test(linhaLimpa) || /^\d+\.\s+/.test(linhaLimpa)) {
-                    if (!emLista) { htmlResultado += '<ul>'; emLista = true; }
-                    let itemTexto = linhaLimpa.replace(/^[\*\-\bullet\e]\s+/, '').replace(/^\d+\.\s+/, '');
-                    htmlResultado += `<li>${itemTexto}</li>`;
-                    return;
-                }
-
-                if (emLista) { htmlResultado += '</ul>'; emLista = false; }
-
-                // Renderiza equações LaTeX ($...$ ou $$...$$) via KaTeX se houver
-                let textoFormatado = linhaLimpa.replace(/\$\$(.*?)\$\$/g, function(match, equacao) {
-                    try {
-                        return `<span class="math-rendered">${katex.renderToString(equacao, { displayMode: true })}</span>`;
-                    } catch (e) {
-                        return match;
-                    }
-                });
-
-                htmlResultado += `<p>${textoFormatado}</p>`;
-            });
-
-            if (emLista) htmlResultado += '</ul>';
-            htmlResultado += '</div>';
-
-            return htmlResultado;
-        }
-
-        async function inicializarAcervo() {
-            const containerMenu = $('#container-menu');
-            containerMenu.empty();
-
-            const urlManifesto = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${SUBPASTA}/catalog.json`;
-
-            try {
-                let manifesto = null;
-                try {
-                    const respManifesto = await fetch(urlManifesto);
-                    if (respManifesto.ok) {
-                        manifesto = await respManifesto.json();
-                    }
-                } catch (e) {
-                    console.warn("Manifesto catalog.json não localizado. Executando varredura dinâmica.");
-                }
-
-                if (manifesto && manifesto.structure) {
-                    renderizarMenuManifesto(manifesto.structure);
-                } else {
-                    await renderizarMenuFallback();
-                }
-
-            } catch (erro) {
-                console.error("Erro na inicialização do acervo:", erro);
-                $('#txt-categoria-atual').text("ERRO AO CARREGAR REPOSITÓRIO");
-            }
-        }
-
-        function renderizarMenuManifesto(estrutura) {
-            const containerMenu = $('#container-menu');
-            let primeiraSubcategoria = null;
-
-            estrutura.forEach((grupo, gIndex) => {
-                const isFirstGroup = gIndex === 0;
-                const groupId = `grp-${grupo.id}`;
-                const subMenuId = `sub-${grupo.id}`;
-
-                let htmlSubitens = '';
-                grupo.subcategories.forEach(sub => {
-                    if (!primeiraSubcategoria) primeiraSubcategoria = sub.slug;
-
-                    const badgeId = `badge-${sub.slug.replace(/[^a-zA-Z0-9]/g, '_')}`;
-                    htmlSubitens += `
-                        <div class="sub-menu-item" data-slug="${sub.slug}" onclick="selecionarSubcategoria('${sub.slug}', this)">
-                            <div class="menu-item-info">
-                                <i class="fa-solid ${sub.icon || 'fa-folder-open'}"></i>
-                                <span>${sub.title}</span>
-                            </div>
-                            <span class="badge-count" id="${badgeId}">...</span>
-                        </div>`;
-
-                    atualizarContadorDocs(sub.slug, badgeId);
-                });
-
-                const htmlGrupo = `
-                    <div class="menu-group ${isFirstGroup ? 'open' : ''}" id="${groupId}">
-                        <div class="menu-parent" onclick="alternarGrupo('${groupId}', '${subMenuId}')">
-                            <div class="menu-parent-info">
-                                <i class="fa-solid ${grupo.icon || 'fa-layer-group'} icon-main"></i>
-                                <span>${grupo.title}</span>
-                            </div>
-                            <i class="fa-solid fa-chevron-down arrow-icon"></i>
-                        </div>
-                        <div class="sub-menu" id="${subMenuId}" style="${isFirstGroup ? 'display: block;' : 'display: none;'}">
-                            ${htmlSubitens}
-                        </div>
-                    </div>`;
-
-                containerMenu.append(htmlGrupo);
-            });
-
-            const primeiroItem = $('.sub-menu-item').first();
-            if (primeiroItem.length && primeiraSubcategoria) {
-                primeiroItem.addClass('active');
-                carregarPasta(primeiraSubcategoria, primeiroItem);
-            }
-        }
-
-        async function renderizarMenuFallback() {
-            const containerMenu = $('#container-menu');
-            const resp = await fetch(API_URL);
-            const dados = await resp.json();
-            const pastas = dados.filter(item => item.type === 'dir');
-
-            if (!Array.isArray(pastas) || pastas.length === 0) {
-                $('#txt-categoria-atual').text("NENHUMA PASTA LOCALIZADA");
-                return;
-            }
-
-            let htmlSubitens = '';
-            let primeiraPasta = pastas[0].name;
-
-            pastas.forEach(pasta => {
-                const badgeId = `badge-${pasta.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
-                const nomeLimpo = pasta.name.replace(/^\d+[_-\s]*/, '').replace(/_/g, ' ').toUpperCase();
-
-                htmlSubitens += `
-                    <div class="sub-menu-item" data-slug="${pasta.name}" onclick="selecionarSubcategoria('${pasta.name}', this)">
-                        <div class="menu-item-info">
-                            <i class="fa-solid fa-folder-closed"></i>
-                            <span>${nomeLimpo}</span>
-                        </div>
-                        <span class="badge-count" id="${badgeId}">...</span>
-                    </div>`;
-
-                atualizarContadorDocs(pasta.name, badgeId);
-            });
-
-            const htmlGrupoUnico = `
-                <div class="menu-group open" id="grp-fallback">
-                    <div class="menu-parent" onclick="alternarGrupo('grp-fallback', 'sub-fallback')">
-                        <div class="menu-parent-info">
-                            <i class="fa-solid fa-database icon-main"></i>
-                            <span>DADOS DO REPOSITÓRIO</span>
-                        </div>
-                        <i class="fa-solid fa-chevron-down arrow-icon"></i>
-                    </div>
-                    <div class="sub-menu" id="sub-fallback" style="display: block;">
-                        ${htmlSubitens}
-                    </div>
-                </div>`;
-
-            containerMenu.append(htmlGrupoUnico);
-
-            const primeiroItem = $('.sub-menu-item').first();
-            if (primeiroItem.length) {
-                primeiroItem.addClass('active');
-                carregarPasta(primeiraPasta, primeiroItem);
-            }
-        }
-
-        function alternarGrupo(groupId, subMenuId) {
-            const $grupo = $(`#${groupId}`);
-            const $subMenu = $(`#${subMenuId}`);
-
-            $('.menu-group').not($grupo).removeClass('open').find('.sub-menu').slideUp(180);
-
-            $grupo.toggleClass('open');
-            $subMenu.slideToggle(180);
-        }
-
-        function selecionarSubcategoria(slugPasta, elemento) {
-            $('.sub-menu-item').removeClass('active');
-            $(elemento).addClass('active');
-            carregarPasta(slugPasta, elemento);
-        }
-
-        async function atualizarContadorDocs(nomePasta, badgeId) {
-            try {
-                const resp = await fetch(`${API_URL}/${encodeURIComponent(nomePasta)}`);
-                const arqs = await resp.json();
-
-                if (!Array.isArray(arqs)) {
-                    $(`#${badgeId}`).text('0');
-                    return;
-                }
-
-                const docsValidos = arqs.filter(arq => 
-                    arq.type === 'file' && (arq.name.toLowerCase().endsWith('.pdf') || arq.name.toLowerCase().endsWith('.txt'))
-                );
-                $(`#${badgeId}`).text(docsValidos.length);
-            } catch (e) {
-                $(`#${badgeId}`).text('0');
-            }
-        }
-
-        async function carregarPasta(nomePasta, elemento) {
-            const tituloFormatado = nomePasta.replace(/^\d+[_-\s]*/, '').replace(/_/g, ' ').toUpperCase();
-            $('#txt-categoria-atual').text(tituloFormatado);
-            $('#search-input').val('');
-
-            const painel = $('#painel-slots');
-            painel.html('<div style="color: #64748b; font-family: \'JetBrains Mono\'; font-size: 12px;">VARRENDO DIRETÓRIO...</div>');
-
-            try {
-                const resposta = await fetch(`${API_URL}/${encodeURIComponent(nomePasta)}`);
-                const arquivos = await resposta.json();
-
-                if (!Array.isArray(arquivos)) {
-                    painel.html('<div style="color: #ef4444; font-family: \'JetBrains Mono\'; font-size: 12px;">FALHA NO MAPEAMENTO DA CATEGORIA.</div>');
-                    return;
-                }
-
-                listaDocumentosAtuais = arquivos.filter(arq => 
-                    arq.type === 'file' && (arq.name.toLowerCase().endsWith('.pdf') || arq.name.toLowerCase().endsWith('.txt'))
-                );
-                renderizarSlots(listaDocumentosAtuais);
-
-            } catch (erro) {
-                console.error("Erro ao carregar arquivos:", erro);
-                painel.html('<div style="color: #ef4444; font-family: \'JetBrains Mono\'; font-size: 12px;">FALHA NO MAPEAMENTO DA CATEGORIA.</div>');
-            }
-        }
-
-        // MONTAGEM DE CARDS COM CAPA PADRÃO E HIGIENIZAÇÃO DE TÍTULO
-        function renderizarSlots(documentos) {
-            const painel = $('#painel-slots');
-            painel.empty();
-
-            if (documentos.length === 0) {
-                painel.html('<div style="color: #64748b; font-family: \'JetBrains Mono\'; font-size: 12px;">NENHUM DOCUMENTO LOCALIZADO.</div>');
-                return;
-            }
-
-            documentos.forEach((doc, index) => {
-                const eTxt = doc.name.toLowerCase().endsWith('.txt');
-                const nomeExibicao = formatarTituloDocumento(doc.name);
-                const imagemCapaPadrao = 'capa_padrao.png';
-                const iconeTipo = eTxt ? 'fa-file-lines' : 'fa-file-pdf';
-
-                const htmlSlot = `
-                    <div class="slot-container populated" onclick="abrirDocumento('${doc.download_url}', '${nomeExibicao}', ${eTxt})">
-                        <div class="slot-cover-wrapper">
-                            <img src="${imagemCapaPadrao}" class="slot-cover-img" alt="Capa LKS MILITAR" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\"fa-solid ${iconeTipo}\" style=\"font-size: 28px; color: rgba(15, 23, 42, 0.15);\"></i>';">
-                        </div>
-                        <div class="slot-overlay-gradient"></div>
-                        
-                        <div class="slot-meta">
-                            <div class="slot-index">${eTxt ? 'TXT' : 'PDF'}_${String(index + 1).padStart(2, '0')}</div>
-                            <div class="slot-status-dot" style="${eTxt ? 'background: #0284c7;' : ''}"></div>
-                        </div>
-                        
-                        <div class="slot-footer">
-                            <div class="slot-title">${nomeExibicao}</div>
-                        </div>
-                    </div>`;
-                painel.append(htmlSlot);
-            });
-        }
-
-        // LEITOR UNIFICADO (PDF VETORIAL E E-BOOK TXT)
-        async function abrirDocumento(urlArquivo, tituloDoc, ehTxt) {
-            $('#pdf-modal-title').text(tituloDoc.toUpperCase());
-            $('#pdf-loader').css('display', 'flex');
-            
-            // Gerencia exibição de controles
-            $('.pdf-only-ctrl').toggle(!ehTxt);
-            $('#modal-type-icon').attr('class', ehTxt ? 'fa-solid fa-file-lines' : 'fa-solid fa-file-pdf');
-
-            $('#modal-overlay').show(0, function() {
-                $(this).addClass('active');
-            });
-
-            if (ehTxt) {
-                $('#pdf-canvas').hide();
-                const $reader = $('#digital-reader-body');
-                $reader.show().html('<div style="color: #10b981; font-family: \'JetBrains Mono\'; padding: 20px;">PROCESSANDO LIVRO DIGITAL...</div>');
-
-                try {
-                    const resposta = await fetch(urlArquivo);
-                    const textoBruto = await resposta.text();
-                    
-                    const htmlLivro = processarTextoParaLivroDigital(textoBruto);
-                    $reader.html(htmlLivro);
-                    $('#doc-status-info').text('E-READER ENG. ATIVO');
-                } catch (e) {
-                    $reader.html('<div style="color: #ef4444; font-family: \'JetBrains Mono\'; padding: 20px;">ERRO AO CARREGAR O LIVRO DIGITAL.</div>');
-                } finally {
-                    $('#pdf-loader').hide();
-                }
-
-            } else {
-                $('#digital-reader-body').hide();
-                $('#pdf-canvas').show();
-                $('#doc-status-info').text('LEITOR VETORIAL ATIVO');
-                pdfScaleModifier = 1.0;
-
-                documentoAtualKey = btoa(tituloDoc).replace(/=/g, '');
-                const paginaSalva = parseInt(localStorage.getItem(`lks_page_${documentoAtualKey}`)) || 1;
-                pageNum = paginaSalva;
-
-                pdfjsLib.getDocument(urlArquivo).promise.then(pdfDoc_ => {
-                    pdfDoc = pdfDoc_;
-                    $('#total-pages-count').text(pdfDoc.numPages);
-                    $('#input-page-num').attr('max', pdfDoc.numPages);
-                    if (pageNum > pdfDoc.numPages) pageNum = 1;
-                    renderPage(pageNum);
-                }).catch(err => {
-                    alert('Erro na leitura do documento.');
-                    $('#pdf-loader').hide();
-                });
-            }
-        }
-
-        function renderPage(num) {
-            pageIsRendering = true;
-            $('#input-page-num').val(num);
-
-            if (documentoAtualKey) {
-                localStorage.setItem(`lks_page_${documentoAtualKey}`, num);
-            }
-
-            if (currentRenderTask) {
-                currentRenderTask.cancel();
-                currentRenderTask = null;
-            }
-
-            pdfDoc.getPage(num).then(page => {
-                const containerWidth = $('.modal-body').width() - 40;
-                const unscaledViewport = page.getViewport({ scale: 1.0 });
-                const calculatedScale = Math.min(containerWidth / unscaledViewport.width, 1.6);
-
-                const dpr = window.devicePixelRatio || 1;
-                const baseScale = Math.max(calculatedScale, 0.8) * pdfScaleModifier;
-                const viewport = page.getViewport({ scale: baseScale });
-
-                canvas.width = Math.floor(viewport.width * dpr);
-                canvas.height = Math.floor(viewport.height * dpr);
-
-                canvas.style.width = Math.floor(viewport.width) + 'px';
-                canvas.style.height = Math.floor(viewport.height) + 'px';
-
-                ctx.save();
-                ctx.scale(dpr, dpr);
-
-                const renderContext = {
-                    canvasContext: ctx,
-                    viewport: viewport
-                };
-
-                currentRenderTask = page.render(renderContext);
-
-                currentRenderTask.promise.then(() => {
-                    ctx.restore();
-                    pageIsRendering = false;
-                    currentRenderTask = null;
-
-                    $('#pdf-loader').hide();
-                    $('#pdf-canvas').css('opacity', '1');
-
-                    if (pageNumPending !== null) {
-                        renderPage(pageNumPending);
-                        pageNumPending = null;
-                    }
-                }).catch(err => {
-                    ctx.restore();
-                    if (err.name !== 'RenderingCancelledException') {
-                        console.error("Erro na renderização:", err);
-                    }
-                });
-            });
-        }
-
-        function queueRenderPage(num) {
-            if (pageIsRendering) {
-                pageNumPending = num;
-            } else {
-                $('#pdf-canvas').css('opacity', '0.3');
-                renderPage(num);
-            }
-        }
-
-        function showPrevPage() {
-            if (pageNum <= 1) return;
-            pageNum--;
-            queueRenderPage(pageNum);
-        }
-
-        function showNextPage() {
-            if (!pdfDoc || pageNum >= pdfDoc.numPages) return;
-            pageNum++;
-            queueRenderPage(pageNum);
-        }
-
-        $(document).ready(function() {
-            inicializarAcervo();
-
-            // MODO DE VISUALIZAÇÃO
-            $('#btn-view-grid').on('click', function() {
-                $('.view-btn').removeClass('active');
-                $(this).addClass('active');
-                $('#painel-slots').removeClass('list-mode');
-            });
-
-            $('#btn-view-list').on('click', function() {
-                $('.view-btn').removeClass('active');
-                $(this).addClass('active');
-                $('#painel-slots').addClass('list-mode');
-            });
-
-            // PESQUISA EM TEMPO REAL
-            $('#search-input').on('input', function() {
-                const termo = $(this).val().toLowerCase().trim();
-                if (!termo) {
-                    renderizarSlots(listaDocumentosAtuais);
-                    return;
-                }
-                const filtrados = listaDocumentosAtuais.filter(doc => 
-                    doc.name.toLowerCase().includes(termo)
-                );
-                renderizarSlots(filtrados);
-            });
-
-            // CONTROLES DE ZOOM
-            $('#btn-zoom-in').on('click', function() {
-                pdfScaleModifier += 0.15;
-                queueRenderPage(pageNum);
-            });
-
-            $('#btn-zoom-out').on('click', function() {
-                if (pdfScaleModifier <= 0.5) return;
-                pdfScaleModifier -= 0.15;
-                queueRenderPage(pageNum);
-            });
-
-            $('#btn-zoom-reset').on('click', function() {
-                pdfScaleModifier = 1.0;
-                queueRenderPage(pageNum);
-            });
-
-            // SALTO DIRETO DE PÁGINA
-            $('#input-page-num').on('change', function() {
-                let val = parseInt($(this).val());
-                if (isNaN(val) || val < 1) val = 1;
-                if (pdfDoc && val > pdfDoc.numPages) val = pdfDoc.numPages;
-                pageNum = val;
-                queueRenderPage(pageNum);
-            });
-
-            // NAVEGAÇÃO E TECLADO
-            $('#prev-page-btn').on('click', showPrevPage);
-            $('#next-page-btn').on('click', showNextPage);
-
-            $(document).on('keydown', function(e) {
-                if (!$('#modal-overlay').hasClass('active')) return;
-                if (e.keyCode === 37 && $('.pdf-only-ctrl').is(':visible')) showPrevPage();
-                if (e.keyCode === 39 && $('.pdf-only-ctrl').is(':visible')) showNextPage();
-                if (e.keyCode === 27) $('#close-modal').click();
-            });
-
-            $('#close-modal, #modal-overlay').on('click', function(e) {
-                if (e.target !== this && e.target.id !== 'close-modal' && $(e.target).parents('#close-modal').length === 0) return;
-                $('#modal-overlay').removeClass('active');
-                setTimeout(() => { 
-                    $('#modal-overlay').hide();
-                    if (currentRenderTask) {
-                        currentRenderTask.cancel();
-                        currentRenderTask = null;
-                    }
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    pdfDoc = null;
-                }, 200);
-            });
+        // Initialize KaTeX Math Rendering
+        document.addEventListener("DOMContentLoaded", function() {
+            renderizarMatematica();
         });
+
+        function renderizarMatematica() {
+            renderMathInElement(document.getElementById('document-content'), {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\(', right: '\\)', display: false},
+                    {left: '\\[', right: '\\]', display: true}
+                ],
+                throwOnError: false
+            });
+        }
+
+        // Control Panel Drawer Toggle
+        function toggleDrawer() {
+            const drawer = document.getElementById('drawer-panel');
+            drawer.classList.toggle('active');
+        }
+
+        // Live Processing of Raw Text
+        function processarTextoBruto() {
+            const rawText = document.getElementById('raw-input-text').value;
+            if (!rawText.trim()) return;
+
+            // Render Markdown/Text structure using Marked
+            const htmlContent = marked.parse(rawText);
+            document.getElementById('document-content').innerHTML = htmlContent;
+
+            // Render LaTeX Equations in the new content
+            renderizarMatematica();
+
+            // Close Drawer
+            toggleDrawer();
+        }
+
+        // Fast & Non-destructive Document Search
+        let currentMatches = [];
+        let matchIndex = -1;
+
+        function executarBusca() {
+            const termo = document.getElementById('search-input').value.trim();
+            const countSpan = document.getElementById('search-count');
+            
+            // Clear current highlights
+            limparDestaques();
+
+            if (!termo || termo.length < 2) {
+                countSpan.innerText = "";
+                return;
+            }
+
+            const docContainer = document.getElementById('document-content');
+            const walker = document.createTreeWalker(docContainer, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+
+            while (walker.nextNode()) {
+                const node = walker.currentNode;
+                if (node.parentNode.nodeName !== 'SCRIPT' && 
+                    node.parentNode.nodeName !== 'STYLE' && 
+                    node.parentNode.nodeName !== 'MARK' &&
+                    node.nodeValue.toLowerCase().includes(termo.toLowerCase())) {
+                    nodesToReplace.push(node);
+                }
+            }
+
+            let totalMatches = 0;
+            nodesToReplace.forEach(node => {
+                const regex = new RegExp(`(${escapeRegExp(termo)})`, 'gi');
+                const span = document.createElement('span');
+                span.innerHTML = node.nodeValue.replace(regex, '<mark class="search-highlight">$1</mark>');
+                node.parentNode.replaceChild(span, node);
+            });
+
+            currentMatches = Array.from(document.querySelectorAll('mark.search-highlight'));
+            totalMatches = currentMatches.length;
+
+            if (totalMatches > 0) {
+                matchIndex = 0;
+                focarMatchAtual();
+                countSpan.innerText = `1/${totalMatches}`;
+            } else {
+                countSpan.innerText = "0/0";
+            }
+        }
+
+        function navegarBusca(direcao) {
+            if (currentMatches.length === 0) return;
+            matchIndex += direcao;
+            if (matchIndex >= currentMatches.length) matchIndex = 0;
+            if (matchIndex < 0) matchIndex = currentMatches.length - 1;
+
+            focarMatchAtual();
+            document.getElementById('search-count').innerText = `${matchIndex + 1}/${currentMatches.length}`;
+        }
+
+        function focarMatchAtual() {
+            currentMatches.forEach((m, idx) => {
+                m.style.backgroundColor = (idx === matchIndex) ? '#f97316' : '#fef08a';
+                m.style.color = (idx === matchIndex) ? '#ffffff' : '#000000';
+            });
+            currentMatches[matchIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function limparDestaques() {
+            const highlights = document.querySelectorAll('mark.search-highlight');
+            highlights.forEach(h => {
+                const parent = h.parentNode;
+                parent.replaceChild(document.createTextNode(h.innerText), h);
+                parent.normalize();
+            });
+            currentMatches = [];
+            matchIndex = -1;
+        }
+
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
     </script>
 </body>
 </html>
