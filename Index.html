@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKS MILITAR - Tactical Library OS</title>
+    
+    <!-- FONTES TÁTICAS -->
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- MOTORES MATEMÁTICOS E DE RENDERIZAÇÃO -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+
+    <style>
+        :root {
+            /* PALETA STEALTH HUD */
+            --hud-cyan: #00f0ff;
+            --hud-cyan-dim: rgba(0, 240, 255, 0.15);
+            --hud-orange: #ff8c00;
+            --bg-dark-obsidian: #05070a;
+            --panel-glass: rgba(10, 14, 20, 0.75);
+            --panel-glass-hover: rgba(15, 22, 32, 0.9);
+            --border-stealth: rgba(255, 255, 255, 0.08);
+            --border-active: rgba(0, 240, 255, 0.4);
+            --text-main: #e2e8f0;
+            --text-muted: #64748b;
+            --glass-blur: blur(20px);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* SCROLLBAR TÁTICA */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark-obsidian); }
+        ::-webkit-scrollbar-thumb { background: var(--hud-cyan-dim); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--hud-cyan); }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: var(--bg-dark-obsidian);
+            /* IMERSÃO COM F-35 EM VOO - BLEND ESCURO */
+            background-image: 
+                linear-gradient(135deg, rgba(3, 5, 8, 0.92) 0%, rgba(3, 5, 8, 0.80) 100%),
+                url('1000250627.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ---------------- OVERLAY E SIDEBAR MOBILE ---------------- */
+        #sidebar-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 99;
+        }
+
+        #sidebar {
+            width: 300px;
+            background: var(--panel-glass);
+            backdrop-filter: var(--glass-blur);
+            -webkit-backdrop-filter: var(--glass-blur);
+            border-right: 1px solid var(--border-stealth);
+            display: flex; flex-direction: column; z-index: 100;
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+        }
+
+        /* CABEÇALHO LATERAL (TEXTURA RAM DO F-35) */
+        .sidebar-brand {
+            height: 80px; display: flex; align-items: center; padding: 0 24px;
+            background-image: 
+                linear-gradient(rgba(5, 7, 10, 0.8), rgba(5, 7, 10, 0.95)),
+                url('1000250626.jpg');
+            background-size: cover; background-position: center;
+            border-bottom: 1px solid var(--border-stealth);
+            position: relative; overflow: hidden;
+        }
+        
+        .sidebar-brand::after {
+            content: ''; position: absolute; bottom: 0; left: 0;
+            width: 100%; height: 2px; background: linear-gradient(90deg, transparent, var(--hud-cyan), transparent);
+        }
+
+        .sidebar-brand i { font-size: 26px; color: var(--hud-cyan); margin-right: 15px; filter: drop-shadow(0 0 8px var(--hud-cyan)); }
+        
+        .sidebar-brand-text { display: flex; flex-direction: column; }
+        .sidebar-brand-text .title { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 16px; letter-spacing: 2px; color: #fff; }
+        .sidebar-brand-text .sub { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--hud-cyan); letter-spacing: 3px; }
+
+        .menu-section { padding: 20px 0; overflow-y: auto; flex: 1; }
+        
+        .menu-group { margin-bottom: 5px; }
+        .menu-parent {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 24px; color: var(--text-main); cursor: pointer;
+            transition: all 0.2s ease; font-size: 13px; font-weight: 700;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            border-left: 3px solid transparent;
+        }
+        .menu-parent:hover { background: rgba(255,255,255,0.03); color: var(--hud-cyan); border-left-color: var(--hud-cyan); }
+        
+        .menu-parent-info { display: flex; align-items: center; gap: 12px; }
+        .menu-parent i.icon-main { font-size: 14px; color: var(--text-muted); }
+        .menu-parent:hover i.icon-main { color: var(--hud-cyan); filter: drop-shadow(0 0 5px var(--hud-cyan)); }
+        .menu-parent i.arrow-icon { font-size: 10px; transition: transform 0.3s ease; }
+        .menu-group.open .menu-parent i.arrow-icon { transform: rotate(180deg); color: var(--hud-cyan); }
+
+        .sub-menu { display: none; background: rgba(0,0,0,0.2); padding: 5px 0; }
+        .sub-menu-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 24px 10px 48px; color: var(--text-muted);
+            cursor: pointer; transition: all 0.2s ease;
+            font-size: 11px; font-family: 'JetBrains Mono', monospace;
+            position: relative;
+        }
+        .sub-menu-item::before {
+            content: ''; position: absolute; left: 28px; top: 0;
+            width: 1px; height: 100%; background: var(--border-stealth);
+        }
+        .sub-menu-item::after {
+            content: ''; position: absolute; left: 28px; top: 50%;
+            width: 10px; height: 1px; background: var(--border-stealth); transition: background 0.2s ease;
+        }
+        
+        .sub-menu-item:hover, .sub-menu-item.active { color: #fff; background: rgba(0, 240, 255, 0.05); }
+        .sub-menu-item:hover::after, .sub-menu-item.active::after { background: var(--hud-cyan); box-shadow: 0 0 5px var(--hud-cyan); }
+        .sub-menu-item i { font-size: 12px; margin-right: 10px; }
+        .sub-menu-item.active i { color: var(--hud-cyan); filter: drop-shadow(0 0 4px var(--hud-cyan)); }
+        
+        .badge-count { font-size: 9px; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 2px; }
+        .sub-menu-item.active .badge-count { background: var(--hud-cyan); color: #000; box-shadow: 0 0 8px var(--hud-cyan); }
+
+        /* ---------------- BARRA INFERIOR DE CANAIS / REDES SOCIAIS ---------------- */
+        .sidebar-social-footer {
+            padding: 15px 20px;
+            background: rgba(3, 5, 8, 0.9);
+            border-top: 1px solid var(--border-stealth);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .social-footer-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 9px;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .social-links-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .social-link-btn {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-stealth);
+            color: var(--text-muted);
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 2px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 13px;
+        }
+
+        .social-link-btn:hover {
+            color: var(--hud-cyan);
+            border-color: var(--hud-cyan);
+            background: rgba(0, 240, 255, 0.1);
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* ---------------- PAINEL PRINCIPAL (MAIN VIEW) ---------------- */
+        #main-view { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+        header {
+            height: 80px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 40px; background: linear-gradient(180deg, rgba(5,7,10,0.9) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border-stealth); z-index: 10;
+        }
+
+        .header-title-zone { display: flex; align-items: center; gap: 20px; }
+        .btn-menu-toggle { display: none; background: none; border: none; font-size: 20px; color: var(--hud-cyan); cursor: pointer; }
+
+        .sys-status-tag {
+            font-family: 'JetBrains Mono', monospace; font-size: 11px;
+            background: rgba(0, 0, 0, 0.5); color: var(--hud-cyan);
+            padding: 6px 12px; border: 1px solid var(--border-active);
+            display: flex; align-items: center; gap: 8px; font-weight: 700;
+            box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.1);
+        }
+        .sys-status-tag .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--hud-cyan); box-shadow: 0 0 8px var(--hud-cyan); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
+
+        .search-wrapper { position: relative; width: 100%; max-width: 400px; }
+        .search-wrapper i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--hud-cyan); font-size: 14px; }
+        .search-input {
+            width: 100%; padding: 10px 16px 10px 45px; background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border-stealth); color: #fff;
+            font-family: 'JetBrains Mono', monospace; font-size: 12px; outline: none;
+            transition: all 0.3s ease; backdrop-filter: blur(5px);
+        }
+        .search-input:focus { border-color: var(--hud-cyan); box-shadow: 0 0 15px rgba(0, 240, 255, 0.2); background: rgba(0, 0, 0, 0.7); }
+
+        .content-body { flex: 1; padding: 40px; overflow-y: auto; position: relative; z-index: 5; }
+
+        .category-header {
+            font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 900;
+            letter-spacing: 2px; margin-bottom: 30px; color: #fff;
+            display: flex; align-items: center; text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+        }
+        .category-header::before { content: '///'; color: var(--hud-cyan); margin-right: 15px; font-size: 20px; }
+        .category-header::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--hud-cyan-dim), transparent); margin-left: 20px; }
+
+        /* ---------------- GRID E CARDS 3D STEALTH ---------------- */
+        .grid-acervo { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; perspective: 1000px; }
+
+        .slot-container {
+            position: relative; background: var(--panel-glass);
+            border: 1px solid var(--border-stealth);
+            aspect-ratio: 1 / 1.4; padding: 20px;
+            display: flex; flex-direction: column; justify-content: space-between;
+            /* CORTES GEOMÉTRICOS STEALTH (F-35 STYLE) */
+            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+            backdrop-filter: var(--glass-blur);
+            /* EFEITO MOTOR 3D HOLOGRÁFICO */
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .slot-container::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%); z-index: 1; pointer-events: none;
+        }
+
+        .slot-container:hover {
+            /* TILT 3D AO PASSAR O MOUSE */
+            transform: translateY(-8px) rotateX(4deg) rotateY(-4deg);
+            border-color: var(--hud-cyan);
+            box-shadow: -10px 20px 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 240, 255, 0.1);
+        }
+
+        /* ÍCONE DE FUNDO ESTILO RADAR */
+        .slot-cover-icon {
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 60px; color: rgba(255, 255, 255, 0.03); z-index: 0;
+            transition: color 0.4s ease, transform 0.4s ease;
+        }
+        .slot-container:hover .slot-cover-icon { color: rgba(0, 240, 255, 0.1); transform: translate(-50%, -50%) scale(1.1) translateZ(20px); }
+
+        .slot-meta { position: relative; z-index: 3; display: flex; justify-content: space-between; align-items: center; }
+        
+        .slot-index {
+            font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 800;
+            color: var(--hud-cyan); background: rgba(0,0,0,0.6);
+            padding: 4px 8px; border: 1px solid var(--border-stealth);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5); letter-spacing: 1px;
+        }
+
+        .slot-status-dot { width: 8px; height: 8px; background: var(--hud-cyan); box-shadow: 0 0 10px var(--hud-cyan); clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+
+        .slot-footer { position: relative; z-index: 3; transform: translateZ(30px); }
+        .slot-title {
+            font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700;
+            color: #fff; line-height: 1.4; word-break: break-word; letter-spacing: 1px;
+            text-transform: uppercase; border-top: 1px solid var(--border-stealth);
+            padding-top: 10px; transition: color 0.3s ease;
+        }
+        .slot-container:hover .slot-title { color: var(--hud-cyan); border-top-color: var(--hud-cyan-dim); }
+
+        /* ---------------- MODAL / LEITOR DE DOCUMENTOS ---------------- */
+        #modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(2, 3, 5, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            z-index: 1000; display: none; justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.3s ease;
+        }
+        #modal-overlay.active { display: flex; opacity: 1; }
+
+        .modal-container {
+            width: 96%; max-width: 1200px; height: 94vh;
+            background: var(--panel-glass); border: 1px solid var(--border-active);
+            box-shadow: 0 0 50px rgba(0, 240, 255, 0.1); display: flex; flex-direction: column;
+            clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
+            transform: scale(0.95) translateY(20px); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #modal-overlay.active .modal-container { transform: scale(1) translateY(0); }
+
+        .modal-header {
+            height: 60px; background: rgba(0,0,0,0.5); padding: 0 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border-stealth);
+        }
+        .modal-title-zone { display: flex; align-items: center; gap: 15px; }
+        .modal-title-zone i { color: var(--hud-cyan); font-size: 18px; filter: drop-shadow(0 0 5px var(--hud-cyan)); }
+        .modal-title { font-family: 'Orbitron', sans-serif; font-size: 14px; letter-spacing: 2px; color: #fff; font-weight: 700; }
+
+        .modal-actions { display: flex; gap: 10px; }
+        .modal-tool-btn {
+            background: rgba(0,0,0,0.4); border: 1px solid var(--border-stealth); color: var(--text-main);
+            width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s ease; font-size: 14px; clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+        }
+        .modal-tool-btn:hover { background: var(--hud-cyan-dim); color: var(--hud-cyan); border-color: var(--hud-cyan); box-shadow: 0 0 10px rgba(0,240,255,0.2); }
+        
+        .modal-close-btn {
+            background: rgba(255, 42, 42, 0.1); border: 1px solid rgba(255, 42, 42, 0.3); color: #ff2a2a;
+            font-size: 20px; margin-left: 15px; clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+        }
+        .modal-close-btn:hover { background: rgba(255, 42, 42, 0.3); border-color: #ff2a2a; box-shadow: 0 0 15px rgba(255, 42, 42, 0.4); }
+
+        .modal-body {
+            flex: 1; display: flex; justify-content: center; align-items: center;
+            position: relative; overflow: auto; padding: 20px;
+            background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        #pdf-canvas { box-shadow: 0 20px 50px rgba(0,0,0,0.8); background: #fff; transition: opacity 0.2s ease; }
+
+        /* ---------------- E-READER DIGITAL TÁTICO (DARK MODE) ---------------- */
+        .reader-book-container {
+            width: 100%; max-width: 900px; height: 100%; margin: 0 auto;
+            padding: 50px 70px; background: rgba(5, 7, 10, 0.85); color: #cbd5e1;
+            font-family: 'Rajdhani', sans-serif; font-size: 18px; line-height: 1.8;
+            overflow-y: auto; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-stealth);
+            backdrop-filter: blur(10px);
+        }
+        .reader-book-container h1 { font-family: 'Orbitron', sans-serif; font-size: 22px; color: var(--hud-cyan); border-bottom: 2px solid var(--hud-cyan-dim); padding-bottom: 10px; margin-top: 30px; margin-bottom: 20px; letter-spacing: 2px; text-transform: uppercase; }
+        .reader-book-container h2 { font-family: 'Orbitron', sans-serif; font-size: 16px; color: #fff; margin-top: 25px; margin-bottom: 15px; letter-spacing: 1px; }
+        .reader-book-container p { margin-bottom: 20px; text-align: justify; }
+        .reader-book-container blockquote { border-left: 4px solid var(--hud-orange); padding: 15px 20px; margin: 25px 0; color: #94a3b8; font-style: italic; background: rgba(255, 140, 0, 0.05); }
+        .math-rendered { display: block; text-align: center; margin: 25px 0; padding: 15px; background: rgba(0, 0, 0, 0.6); border: 1px solid var(--border-stealth); border-radius: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+        .math-inline { padding: 2px 6px; background: rgba(0, 0, 0, 0.5); color: var(--hud-cyan); font-family: 'JetBrains Mono', monospace; }
+
+        .nav-side-btn {
+            position: absolute; top: 0; height: 100%; width: 80px;
+            background: linear-gradient(90deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+            border: none; color: var(--border-stealth); font-size: 30px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; z-index: 10;
+        }
+        .nav-side-btn.next { right: 0; background: linear-gradient(-90deg, rgba(0,0,0,0.8) 0%, transparent 100%); }
+        .nav-side-btn:hover { color: var(--hud-cyan); background: rgba(0, 240, 255, 0.05); text-shadow: 0 0 10px var(--hud-cyan); }
+
+        .modal-footer {
+            height: 50px; background: rgba(0,0,0,0.7); border-top: 1px solid var(--border-stealth);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 24px;
+            font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-muted);
+        }
+        .page-jumper { display: flex; align-items: center; gap: 10px; }
+        .page-input {
+            width: 50px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-active);
+            color: var(--hud-cyan); font-weight: 700; text-align: center;
+            font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 4px 0; outline: none;
+            box-shadow: 0 0 5px rgba(0,240,255,0.2);
+        }
+
+        #pdf-loader {
+            position: absolute; color: var(--hud-cyan); font-family: 'Orbitron', sans-serif; font-size: 14px;
+            letter-spacing: 3px; display: none; flex-direction: column; align-items: center; gap: 15px; z-index: 20;
+            text-shadow: 0 0 10px var(--hud-cyan);
+        }
+        #pdf-loader i { font-size: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* RESPONSIVIDADE MOBILE HUD */
+        @media (max-width: 768px) {
+            #sidebar { position: fixed; top: 0; left: 0; height: 100vh; transform: translateX(-100%); width: 280px; }
+            #sidebar.mobile-open { transform: translateX(0); }
+            .btn-menu-toggle { display: block; }
+            header { padding: 0 20px; }
+            .content-body { padding: 20px; }
+            .grid-acervo { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+            .reader-book-container { padding: 20px 15px; font-size: 16px; }
+            .modal-container { width: 100%; height: 100vh; clip-path: none; border: none; }
+            .nav-side-btn { width: 50px; background: transparent; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar-overlay"></div>
+
+    <div id="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-fighter-jet"></i>
+            <div class="sidebar-brand-text">
+                <span class="title">LKS MILITAR</span>
+                <span class="sub">TAC_OS // STEALTH</span>
+            </div>
+        </div>
+        
+        <div class="menu-section" id="container-menu"></div>
+
+        <!-- BARRA INFERIOR DE REDES SOCIAIS E CANAIS -->
+        <div class="sidebar-social-footer">
+            <span class="social-footer-title">Canais Oficiais</span>
+            <div class="social-links-grid">
+                <a href="https://www.youtube.com/@lksmilitar" target="_blank" class="social-link-btn" title="YouTube LKS MILITAR"><i class="fa-brands fa-youtube"></i></a>
+                <a href="https://www.tiktok.com/@lksmilitar" target="_blank" class="social-link-btn" title="TikTok LKS MILITAR"><i class="fa-brands fa-tiktok"></i></a>
+                <a href="https://www.instagram.com/@lksmilitar" target="_blank" class="social-link-btn" title="Instagram LKS MILITAR"><i class="fa-brands fa-instagram"></i></a>
+                <a href="https://www.facebook.com/lksmilitar" target="_blank" class="social-link-btn" title="Facebook LKS MILITAR"><i class="fa-brands fa-facebook"></i></a>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-view">
+        <header>
+            <div class="header-title-zone">
+                <button class="btn-menu-toggle" id="btn-toggle-sidebar" title="Menu Tático">
+                    <i class="fa-solid fa-bars-staggered"></i>
+                </button>
+                <div class="sys-status-tag">
+                    <div class="dot"></div>
+                    <span>SYS_SECURE</span>
+                </div>
+            </div>
+
+            <div class="header-controls">
+                <div class="search-wrapper">
+                    <i class="fa-solid fa-crosshairs"></i>
+                    <input type="text" id="search-input" class="search-input" placeholder="LOCALIZAR ALVO / ARQUIVO...">
+                </div>
+            </div>
+        </header>
+
+        <div class="content-body">
+            <div class="category-header" id="txt-categoria-atual">INICIALIZANDO SISTEMA...</div>
+            <div class="grid-acervo" id="painel-slots"></div>
+        </div>
+    </div>
+
+    <div id="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-title-zone">
+                    <i class="fa-solid fa-satellite-dish" id="modal-type-icon"></i>
+                    <div class="modal-title" id="pdf-modal-title">DECODIFICANDO SINAL...</div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="modal-tool-btn pdf-only-ctrl" id="btn-zoom-out" title="Reduzir Escala"><i class="fa-solid fa-minus"></i></button>
+                    <button class="modal-tool-btn pdf-only-ctrl" id="btn-zoom-in" title="Aumentar Escala"><i class="fa-solid fa-plus"></i></button>
+                    <button class="modal-tool-btn pdf-only-ctrl" id="btn-zoom-reset" title="Restaurar Visão"><i class="fa-solid fa-expand"></i></button>
+                    <button class="modal-tool-btn modal-close-btn" id="close-modal"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <button class="nav-side-btn prev pdf-only-ctrl" id="prev-page-btn"><i class="fa-solid fa-chevron-left"></i></button>
+                <div id="pdf-loader">
+                    <i class="fa-solid fa-radar"></i>
+                    <span id="loader-status-text">PROCESSANDO MATRIZ...</span>
+                </div>
+                <canvas id="pdf-canvas"></canvas>
+                <div id="digital-reader-body" style="width: 100%; height: 100%; display: none;"></div>
+                <button class="nav-side-btn next pdf-only-ctrl" id="next-page-btn"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+            <div class="modal-footer">
+                <div class="page-jumper pdf-only-ctrl">
+                    <span>COORD: PAG</span>
+                    <input type="number" id="input-page-num" class="page-input" value="1" min="1">
+                    <span>/ <span id="total-pages-count">0</span></span>
+                </div>
+                <div id="doc-status-info" style="color: var(--hud-cyan); font-weight: bold;">LINK ESTABELECIDO</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+        const GITHUB_USER = "LKSMILITAR";
+        const GITHUB_REPO = "simuladores";
+        const API_URL = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents`;
+
+        let pdfDoc = null, pageNum = 1, pdfScaleModifier = 1.0, pageIsRendering = false, pageNumPending = null, currentRenderTask = null, listaDocumentosAtuais = [], documentoAtualKey = '';
+        const canvas = document.getElementById('pdf-canvas'), ctx = canvas.getContext('2d');
+
+        function formatarTituloDocumento(nomeBruto) {
+            let titulo = nomeBruto.replace(/\.(pdf|txt)$/i, '').replace(/[-_]\d+$/g, '').replace(/[-_]+/g, ' ').replace(/[^\w\sÀ-ÿ]/gi, ' ');
+            return titulo.trim().replace(/\s+/g, ' ').toUpperCase();
+        }
+
+        function processarTextoParaLivroDigital(textoBruto) {
+            let linhas = textoBruto.split(/\r?\n/);
+            let htmlResultado = '<div class="reader-book-container">';
+            let emLista = false;
+
+            linhas.forEach(linha => {
+                let linhaLimpa = linha.trim();
+                if (!linhaLimpa) { if (emLista) { htmlResultado += '</ul>'; emLista = false; } return; }
+
+                if (/^[A-Z0-9\s\-\.\:\,]{4,80}$/.test(linhaLimpa) && !linhaLimpa.startsWith('*') && !linhaLimpa.startsWith('e ')) {
+                    if (emLista) { htmlResultado += '</ul>'; emLista = false; }
+                    htmlResultado += `<h1>${linhaLimpa}</h1>`; return;
+                }
+
+                if (linhaLimpa.endsWith(':') && linhaLimpa.length < 60) {
+                    if (emLista) { htmlResultado += '</ul>'; emLista = false; }
+                    htmlResultado += `<h2>${linhaLimpa}</h2>`; return;
+                }
+
+                if (/^[\*\-\bullet\e]\s+/.test(linhaLimpa) || /^\d+\.\s+/.test(linhaLimpa)) {
+                    if (!emLista) { htmlResultado += '<ul>'; emLista = true; }
+                    htmlResultado += `<li>${linhaLimpa.replace(/^[\*\-\bullet\e]\s+/, '').replace(/^\d+\.\s+/, '')}</li>`; return;
+                }
+
+                if (emLista) { htmlResultado += '</ul>'; emLista = false; }
+
+                let textoFormatado = linhaLimpa
+                    .replace(/\$\$(.*?)\$\$/g, (match, eq) => { try { return `<span class="math-rendered">${katex.renderToString(eq, { displayMode: true })}</span>`; } catch (e) { return match; } })
+                    .replace(/\$(.*?)\$/g, (match, eq) => { try { return `<span class="math-inline">${katex.renderToString(eq, { displayMode: false })}</span>`; } catch (e) { return match; } });
+
+                htmlResultado += `<p>${textoFormatado}</p>`;
+            });
+
+            if (emLista) htmlResultado += '</ul>';
+            htmlResultado += '</div>';
+            return htmlResultado;
+        }
+
+        async function inicializarAcervo() {
+            const containerMenu = $('#container-menu');
+            containerMenu.empty();
+            const urlManifesto = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/catalog.json`;
+
+            try {
+                let manifesto = null;
+                try {
+                    const respManifesto = await fetch(urlManifesto);
+                    if (respManifesto.ok) manifesto = await respManifesto.json();
+                } catch (e) { console.warn("Manifesto não localizado."); }
+
+                if (manifesto && manifesto.structure) { renderizarMenuManifesto(manifesto.structure); } 
+                else { await renderizarMenuFallback(); }
+            } catch (erro) {
+                $('#txt-categoria-atual').text("FALHA CRÍTICA NOS SISTEMAS");
+            }
+        }
+
+        function renderizarMenuManifesto(estrutura) {
+            const containerMenu = $('#container-menu');
+            let primeiraSubcategoria = null;
+
+            estrutura.forEach((grupo, gIndex) => {
+                const isFirstGroup = gIndex === 0;
+                const groupId = `grp-${grupo.id}`, subMenuId = `sub-${grupo.id}`;
+
+                let htmlSubitens = '';
+                grupo.subcategories.forEach(sub => {
+                    if (!primeiraSubcategoria) primeiraSubcategoria = sub.slug;
+                    const badgeId = `badge-${sub.slug.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                    htmlSubitens += `<div class="sub-menu-item" data-slug="${sub.slug}" onclick="selecionarSubcategoria('${sub.slug}', this)"><div class="menu-item-info"><i class="fa-solid ${sub.icon || 'fa-folder-open'}"></i><span>${sub.title}</span></div><span class="badge-count" id="${badgeId}">...</span></div>`;
+                    atualizarContadorDocs(sub.slug, badgeId);
+                });
+
+                containerMenu.append(`<div class="menu-group ${isFirstGroup ? 'open' : ''}" id="${groupId}"><div class="menu-parent" onclick="alternarGrupo('${groupId}', '${subMenuId}')"><div class="menu-parent-info"><i class="fa-solid ${grupo.icon || 'fa-layer-group'} icon-main"></i><span>${grupo.title}</span></div><i class="fa-solid fa-chevron-down arrow-icon"></i></div><div class="sub-menu" id="${subMenuId}" style="${isFirstGroup ? 'display: block;' : 'display: none;'}">${htmlSubitens}</div></div>`);
+            });
+
+            const primeiroItem = $('.sub-menu-item').first();
+            if (primeiroItem.length && primeiraSubcategoria) { primeiroItem.addClass('active'); carregarPasta(primeiraSubcategoria, primeiroItem); }
+        }
+
+        async function renderizarMenuFallback() {
+            const containerMenu = $('#container-menu');
+            const resp = await fetch(API_URL);
+            const dados = await resp.json();
+
+            if (dados.message && dados.message.includes("API rate limit")) {
+                $('#txt-categoria-atual').text("BLOQUEIO TÁTICO: GITHUB API");
+                $('#painel-slots').html('<div style="color: var(--hud-orange); font-family: \'Orbitron\'; font-size: 14px; padding: 20px; border: 1px solid var(--hud-orange); background: rgba(255, 140, 0, 0.1);"><strong>LIMITE DE REQUISIÇÕES ATINGIDO (60/h).</strong><br><br>Aguarde alguns instantes ou crie um arquivo <strong>catalog.json</strong> na raiz do repositório.</div>');
+                return;
+            }
+
+            const pastas = dados.filter(item => item.type === 'dir');
+
+            if (!Array.isArray(pastas) || pastas.length === 0) { $('#txt-categoria-atual').text("BANCO DE DADOS VAZIO"); return; }
+
+            let htmlSubitens = '';
+            pastas.forEach(pasta => {
+                const badgeId = `badge-${pasta.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                const nomeLimpo = pasta.name.replace(/^\d+[_-\s]*/, '').replace(/_/g, ' ').toUpperCase();
+                htmlSubitens += `<div class="sub-menu-item" data-slug="${pasta.name}" onclick="selecionarSubcategoria('${pasta.name}', this)"><div class="menu-item-info"><i class="fa-solid fa-folder"></i><span>${nomeLimpo}</span></div><span class="badge-count" id="${badgeId}">...</span></div>`;
+                atualizarContadorDocs(pasta.name, badgeId);
+            });
+
+            containerMenu.append(`<div class="menu-group open" id="grp-fallback"><div class="menu-parent" onclick="alternarGrupo('grp-fallback', 'sub-fallback')"><div class="menu-parent-info"><i class="fa-solid fa-server icon-main"></i><span>BANCO DE DADOS GITHUB</span></div><i class="fa-solid fa-chevron-down arrow-icon"></i></div><div class="sub-menu" id="sub-fallback" style="display: block;">${htmlSubitens}</div></div>`);
+
+            const primeiroItem = $('.sub-menu-item').first();
+            if (primeiroItem.length) { primeiroItem.addClass('active'); carregarPasta(pastas[0].name, primeiroItem); }
+        }
+
+        function alternarGrupo(groupId, subMenuId) {
+            const $grupo = $(`#${groupId}`), $subMenu = $(`#${subMenuId}`);
+            $('.menu-group').not($grupo).removeClass('open').find('.sub-menu').slideUp(200);
+            $grupo.toggleClass('open'); $subMenu.slideToggle(200);
+        }
+
+        function selecionarSubcategoria(slugPasta, elemento) {
+            $('.sub-menu-item').removeClass('active'); $(elemento).addClass('active');
+            carregarPasta(slugPasta, elemento);
+            if ($(window).width() <= 768) { $('#sidebar').removeClass('mobile-open'); $('#sidebar-overlay').fadeOut(200); }
+        }
+
+        async function atualizarContadorDocs(nomePasta, badgeId) {
+            try {
+                const resp = await fetch(`${API_URL}/${encodeURIComponent(nomePasta)}`);
+                const arqs = await resp.json();
+                if (!Array.isArray(arqs)) return $(`#${badgeId}`).text('0');
+                const docs = arqs.filter(arq => arq.type === 'file' && (arq.name.toLowerCase().endsWith('.pdf') || arq.name.toLowerCase().endsWith('.txt')));
+                $(`#${badgeId}`).text(docs.length);
+            } catch (e) { $(`#${badgeId}`).text('0'); }
+        }
+
+        async function carregarPasta(nomePasta, elemento) {
+            $('#txt-categoria-atual').text(nomePasta.replace(/^\d+[_-\s]*/, '').replace(/_/g, ' ').toUpperCase());
+            $('#search-input').val('');
+            const painel = $('#painel-slots');
+            painel.html('<div style="color: var(--hud-cyan); font-family: \'Orbitron\'; text-shadow: 0 0 10px var(--hud-cyan);">VARRENDO SETOR...</div>');
+
+            try {
+                const resposta = await fetch(`${API_URL}/${encodeURIComponent(nomePasta)}`);
+                const arquivos = await resposta.json();
+                listaDocumentosAtuais = arquivos.filter(arq => arq.type === 'file' && (arq.name.toLowerCase().endsWith('.pdf') || arq.name.toLowerCase().endsWith('.txt')));
+                renderizarSlots(listaDocumentosAtuais);
+            } catch (erro) { painel.html('<div style="color: #ff2a2a; font-family: \'Orbitron\';">FALHA NO LINK COM SERVIDOR</div>'); }
+        }
+
+        function renderizarSlots(documentos) {
+            const painel = $('#painel-slots');
+            painel.empty();
+            if (documentos.length === 0) return painel.html('<div style="color: var(--text-muted); font-family: \'Orbitron\';">SETOR VAZIO.</div>');
+
+            documentos.forEach((doc, index) => {
+                const eTxt = doc.name.toLowerCase().endsWith('.txt');
+                const nomeExibicao = formatarTituloDocumento(doc.name);
+                const iconBg = eTxt ? 'fa-file-lines' : 'fa-file-pdf';
+
+                painel.append(`
+                    <div class="slot-container" onclick="abrirDocumento('${doc.download_url}', '${nomeExibicao}', ${eTxt})">
+                        <i class="fa-solid ${iconBg} slot-cover-icon"></i>
+                        <div class="slot-meta">
+                            <div class="slot-index">${eTxt ? 'TXT' : 'PDF'}-${String(index + 1).padStart(3, '0')}</div>
+                            <div class="slot-status-dot" style="${eTxt ? 'background: var(--hud-orange); box-shadow: 0 0 10px var(--hud-orange);' : ''}"></div>
+                        </div>
+                        <div class="slot-footer">
+                            <div class="slot-title">${nomeExibicao}</div>
+                        </div>
+                    </div>
+                `);
+            });
+        }
+
+        async function abrirDocumento(urlArquivo, tituloDoc, ehTxt) {
+            $('#pdf-modal-title').text(tituloDoc);
+            $('#pdf-loader').css('display', 'flex');
+            $('.pdf-only-ctrl').toggle(!ehTxt);
+            $('#modal-type-icon').attr('class', ehTxt ? 'fa-solid fa-file-code' : 'fa-solid fa-file-pdf');
+
+            $('#modal-overlay').show(0, function() { $(this).addClass('active'); });
+
+            if (ehTxt) {
+                $('#pdf-canvas').hide();
+                const $reader = $('#digital-reader-body');
+                $reader.show().html('<div style="color: var(--hud-cyan); font-family: \'Orbitron\'; padding: 20px;">DESCRIPTOGRAFANDO TEXTO...</div>');
+                try {
+                    const resposta = await fetch(urlArquivo);
+                    $reader.html(processarTextoParaLivroDigital(await resposta.text()));
+                    $('#doc-status-info').text('MODO E-READER ATIVO').css('color', 'var(--hud-orange)');
+                } catch (e) { $reader.html('<div style="color: #ff2a2a; padding: 20px;">ERRO DE DECODIFICAÇÃO.</div>'); } 
+                finally { $('#pdf-loader').hide(); }
+            } else {
+                $('#digital-reader-body').hide(); $('#pdf-canvas').show();
+                $('#doc-status-info').text('RENDERIZADOR VETORIAL ONLINE').css('color', 'var(--hud-cyan)');
+                pdfScaleModifier = 1.0; documentoAtualKey = btoa(tituloDoc).replace(/=/g, '');
+                pageNum = parseInt(localStorage.getItem(`lks_page_${documentoAtualKey}`)) || 1;
+
+                pdfjsLib.getDocument(urlArquivo).promise.then(pdfDoc_ => {
+                    pdfDoc = pdfDoc_; $('#total-pages-count').text(pdfDoc.numPages); $('#input-page-num').attr('max', pdfDoc.numPages);
+                    if (pageNum > pdfDoc.numPages) pageNum = 1; renderPage(pageNum);
+                }).catch(err => { alert('Falha ao processar arquivo PDF tático.'); $('#pdf-loader').hide(); });
+            }
+        }
+
+        function renderPage(num) {
+            pageIsRendering = true; $('#input-page-num').val(num);
+            if (documentoAtualKey) localStorage.setItem(`lks_page_${documentoAtualKey}`, num);
+            if (currentRenderTask) { currentRenderTask.cancel(); currentRenderTask = null; }
+
+            pdfDoc.getPage(num).then(page => {
+                const containerWidth = $('.modal-body').width() - 60;
+                const unscaledViewport = page.getViewport({ scale: 1.0 });
+                const baseScale = Math.max(Math.min(containerWidth / unscaledViewport.width, 1.6), 0.8) * pdfScaleModifier;
+                const viewport = page.getViewport({ scale: baseScale });
+                const dpr = window.devicePixelRatio || 1;
+
+                canvas.width = Math.floor(viewport.width * dpr); canvas.height = Math.floor(viewport.height * dpr);
+                canvas.style.width = Math.floor(viewport.width) + 'px'; canvas.style.height = Math.floor(viewport.height) + 'px';
+                
+                ctx.save(); ctx.scale(dpr, dpr);
+                currentRenderTask = page.render({ canvasContext: ctx, viewport: viewport });
+
+                currentRenderTask.promise.then(() => {
+                    ctx.restore(); pageIsRendering = false; currentRenderTask = null;
+                    $('#pdf-loader').hide(); $('#pdf-canvas').css('opacity', '1');
+                    if (pageNumPending !== null) { renderPage(pageNumPending); pageNumPending = null; }
+                }).catch(err => { ctx.restore(); });
+            });
+        }
+
+        function queueRenderPage(num) {
+            if (pageIsRendering) pageNumPending = num;
+            else { $('#pdf-canvas').css('opacity', '0.5'); renderPage(num); }
+        }
+
+        function showPrevPage() { if (pageNum <= 1) return; pageNum--; queueRenderPage(pageNum); }
+        function showNextPage() { if (!pdfDoc || pageNum >= pdfDoc.numPages) return; pageNum++; queueRenderPage(pageNum); }
+
+        $(document).ready(function() {
+            inicializarAcervo();
+
+            $('#btn-toggle-sidebar').on('click', function() { $('#sidebar').addClass('mobile-open'); $('#sidebar-overlay').fadeIn(200); });
+            $('#sidebar-overlay').on('click', function() { $('#sidebar').removeClass('mobile-open'); $(this).fadeOut(200); });
+
+            $('#search-input').on('input', function() {
+                const termo = $(this).val().toLowerCase().trim();
+                renderizarSlots(termo ? listaDocumentosAtuais.filter(doc => doc.name.toLowerCase().includes(termo)) : listaDocumentosAtuais);
+            });
+
+            $('#btn-zoom-in').on('click', function() { pdfScaleModifier += 0.15; queueRenderPage(pageNum); });
+            $('#btn-zoom-out').on('click', function() { if (pdfScaleModifier > 0.5) { pdfScaleModifier -= 0.15; queueRenderPage(pageNum); } });
+            $('#btn-zoom-reset').on('click', function() { pdfScaleModifier = 1.0; queueRenderPage(pageNum); });
+            $('#input-page-num').on('change', function() { let v = parseInt($(this).val()); pageNum = (isNaN(v) || v < 1) ? 1 : (v > pdfDoc.numPages ? pdfDoc.numPages : v); queueRenderPage(pageNum); });
+
+            $('#prev-page-btn').on('click', showPrevPage); $('#next-page-btn').on('click', showNextPage);
+            $(document).on('keydown', function(e) {
+                if (!$('#modal-overlay').hasClass('active')) return;
+                if (e.keyCode === 37 && $('.pdf-only-ctrl').is(':visible')) showPrevPage();
+                if (e.keyCode === 39 && $('.pdf-only-ctrl').is(':visible')) showNextPage();
+                if (e.keyCode === 27) $('#close-modal').click();
+            });
+
+            $('#close-modal, #modal-overlay').on('click', function(e) {
+                if (e.target !== this && e.target.id !== 'close-modal' && $(e.target).parents('#close-modal').length === 0) return;
+                $('#modal-overlay').removeClass('active');
+                setTimeout(() => { 
+                    $('#modal-overlay').hide();
+                    if (currentRenderTask) { currentRenderTask.cancel(); currentRenderTask = null; }
+                    ctx.clearRect(0, 0, canvas.width, canvas.height); pdfDoc = null;
+                }, 300);
+            });
+        });
+    </script>
+</body>
+</html>
