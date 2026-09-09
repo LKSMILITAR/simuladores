@@ -1,93 +1,64 @@
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 
-const SOURCE_DIR = path.resolve('documents');
-const OUTPUT_DIR = path.resolve('assets/catalog');
-const CHUNKS_DIR = path.join(OUTPUT_DIR, 'chunks');
+const DOCS_DIR = path.join(__dirname, '../documents');
+const OUTPUT_DIR = path.join(__dirname, '../assets/catalog');
+const OUTPUT_FILE = path.join(OUTPUT_DIR, 'root.json');
 
-function cleanAndEnsureDirectories() {
-  if (fs.existsSync(OUTPUT_DIR)) {
-    fs.rmSync(OUTPUT_DIR, { recursive: true, force: true });
-  }
-  fs.mkdirSync(CHUNKS_DIR, { recursive: true });
+const VALID_EXTENSIONS = ['.pdf', '.txt', '.doc', '.docx'];
 
-  if (!fs.existsSync(SOURCE_DIR)) {
-    fs.mkdirSync(SOURCE_DIR, { recursive: true });
-  }
-}
-
-function generateHash(input) {
-  return crypto.createHash('sha256').update(input).digest('hex').substring(0, 10);
-}
-
-function scanDirectory(currentPath, relativePath = '') {
-  if (!fs.existsSync(currentPath)) return { folders: [], files: [] };
-
-  const entries = fs.readdirSync(currentPath, { withFileTypes: true });
-  const folders = [];
-  const files = [];
-
-  for (const entry of entries) {
-    if (entry.name.startsWith('.')) continue;
-
-    const fullPath = path.join(currentPath, entry.name);
-    const relPath = path.join(relativePath, entry.name).replace(/\\/g, '/');
-
-    if (entry.isDirectory()) {
-      const childData = scanDirectory(fullPath, relPath);
-      const chunkHash = generateHash(relPath);
-      const chunkFileName = `chunk-${chunkHash}.json`;
-
-      fs.writeFileSync(
-        path.join(CHUNKS_DIR, chunkFileName),
-        JSON.stringify({ path: relPath, ...childData }, null, 2)
-      );
-
-      folders.push({
-        name: entry.name,
-        path: relPath,
-        chunk: `assets/catalog/chunks/${chunkFileName}`,
-        itemCount: childData.folders.length + childData.files.length
-      });
-    } else if (entry.isFile()) {
-      const ext = path.extname(entry.name).toLowerCase();
-      if (['.pdf', '.txt', '.md'].includes(ext)) {
-        const stats = fs.statSync(fullPath);
-        files.push({
-          name: entry.name,
-          path: relPath,
-          size: stats.size,
-          extension: ext
-        });
-      }
+function buildCatalog() {
+    if (!fs.existsSync(DOCS_DIR)) {
+        console.error(`[ERRO] Diretório não encontrado: ${DOCS_DIR}`);
+        process.exit(1);
     }
-  }
 
-  return { folders, files };
+    if (!fs.existsSync(OUTPUT_DIR)) {
+        fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+    }
+
+    const categories = [];
+    const entries = fs.readdirSync(DOCS_DIR, { withFileTypes: true });
+
+    entries.forEach(entry => {
+        if (entry.isDirectory()) {
+            const categoryName = entry.name;
+            const categoryPath = path.join(DOCS_DIR, categoryName);
+            
+            const files = fs.readdirSync(categoryPath)
+                .filter(file => {
+                    const ext = path.extname(file).toLowerCase();
+                    return VALID_EXTENSIONS.includes(ext) && !file.startsWith('.');
+                })
+                .map(file => {
+                    // Mapeia o nome do arquivo e gera a URL tratada para o navegador
+                    const relativePath = `documents/${categoryName}/${file}`;
+                    const encodedPath = `documents/${encodeURIComponent(categoryName)}/${encodeURIComponent(file)}`;
+                    
+                    return {
+                        title: file,
+                        path: relativePath,
+                        encodedPath: encodedPath
+                    };
+                });
+
+            categories.push({
+                id: categoryName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_"),
+                name: categoryName,
+                itemCount: files.length,
+                items: files
+            });
+        }
+    });
+
+    const catalogData = {
+        updatedAt: new Date().toISOString(),
+        totalCategories: categories.length,
+        categories: categories
+    };
+
+    fs.writeFileSync(OUTPUT_FILE, JSON.stringify(catalogData, null, 2), 'utf-8');
+    console.log(`[SUCESSO] Catálogo gerado em ${OUTPUT_FILE} com ${categories.length} categorias.`);
 }
 
-try {
-  console.log('[Catalog Builder] Executando expurgo completo do catálogo antigo...');
-  cleanAndEnsureDirectories();
-
-  console.log('[Catalog Builder] Indexando acervo em documents/...');
-  const data = scanDirectory(SOURCE_DIR);
-
-  const rootManifest = {
-    generatedAt: new Date().toISOString(),
-    totalRootCategories: data.folders.length,
-    categories: data.folders,
-    files: data.files
-  };
-
-  fs.writeFileSync(
-    path.join(OUTPUT_DIR, 'root.json'),
-    JSON.stringify(rootManifest, null, 2)
-  );
-
-  console.log(`[Catalog Builder] Catálogo e chunks gerados em: ${OUTPUT_DIR}`);
-} catch (error) {
-  console.error('[Catalog Builder] Falha crítica:', error);
-  process.exit(1);
-}
+buildCatalog();
