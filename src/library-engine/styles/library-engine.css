@@ -1,14 +1,13 @@
 :host, .lib-drawer-host, library-drawer {
-  --lib-bg-primary: #050811;
-  --lib-bg-secondary: #0b1220;
-  --lib-bg-hover: #152238;
-  --lib-border-color: #1e2d4a;
-  --lib-text-primary: #e2e8f0;
-  --lib-text-muted: #64748b;
-  --lib-accent: #00f0ff;
-  --lib-accent-hover: #00c8d6;
-  --lib-accent-glow: rgba(0, 240, 255, 0.15);
-  --lib-font: "JetBrains Mono", "Fira Code", monospace;
+  --lib-bg-primary: #0a0e17;
+  --lib-bg-secondary: #121824;
+  --lib-bg-hover: #1b2436;
+  --lib-border-color: #222f43;
+  --lib-text-primary: #f1f5f9;
+  --lib-text-muted: #94a3b8;
+  --lib-accent-red: #dc2626;
+  --lib-accent-red-hover: #ef4444;
+  --lib-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --lib-width: 380px;
 }
 
@@ -30,16 +29,17 @@ library-drawer.lib-drawer--closing {
   pointer-events: auto;
 }
 
+/* Backdrp / Blur de Fundo */
 .lib-drawer__backdrop {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(2, 6, 23, 0.85);
-  backdrop-filter: blur(4px);
+  background-color: rgba(6, 9, 15, 0.75);
+  backdrop-filter: blur(6px);
   opacity: 0;
-  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.25s ease-out;
   will-change: opacity;
 }
 
@@ -48,6 +48,7 @@ library-drawer.lib-drawer--opening .lib-drawer__backdrop {
   opacity: 1;
 }
 
+/* Painel Lateral Estilo Leonardo */
 .lib-drawer__panel {
   position: absolute;
   top: 0;
@@ -57,7 +58,7 @@ library-drawer.lib-drawer--opening .lib-drawer__backdrop {
   height: 100%;
   background-color: var(--lib-bg-primary);
   border-left: 1px solid var(--lib-border-color);
-  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.8);
+  box-shadow: -12px 0 32px rgba(0, 0, 0, 0.6);
   display: flex;
   flex-direction: column;
   font-family: var(--lib-font);
@@ -76,8 +77,9 @@ library-drawer.lib-drawer--closed .lib-drawer__panel {
   transform: translate3d(100%, 0, 0);
 }
 
+/* Cabeçalho do Painel */
 .lib-drawer__header {
-  padding: 18px 20px;
+  padding: 16px 20px;
   background-color: var(--lib-bg-secondary);
   border-bottom: 1px solid var(--lib-border-color);
   display: flex;
@@ -85,54 +87,53 @@ library-drawer.lib-drawer--closed .lib-drawer__panel {
   justify-content: space-between;
 }
 
-.lib-drawer__header h2 {
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--lib-accent);
-  margin: 0;
+.lib-drawer__header-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-.lib-drawer__header h2::before {
-  content: "";
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  background-color: var(--lib-accent);
-  box-shadow: 0 0 8px var(--lib-accent);
-  border-radius: 50%;
+.lib-drawer__header h2 {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--lib-text-primary);
+  margin: 0;
 }
 
-.lib-drawer__close-btn {
+.lib-drawer__collapse-btn {
   background: transparent;
-  border: 1px solid transparent;
+  border: 1px solid var(--lib-border-color);
   color: var(--lib-text-muted);
   cursor: pointer;
-  padding: 4px 8px;
-  font-size: 16px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
   border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.05em;
   transition: all 0.2s ease;
 }
 
-.lib-drawer__close-btn:hover {
-  color: var(--lib-accent);
-  border-color: var(--lib-border-color);
-  background-color: var(--lib-bg-hover);
+.lib-drawer__collapse-btn:hover {
+  color: var(--lib-text-primary);
+  border-color: var(--lib-accent-red);
+  background-color: rgba(220, 38, 38, 0.1);
 }
 
+/* Caixa de Pesquisa */
 .lib-drawer__search-box {
-  padding: 14px 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--lib-border-color);
   background-color: var(--lib-bg-primary);
 }
 
 .lib-drawer__search-input {
   width: 100%;
-  padding: 10px 14px;
+  padding: 8px 12px;
   background-color: var(--lib-bg-secondary);
   border: 1px solid var(--lib-border-color);
   border-radius: 4px;
@@ -141,17 +142,32 @@ library-drawer.lib-drawer--closed .lib-drawer__panel {
   font-family: var(--lib-font);
   box-sizing: border-box;
   outline: none;
+  transition: border-color 0.2s ease;
 }
 
 .lib-drawer__search-input:focus {
-  border-color: var(--lib-accent);
-  box-shadow: 0 0 10px var(--lib-accent-glow);
+  border-color: var(--lib-accent-red);
 }
 
 .lib-drawer__body {
   flex: 1;
   position: relative;
   overflow: hidden;
+}
+
+/* Rolagem Customizada */
+.virtual-viewport::-webkit-scrollbar {
+  width: 4px;
+}
+.virtual-viewport::-webkit-scrollbar-track {
+  background: var(--lib-bg-primary);
+}
+.virtual-viewport::-webkit-scrollbar-thumb {
+  background: var(--lib-border-color);
+  border-radius: 2px;
+}
+.virtual-viewport::-webkit-scrollbar-thumb:hover {
+  background: var(--lib-accent-red);
 }
 
 @media (max-width: 768px) {
