@@ -204,7 +204,42 @@
         .sys-status-tag .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--hud-cyan); box-shadow: 0 0 8px var(--hud-cyan); animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-        .search-wrapper { position: relative; width: 100%; max-width: 400px; }
+        .header-controls { display: flex; align-items: center; gap: 15px; }
+
+        /* SELETOR DE MODO DE EXIBIÇÃO DO ACERVO */
+        .view-mode-selector {
+            display: flex;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-stealth);
+            padding: 3px;
+            border-radius: 2px;
+            gap: 4px;
+        }
+
+        .view-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 13px;
+            border-radius: 2px;
+        }
+
+        .view-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
+        .view-btn.active {
+            color: var(--hud-cyan);
+            background: rgba(0, 240, 255, 0.15);
+            border: 1px solid var(--border-active);
+            box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+        }
+
+        .search-wrapper { position: relative; width: 100%; max-width: 320px; }
         .search-wrapper i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--hud-cyan); font-size: 14px; }
         .search-input {
             width: 100%; padding: 10px 16px 10px 45px; background: rgba(0,0,0,0.4);
@@ -224,9 +259,18 @@
         .category-header::before { content: '///'; color: var(--hud-cyan); margin-right: 15px; font-size: 20px; }
         .category-header::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--hud-cyan-dim), transparent); margin-left: 20px; }
 
-        /* ---------------- GRID E CARDS 3D STEALTH ---------------- */
-        .grid-acervo { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; perspective: 1000px; }
+        /* ---------------- ESTRUTURA DOS MODOS DE EXIBIÇÃO ---------------- */
 
+        /* 1. MODO NORMAL (PADRÃO) */
+        .grid-acervo.mode-normal { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; perspective: 1000px; }
+
+        /* 2. MODO MENOR (ÍCONES REDUZIDOS) */
+        .grid-acervo.mode-small { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; perspective: 1000px; }
+        .grid-acervo.mode-small .slot-container { aspect-ratio: 1 / 1.3; padding: 10px; }
+        .grid-acervo.mode-small .slot-title { font-size: 9px; line-height: 1.2; }
+        .grid-acervo.mode-small .slot-index { font-size: 8px; padding: 2px 5px; }
+
+        /* ESTILOS COMUNS DOS SLOTS EM GRADE */
         .slot-container {
             position: relative; background: var(--panel-glass);
             border: 1px solid var(--border-stealth);
@@ -294,6 +338,23 @@
         }
         .slot-container:hover .slot-title { color: var(--hud-cyan); }
 
+        /* 3. MODO LISTA (TABELA COMPACTA) */
+        .grid-acervo.mode-list { display: flex; flex-direction: column; gap: 8px; }
+        .grid-acervo.mode-list .slot-container {
+            aspect-ratio: auto;
+            height: 52px;
+            flex-direction: row;
+            align-items: center;
+            padding: 0 20px;
+            clip-path: none;
+            border-radius: 2px;
+            transform: none !important;
+        }
+        .grid-acervo.mode-list .slot-cover-wrapper { display: none; }
+        .grid-acervo.mode-list .slot-meta { width: auto; gap: 15px; }
+        .grid-acervo.mode-list .slot-footer { background: transparent; padding: 0; flex: 1; margin-left: 20px; transform: none; }
+        .grid-acervo.mode-list .slot-title { border: none; font-size: 12px; }
+
         /* ---------------- MODAL / LEITOR DE DOCUMENTOS ---------------- */
         #modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -321,7 +382,29 @@
         .modal-title-zone i { color: var(--hud-cyan); font-size: 18px; filter: drop-shadow(0 0 5px var(--hud-cyan)); }
         .modal-title { font-family: 'Orbitron', sans-serif; font-size: 14px; letter-spacing: 2px; color: #fff; font-weight: 700; }
 
-        .modal-actions { display: flex; gap: 10px; }
+        .modal-actions { display: flex; align-items: center; gap: 12px; }
+
+        .page-slider-container {
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(0, 0, 0, 0.5); padding: 4px 12px;
+            border: 1px solid var(--border-stealth); border-radius: 20px;
+        }
+
+        .page-slider {
+            -webkit-appearance: none; width: 140px; height: 4px;
+            background: var(--border-stealth); outline: none; border-radius: 2px;
+            transition: background 0.3s;
+        }
+
+        .page-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 14px; height: 14px; border-radius: 50%;
+            background: var(--hud-cyan); cursor: pointer;
+            box-shadow: 0 0 8px var(--hud-cyan); transition: transform 0.2s;
+        }
+
+        .page-slider::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
         .modal-tool-btn {
             background: rgba(0,0,0,0.4); border: 1px solid var(--border-stealth); color: var(--text-main);
             width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center;
@@ -331,7 +414,7 @@
         
         .modal-close-btn {
             background: rgba(255, 42, 42, 0.1); border: 1px solid rgba(255, 42, 42, 0.3); color: #ff2a2a;
-            font-size: 20px; margin-left: 15px; clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+            font-size: 20px; margin-left: 10px; clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
         }
         .modal-close-btn:hover { background: rgba(255, 42, 42, 0.3); border-color: #ff2a2a; box-shadow: 0 0 15px rgba(255, 42, 42, 0.4); }
 
@@ -349,8 +432,7 @@
             padding: 50px 70px; background: rgba(5, 7, 10, 0.85); color: #cbd5e1;
             font-family: 'Rajdhani', sans-serif; font-size: 18px; line-height: 1.8;
             overflow-y: auto; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--border-stealth);
-            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-stealth); backdrop-filter: blur(10px);
         }
         .reader-book-container h1 { font-family: 'Orbitron', sans-serif; font-size: 22px; color: var(--hud-cyan); border-bottom: 2px solid var(--hud-cyan-dim); padding-bottom: 10px; margin-top: 30px; margin-bottom: 20px; letter-spacing: 2px; text-transform: uppercase; }
         .reader-book-container h2 { font-family: 'Orbitron', sans-serif; font-size: 16px; color: #fff; margin-top: 25px; margin-bottom: 15px; letter-spacing: 1px; }
@@ -359,39 +441,24 @@
         .math-rendered { display: block; text-align: center; margin: 25px 0; padding: 15px; background: rgba(0, 0, 0, 0.6); border: 1px solid var(--border-stealth); border-radius: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         .math-inline { padding: 2px 6px; background: rgba(0, 0, 0, 0.5); color: var(--hud-cyan); font-family: 'JetBrains Mono', monospace; }
 
-        /* ---------------- BOTÕES CIRCULARES DE NAVEGAÇÃO HUD ---------------- */
         .nav-side-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: rgba(5, 7, 10, 0.85);
-            border: 1px solid var(--border-active);
-            color: var(--hud-cyan);
-            font-size: 18px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 48px; height: 48px; border-radius: 50%;
+            background: rgba(5, 7, 10, 0.85); border: 1px solid var(--border-active);
+            color: var(--hud-cyan); font-size: 18px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
             transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 50;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(0, 240, 255, 0.15);
+            z-index: 50; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(0, 240, 255, 0.15);
             backdrop-filter: blur(8px);
         }
         .nav-side-btn.prev { left: 20px; }
         .nav-side-btn.next { right: 20px; }
         .nav-side-btn:hover {
-            background: rgba(0, 240, 255, 0.2);
-            border-color: var(--hud-cyan);
-            color: #fff;
-            box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+            background: rgba(0, 240, 255, 0.2); border-color: var(--hud-cyan);
+            color: #fff; box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
             transform: translateY(-50%) scale(1.1);
         }
-        .nav-side-btn:active {
-            transform: translateY(-50%) scale(0.95);
-        }
+        .nav-side-btn:active { transform: translateY(-50%) scale(0.95); }
 
         .modal-footer {
             height: 50px; background: rgba(0,0,0,0.7); border-top: 1px solid var(--border-stealth);
@@ -400,10 +467,10 @@
         }
         .page-jumper { display: flex; align-items: center; gap: 10px; }
         .page-input {
-            width: 50px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-active);
+            width: 60px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-active);
             color: var(--hud-cyan); font-weight: 700; text-align: center;
             font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 4px 0; outline: none;
-            box-shadow: 0 0 5px rgba(0,240,255,0.2);
+            box-shadow: 0 0 5px rgba(0,240,255,0.2); border-radius: 2px;
         }
 
         #pdf-loader {
@@ -418,14 +485,14 @@
             #sidebar { position: fixed; top: 0; left: 0; height: 100vh; transform: translateX(-100%); width: 280px; }
             #sidebar.mobile-open { transform: translateX(0); }
             .btn-menu-toggle { display: block; }
-            header { padding: 0 20px; }
+            header { padding: 0 20px; flex-wrap: wrap; height: auto; padding-bottom: 10px; gap: 10px; }
             .content-body { padding: 20px; }
-            .grid-acervo { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
             .reader-book-container { padding: 20px 15px; font-size: 16px; }
             .modal-container { width: 100%; height: 100vh; clip-path: none; border: none; }
             .nav-side-btn { width: 40px; height: 40px; font-size: 14px; }
             .nav-side-btn.prev { left: 10px; }
             .nav-side-btn.next { right: 10px; }
+            .page-slider { width: 80px; }
         }
     </style>
 </head>
@@ -468,6 +535,13 @@
             </div>
 
             <div class="header-controls">
+                <!-- SELETOR DE MODO DE EXIBIÇÃO DA GRADE -->
+                <div class="view-mode-selector">
+                    <button class="view-btn active" id="btn-mode-normal" title="Modo Padrão (Cards)"><i class="fa-solid fa-border-all"></i></button>
+                    <button class="view-btn" id="btn-mode-small" title="Modo Compacto (Ícones Menores)"><i class="fa-solid fa-grip"></i></button>
+                    <button class="view-btn" id="btn-mode-list" title="Modo Lista (Linhas)"><i class="fa-solid fa-list-ul"></i></button>
+                </div>
+
                 <div class="search-wrapper">
                     <i class="fa-solid fa-crosshairs"></i>
                     <input type="text" id="search-input" class="search-input" placeholder="LOCALIZAR ALVO / ARQUIVO...">
@@ -477,7 +551,7 @@
 
         <div class="content-body">
             <div class="category-header" id="txt-categoria-atual">INICIALIZANDO SISTEMA...</div>
-            <div class="grid-acervo" id="painel-slots"></div>
+            <div class="grid-acervo mode-normal" id="painel-slots"></div>
         </div>
     </div>
 
@@ -490,6 +564,11 @@
                 </div>
 
                 <div class="modal-actions">
+                    <div class="page-slider-container pdf-only-ctrl">
+                        <i class="fa-solid fa-sliders" style="color: var(--hud-cyan); font-size: 11px;"></i>
+                        <input type="range" id="input-page-slider" class="page-slider" value="1" min="1" max="1">
+                    </div>
+
                     <button class="modal-tool-btn pdf-only-ctrl" id="btn-zoom-out" title="Reduzir Escala"><i class="fa-solid fa-minus"></i></button>
                     <button class="modal-tool-btn pdf-only-ctrl" id="btn-zoom-in" title="Aumentar Escala"><i class="fa-solid fa-plus"></i></button>
                     <button class="modal-tool-btn pdf-only-ctrl" id="btn-zoom-reset" title="Restaurar Visão"><i class="fa-solid fa-expand"></i></button>
@@ -702,7 +781,7 @@
                     </div>
                 `);
 
-                if (!eTxt) {
+                if (!eTxt && !painel.hasClass('mode-list')) {
                     renderizarCapaPDF(doc.download_url, slotCanvasId);
                 }
             });
@@ -751,14 +830,23 @@
                 pageNum = parseInt(localStorage.getItem(`lks_page_${documentoAtualKey}`)) || 1;
 
                 pdfjsLib.getDocument(urlArquivo).promise.then(pdfDoc_ => {
-                    pdfDoc = pdfDoc_; $('#total-pages-count').text(pdfDoc.numPages); $('#input-page-num').attr('max', pdfDoc.numPages);
-                    if (pageNum > pdfDoc.numPages) pageNum = 1; renderPage(pageNum);
+                    pdfDoc = pdfDoc_;
+                    const totalPaginas = pdfDoc.numPages;
+                    $('#total-pages-count').text(totalPaginas);
+                    $('#input-page-num').attr('max', totalPaginas);
+                    $('#input-page-slider').attr('max', totalPaginas).val(pageNum);
+
+                    if (pageNum > totalPaginas) pageNum = 1;
+                    renderPage(pageNum);
                 }).catch(err => { alert('Falha ao processar arquivo PDF tático.'); $('#pdf-loader').hide(); });
             }
         }
 
         function renderPage(num) {
-            pageIsRendering = true; $('#input-page-num').val(num);
+            pageIsRendering = true;
+            $('#input-page-num').val(num);
+            $('#input-page-slider').val(num);
+
             if (documentoAtualKey) localStorage.setItem(`lks_page_${documentoAtualKey}`, num);
             if (currentRenderTask) { currentRenderTask.cancel(); currentRenderTask = null; }
 
@@ -797,6 +885,25 @@
             $('#btn-toggle-sidebar').on('click', function() { $('#sidebar').addClass('mobile-open'); $('#sidebar-overlay').fadeIn(200); });
             $('#sidebar-overlay').on('click', function() { $('#sidebar').removeClass('mobile-open'); $(this).fadeOut(200); });
 
+            /* EVENTOS DE ALTERAÇÃO DO MODO DE EXIBIÇÃO */
+            $('#btn-mode-normal').on('click', function() {
+                $('.view-btn').removeClass('active'); $(this).addClass('active');
+                $('#painel-slots').removeClass('mode-small mode-list').addClass('mode-normal');
+                renderizarSlots(listaDocumentosAtuais);
+            });
+
+            $('#btn-mode-small').on('click', function() {
+                $('.view-btn').removeClass('active'); $(this).addClass('active');
+                $('#painel-slots').removeClass('mode-normal mode-list').addClass('mode-small');
+                renderizarSlots(listaDocumentosAtuais);
+            });
+
+            $('#btn-mode-list').on('click', function() {
+                $('.view-btn').removeClass('active'); $(this).addClass('active');
+                $('#painel-slots').removeClass('mode-normal mode-small').addClass('mode-list');
+                renderizarSlots(listaDocumentosAtuais);
+            });
+
             $('#search-input').on('input', function() {
                 const termo = $(this).val().toLowerCase().trim();
                 renderizarSlots(termo ? listaDocumentosAtuais.filter(doc => doc.name.toLowerCase().includes(termo)) : listaDocumentosAtuais);
@@ -805,7 +912,23 @@
             $('#btn-zoom-in').on('click', function() { pdfScaleModifier += 0.15; queueRenderPage(pageNum); });
             $('#btn-zoom-out').on('click', function() { if (pdfScaleModifier > 0.5) { pdfScaleModifier -= 0.15; queueRenderPage(pageNum); } });
             $('#btn-zoom-reset').on('click', function() { pdfScaleModifier = 1.0; queueRenderPage(pageNum); });
-            $('#input-page-num').on('change', function() { let v = parseInt($(this).val()); pageNum = (isNaN(v) || v < 1) ? 1 : (v > pdfDoc.numPages ? pdfDoc.numPages : v); queueRenderPage(pageNum); });
+
+            $('#input-page-num').on('keyup change', function(e) {
+                if (e.type === 'keyup' && e.keyCode !== 13) return;
+                let v = parseInt($(this).val());
+                if (isNaN(v) || v < 1) v = 1;
+                if (pdfDoc && v > pdfDoc.numPages) v = pdfDoc.numPages;
+                pageNum = v;
+                queueRenderPage(pageNum);
+            });
+
+            $('#input-page-slider').on('input change', function() {
+                let v = parseInt($(this).val());
+                if (isNaN(v) || v < 1) v = 1;
+                if (pdfDoc && v > pdfDoc.numPages) v = pdfDoc.numPages;
+                pageNum = v;
+                queueRenderPage(pageNum);
+            });
 
             $('#prev-page-btn').on('click', showPrevPage); $('#next-page-btn').on('click', showNextPage);
             $(document).on('keydown', function(e) {
