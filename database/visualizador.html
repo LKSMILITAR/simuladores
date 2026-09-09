@@ -2,9 +2,16 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
     <title>Visualizador de Documentos - LKS</title>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
     <style>
         * {
             box-sizing: border-box;
@@ -13,7 +20,15 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                Helvetica,
+                Arial,
+                sans-serif;
+
             background-color: #1a1a1a;
             color: #e0e0e0;
             display: flex;
@@ -41,7 +56,8 @@
             gap: 8px;
         }
 
-        button, a.btn-download {
+        button,
+        a.btn-download {
             background-color: #333333;
             color: #ffffff;
             border: 1px solid #444444;
@@ -50,23 +66,28 @@
             font-weight: 500;
             border-radius: 4px;
             cursor: pointer;
-            transition: background-color 0.1s ease, border-color 0.1s ease;
+            transition:
+                background-color 0.1s ease,
+                border-color 0.1s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
         }
 
-        button:hover, a.btn-download:hover {
+        button:hover,
+        a.btn-download:hover {
             background-color: #444444;
             border-color: #555555;
         }
 
-        button:disabled {
+        button:disabled,
+        a.btn-download[aria-disabled="true"] {
             background-color: #222222;
             border-color: #2a2a2a;
             color: #666666;
             cursor: not-allowed;
+            pointer-events: none;
         }
 
         .page-info {
@@ -83,7 +104,7 @@
             border: 1px solid #444444;
             color: #ffffff;
             text-align: center;
-            width: 45px;
+            width: 52px;
             padding: 4px;
             font-size: 13px;
             border-radius: 3px;
@@ -121,19 +142,20 @@
 
         .loading-overlay {
             position: absolute;
-            top: 0;
-            left: 0;
+            inset: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(18, 18, 18, 0.9);
+            background-color: rgba(18, 18, 18, 0.94);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             gap: 12px;
             z-index: 5;
+            padding: 24px;
             font-size: 14px;
             color: #cccccc;
+            text-align: center;
         }
 
         .spinner {
@@ -145,34 +167,109 @@
             animation: spin 0.6s linear infinite;
         }
 
+        .error-message {
+            color: #ff5555;
+            max-width: 720px;
+            line-height: 1.5;
+            word-break: break-word;
+        }
+
+        .error-path {
+            color: #aaaaaa;
+            font-family: monospace;
+            font-size: 12px;
+            max-width: 720px;
+            line-height: 1.5;
+            word-break: break-all;
+        }
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
-<body>
 
+<body>
     <div class="toolbar">
         <div class="toolbar-group">
-            <button id="prev-page" title="Página Anterior">Anterior</button>
+            <button
+                id="prev-page"
+                type="button"
+                title="Página anterior"
+                disabled
+            >
+                Anterior
+            </button>
+
             <div class="page-info">
                 <span>Pág.</span>
-                <input type="number" id="page-num" value="1" min="1">
-                <span>de <span id="page-count">--</span></span>
+
+                <input
+                    type="number"
+                    id="page-num"
+                    value="1"
+                    min="1"
+                    disabled
+                >
+
+                <span>
+                    de <span id="page-count">--</span>
+                </span>
             </div>
-            <button id="next-page" title="Próxima Página">Próxima</button>
+
+            <button
+                id="next-page"
+                type="button"
+                title="Próxima página"
+                disabled
+            >
+                Próxima
+            </button>
         </div>
 
         <div class="toolbar-group">
-            <button id="zoom-out" title="Reduzir Zoom">-</button>
-            <span id="zoom-percent" class="page-info">100%</span>
-            <button id="zoom-in" title="Aumentar Zoom">+</button>
-            <button id="zoom-fit" title="Ajustar à Largura">Ajustar Largura</button>
+            <button
+                id="zoom-out"
+                type="button"
+                title="Reduzir zoom"
+                disabled
+            >
+                -
+            </button>
+
+            <span id="zoom-percent" class="page-info">
+                125%
+            </span>
+
+            <button
+                id="zoom-in"
+                type="button"
+                title="Aumentar zoom"
+                disabled
+            >
+                +
+            </button>
+
+            <button
+                id="zoom-fit"
+                type="button"
+                title="Ajustar à largura"
+                disabled
+            >
+                Ajustar largura
+            </button>
         </div>
 
         <div class="toolbar-group">
-            <a id="download-btn" class="btn-download" href="#" download target="_blank">Baixar PDF</a>
+            #
+                Baixar PDF
+            </a>
         </div>
     </div>
 
@@ -181,142 +278,548 @@
             <div class="spinner"></div>
             <span>Processando arquivo...</span>
         </div>
+
         <div class="canvas-wrapper">
             <canvas id="pdf-canvas"></canvas>
         </div>
     </div>
 
     <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        "use strict";
 
-        // Defina o caminho correto do documento PDF hospedado no servidor
-        const url = 'PCUSERS - HTML5 (1).pdf';
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-        let pdfDoc = null,
-            pageNum = 1,
-            pageRendering = false,
-            pageNumPending = null,
-            scale = 1.25,
-            canvas = document.getElementById('pdf-canvas'),
-            ctx = canvas.getContext('2d'),
-            loadingEl = document.getElementById('loading'),
-            pageNumInput = document.getElementById('page-num'),
-            pageCountEl = document.getElementById('page-count'),
-            zoomPercentEl = document.getElementById('zoom-percent'),
-            downloadBtn = document.getElementById('download-btn');
+        const SITE_BASE_PATH = "/simuladores/";
+        const DATABASE_BASE_PATH = "/simuladores/database/";
+        const DOCUMENTS_BASE_PATH = "/simuladores/database/documents/";
 
-        downloadBtn.href = url;
+        const canvas = document.getElementById("pdf-canvas");
+        const context = canvas.getContext("2d", {
+            alpha: false
+        });
 
-        function renderPage(num) {
-            pageRendering = true;
+        const viewportElement = document.getElementById("viewport");
+        const loadingElement = document.getElementById("loading");
 
-            pdfDoc.getPage(num).then(function(page) {
-                const pixelRatio = window.devicePixelRatio || 1;
-                const viewport = page.getViewport({ scale: scale });
+        const previousButton = document.getElementById("prev-page");
+        const nextButton = document.getElementById("next-page");
+        const zoomOutButton = document.getElementById("zoom-out");
+        const zoomInButton = document.getElementById("zoom-in");
+        const zoomFitButton = document.getElementById("zoom-fit");
 
-                canvas.height = viewport.height * pixelRatio;
-                canvas.width = viewport.width * pixelRatio;
-                canvas.style.width = viewport.width + 'px';
-                canvas.style.height = viewport.height + 'px';
+        const pageNumberInput = document.getElementById("page-num");
+        const pageCountElement = document.getElementById("page-count");
+        const zoomPercentElement =
+            document.getElementById("zoom-percent");
+        const downloadButton =
+            document.getElementById("download-btn");
 
-                ctx.scale(pixelRatio, pixelRatio);
+        let pdfDocument = null;
+        let pageNumber = 1;
+        let scale = 1.25;
+        let pageRendering = false;
+        let pendingPageNumber = null;
+        let activeRenderTask = null;
 
-                const renderContext = {
-                    canvasContext: ctx,
-                    viewport: viewport
-                };
-
-                const renderTask = page.render(renderContext);
-
-                renderTask.promise.then(function() {
-                    pageRendering = false;
-                    if (pageNumPending !== null) {
-                        renderPage(pageNumPending);
-                        pageNumPending = null;
-                    }
-                });
-            });
-
-            pageNumInput.value = num;
-            zoomPercentEl.textContent = Math.round(scale * 100) + '%';
-        }
-
-        function queueRenderPage(num) {
-            if (pageRendering) {
-                pageNumPending = num;
-            } else {
-                renderPage(num);
+        /**
+         * Decodifica um segmento somente quando necessário.
+         * URLSearchParams já realiza uma etapa de decodificação.
+         */
+        function safelyDecodeSegment(segment) {
+            try {
+                return decodeURIComponent(segment);
+            } catch {
+                return segment;
             }
         }
 
-        function onPrevPage() {
-            if (pageNum <= 1) return;
-            pageNum--;
-            queueRenderPage(pageNum);
+        /**
+         * Normaliza a rota conforme o sistema de arquivos do GitHub Pages:
+         * - converte barras invertidas;
+         * - normaliza Unicode para NFC;
+         * - remove "." e rejeita "..";
+         * - codifica espaços, vírgulas, acentos e caracteres especiais;
+         * - preserva as barras separadoras.
+         */
+        function sanitizePathname(pathname) {
+            const normalizedPath = String(pathname)
+                .replace(/\\/g, "/")
+                .normalize("NFC");
+
+            const sanitizedSegments = [];
+
+            for (const rawSegment of normalizedPath.split("/")) {
+                if (!rawSegment || rawSegment === ".") {
+                    continue;
+                }
+
+                const decodedSegment =
+                    safelyDecodeSegment(rawSegment).normalize("NFC");
+
+                if (decodedSegment === "..") {
+                    throw new Error(
+                        "A rota do documento contém navegação inválida."
+                    );
+                }
+
+                sanitizedSegments.push(
+                    encodeURIComponent(decodedSegment)
+                );
+            }
+
+            return "/" + sanitizedSegments.join("/");
+        }
+
+        /**
+         * Aceita:
+         *
+         * documents/Disciplina/Arquivo.pdf
+         * ./documents/Disciplina/Arquivo.pdf
+         * /simuladores/database/documents/Disciplina/Arquivo.pdf
+         * https://lksmilitar.github.io/simuladores/database/documents/...
+         *
+         * Rotas relativas são resolvidas a partir de /database/.
+         */
+        function resolveDocumentUrl(rawFile) {
+            if (typeof rawFile !== "string" || !rawFile.trim()) {
+                throw new Error(
+                    "O parâmetro obrigatório ?file= não foi informado."
+                );
+            }
+
+            const normalizedInput = rawFile
+                .trim()
+                .replace(/\\/g, "/")
+                .normalize("NFC");
+
+            const databaseBaseUrl = new URL(
+                DATABASE_BASE_PATH,
+                window.location.origin
+            );
+
+            const candidateUrl = new URL(
+                normalizedInput,
+                databaseBaseUrl
+            );
+
+            if (
+                candidateUrl.protocol !== "https:" &&
+                candidateUrl.protocol !== "http:"
+            ) {
+                throw new Error(
+                    "O protocolo informado para o documento não é permitido."
+                );
+            }
+
+            /*
+             * O leitor aceita URLs absolutas, mas bloqueia outra origem.
+             * Isso evita CORS inesperado e limita o leitor ao GitHub Pages
+             * que está hospedando a aplicação.
+             */
+            if (candidateUrl.origin !== window.location.origin) {
+                throw new Error(
+                    "O documento precisa estar hospedado na mesma origem da aplicação."
+                );
+            }
+
+            candidateUrl.pathname = sanitizePathname(
+                candidateUrl.pathname
+            );
+
+            /*
+             * Restringe o documento ao diretório oficial do acervo.
+             */
+            if (
+                !candidateUrl.pathname.startsWith(
+                    DOCUMENTS_BASE_PATH
+                )
+            ) {
+                throw new Error(
+                    "O documento solicitado está fora de " +
+                    DOCUMENTS_BASE_PATH
+                );
+            }
+
+            candidateUrl.hash = "";
+
+            return candidateUrl.href;
+        }
+
+        function showError(message, path = "") {
+            loadingElement.style.display = "flex";
+
+            const messageElement = document.createElement("div");
+            messageElement.className = "error-message";
+            messageElement.textContent = message;
+
+            loadingElement.replaceChildren(messageElement);
+
+            if (path) {
+                const pathElement = document.createElement("div");
+                pathElement.className = "error-path";
+                pathElement.textContent = path;
+                loadingElement.appendChild(pathElement);
+            }
+
+            setControlsEnabled(false);
+        }
+
+        function setControlsEnabled(enabled) {
+            previousButton.disabled = !enabled || pageNumber <= 1;
+
+            nextButton.disabled =
+                !enabled ||
+                !pdfDocument ||
+                pageNumber >= pdfDocument.numPages;
+
+            zoomOutButton.disabled = !enabled;
+            zoomInButton.disabled = !enabled;
+            zoomFitButton.disabled = !enabled;
+            pageNumberInput.disabled = !enabled;
+
+            downloadButton.setAttribute(
+                "aria-disabled",
+                enabled ? "false" : "true"
+            );
+        }
+
+        function updateControls() {
+            if (!pdfDocument) {
+                setControlsEnabled(false);
+                return;
+            }
+
+            pageNumberInput.value = String(pageNumber);
+            pageNumberInput.max = String(pdfDocument.numPages);
+            pageCountElement.textContent =
+                String(pdfDocument.numPages);
+
+            zoomPercentElement.textContent =
+                Math.round(scale * 100) + "%";
+
+            setControlsEnabled(true);
+        }
+
+        async function renderPage(number) {
+            if (!pdfDocument) {
+                return;
+            }
+
+            pageRendering = true;
+
+            try {
+                const page = await pdfDocument.getPage(number);
+                const displayViewport = page.getViewport({
+                    scale
+                });
+
+                const pixelRatio = Math.max(
+                    window.devicePixelRatio || 1,
+                    1
+                );
+
+                canvas.width = Math.floor(
+                    displayViewport.width * pixelRatio
+                );
+
+                canvas.height = Math.floor(
+                    displayViewport.height * pixelRatio
+                );
+
+                canvas.style.width =
+                    Math.floor(displayViewport.width) + "px";
+
+                canvas.style.height =
+                    Math.floor(displayViewport.height) + "px";
+
+                /*
+                 * setTransform redefine a transformação.
+                 * Não acumula escala após zoom ou mudança de página.
+                 */
+                context.setTransform(
+                    pixelRatio,
+                    0,
+                    0,
+                    pixelRatio,
+                    0,
+                    0
+                );
+
+                context.clearRect(
+                    0,
+                    0,
+                    displayViewport.width,
+                    displayViewport.height
+                );
+
+                activeRenderTask = page.render({
+                    canvasContext: context,
+                    viewport: displayViewport
+                });
+
+                await activeRenderTask.promise;
+            } catch (error) {
+                /*
+                 * RenderingCancelledException não representa falha do PDF.
+                 */
+                if (error?.name !== "RenderingCancelledException") {
+                    console.error(
+                        "[LKSMILITAR VIEWER] Falha na renderização:",
+                        error
+                    );
+
+                    showError(
+                        "Não foi possível renderizar a página selecionada."
+                    );
+                }
+            } finally {
+                pageRendering = false;
+                activeRenderTask = null;
+                updateControls();
+
+                if (pendingPageNumber !== null) {
+                    const nextPendingPage = pendingPageNumber;
+                    pendingPageNumber = null;
+                    renderPage(nextPendingPage);
+                }
+            }
+        }
+
+        function queueRenderPage(number) {
+            if (!pdfDocument) {
+                return;
+            }
+
+            const validPage = Math.min(
+                Math.max(Number(number), 1),
+                pdfDocument.numPages
+            );
+
+            pageNumber = validPage;
+            updateControls();
+
+            if (pageRendering) {
+                pendingPageNumber = validPage;
+                return;
+            }
+
+            renderPage(validPage);
+        }
+
+        function onPreviousPage() {
+            if (!pdfDocument || pageNumber <= 1) {
+                return;
+            }
+
+            queueRenderPage(pageNumber - 1);
         }
 
         function onNextPage() {
-            if (pageNum >= pdfDoc.numPages) return;
-            pageNum++;
-            queueRenderPage(pageNum);
+            if (
+                !pdfDocument ||
+                pageNumber >= pdfDocument.numPages
+            ) {
+                return;
+            }
+
+            queueRenderPage(pageNumber + 1);
         }
 
         function onZoomIn() {
-            if (scale >= 3.0) return;
-            scale += 0.25;
-            queueRenderPage(pageNum);
+            if (!pdfDocument || scale >= 3) {
+                return;
+            }
+
+            scale = Math.min(scale + 0.25, 3);
+            queueRenderPage(pageNumber);
         }
 
         function onZoomOut() {
-            if (scale <= 0.5) return;
-            scale -= 0.25;
-            queueRenderPage(pageNum);
+            if (!pdfDocument || scale <= 0.5) {
+                return;
+            }
+
+            scale = Math.max(scale - 0.25, 0.5);
+            queueRenderPage(pageNumber);
         }
 
-        function onZoomFit() {
-            if (!pdfDoc) return;
-            pdfDoc.getPage(pageNum).then(function(page) {
-                const containerWidth = document.getElementById('viewport').clientWidth - 40;
-                const unscaledViewport = page.getViewport({ scale: 1.0 });
-                scale = containerWidth / unscaledViewport.width;
-                queueRenderPage(pageNum);
-            });
+        async function onZoomFit() {
+            if (!pdfDocument) {
+                return;
+            }
+
+            try {
+                const page = await pdfDocument.getPage(pageNumber);
+
+                const unscaledViewport = page.getViewport({
+                    scale: 1
+                });
+
+                const availableWidth = Math.max(
+                    viewportElement.clientWidth - 40,
+                    200
+                );
+
+                scale = Math.min(
+                    Math.max(
+                        availableWidth / unscaledViewport.width,
+                        0.5
+                    ),
+                    3
+                );
+
+                queueRenderPage(pageNumber);
+            } catch (error) {
+                console.error(
+                    "[LKSMILITAR VIEWER] Falha ao ajustar largura:",
+                    error
+                );
+            }
         }
 
-        document.getElementById('prev-page').addEventListener('click', onPrevPage);
-        document.getElementById('next-page').addEventListener('click', onNextPage);
-        document.getElementById('zoom-in').addEventListener('click', onZoomIn);
-        document.getElementById('zoom-out').addEventListener('click', onZoomOut);
-        document.getElementById('zoom-fit').addEventListener('click', onZoomFit);
+        async function loadDocument() {
+            const searchParameters = new URLSearchParams(
+                window.location.search
+            );
 
-        pageNumInput.addEventListener('change', function() {
-            let val = parseInt(this.value);
-            if (val >= 1 && val <= pdfDoc.numPages) {
-                pageNum = val;
-                queueRenderPage(pageNum);
+            /*
+             * URLSearchParams.get() já devolve o valor decodificado.
+             * Não aplique decodeURIComponent diretamente sobre o valor
+             * inteiro, pois isso pode causar dupla decodificação.
+             */
+            const rawFile = searchParameters.get("file");
+
+            let documentUrl;
+
+            try {
+                documentUrl = resolveDocumentUrl(rawFile);
+            } catch (error) {
+                console.error(
+                    "[LKSMILITAR VIEWER] Rota inválida:",
+                    error
+                );
+
+                showError(
+                    error.message ||
+                    "A rota informada para o documento é inválida.",
+                    rawFile || ""
+                );
+
+                return;
+            }
+
+            downloadButton.href = documentUrl;
+
+            try {
+                const loadingTask = pdfjsLib.getDocument({
+                    url: documentUrl,
+                    withCredentials: false,
+                    disableRange: false,
+                    disableStream: false,
+                    disableAutoFetch: false
+                });
+
+                pdfDocument = await loadingTask.promise;
+
+                pageNumber = 1;
+                pageCountElement.textContent =
+                    String(pdfDocument.numPages);
+
+                pageNumberInput.max =
+                    String(pdfDocument.numPages);
+
+                loadingElement.style.display = "none";
+
+                updateControls();
+                await renderPage(pageNumber);
+            } catch (error) {
+                console.error(
+                    "[LKSMILITAR VIEWER] Falha no PDF.js:",
+                    error
+                );
+
+                showError(
+                    "Erro ao carregar o PDF. Verifique se o nome, " +
+                    "as maiúsculas, os acentos e o diretório correspondem " +
+                    "exatamente ao arquivo existente no GitHub.",
+                    documentUrl
+                );
+            }
+        }
+
+        previousButton.addEventListener(
+            "click",
+            onPreviousPage
+        );
+
+        nextButton.addEventListener(
+            "click",
+            onNextPage
+        );
+
+        zoomInButton.addEventListener(
+            "click",
+            onZoomIn
+        );
+
+        zoomOutButton.addEventListener(
+            "click",
+            onZoomOut
+        );
+
+        zoomFitButton.addEventListener(
+            "click",
+            onZoomFit
+        );
+
+        pageNumberInput.addEventListener("change", function () {
+            if (!pdfDocument) {
+                return;
+            }
+
+            const selectedPage = Number.parseInt(
+                this.value,
+                10
+            );
+
+            if (
+                Number.isInteger(selectedPage) &&
+                selectedPage >= 1 &&
+                selectedPage <= pdfDocument.numPages
+            ) {
+                queueRenderPage(selectedPage);
             } else {
-                this.value = pageNum;
+                this.value = String(pageNumber);
             }
         });
 
-        window.addEventListener('keydown', function(e) {
-            if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+        window.addEventListener("keydown", function (event) {
+            if (
+                event.target instanceof HTMLInputElement ||
+                event.target instanceof HTMLTextAreaElement
+            ) {
+                return;
+            }
+
+            if (
+                event.key === "ArrowRight" ||
+                event.key === "PageDown"
+            ) {
+                event.preventDefault();
                 onNextPage();
-            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-                onPrevPage();
+            }
+
+            if (
+                event.key === "ArrowLeft" ||
+                event.key === "PageUp"
+            ) {
+                event.preventDefault();
+                onPreviousPage();
             }
         });
 
-        pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
-            pdfDoc = pdfDoc_;
-            pageCountEl.textContent = pdfDoc.numPages;
-            pageNumInput.max = pdfDoc.numPages;
-            loadingEl.style.display = 'none';
-            renderPage(pageNum);
-        }).catch(function(error) {
-            loadingEl.innerHTML = '<span style="color: #ff5555;">Erro ao carregar o arquivo PDF. Verifique o caminho indicado.</span>';
-            console.error('Falha no PDF.js:', error);
-        });
+        loadDocument();
     </script>
 </body>
 </html>
