@@ -1,11 +1,17 @@
 {
-  "generatedAt": "2026-09-09T08:03:18.038Z",
-  "totalRootCategories": 1,
+  "generatedAt": "2026-09-09T08:12:42.169Z",
+  "totalRootCategories": 2,
   "categories": [
     {
       "name": "Eletrodinamica",
       "path": "Eletrodinamica",
       "chunk": "assets/catalog/chunks/chunk-b7e6b2623849.json",
+      "itemCount": 1
+    },
+    {
+      "name": "Termodinamica",
+      "path": "Termodinamica",
+      "chunk": "assets/catalog/chunks/chunk-14d6ce53d06d.json",
       "itemCount": 1
     }
   ],
