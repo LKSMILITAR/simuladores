@@ -13,7 +13,7 @@ export class LibraryNavigationEngine {
   #rootItems = [];
 
   constructor(config = {}) {
-    this.#baseUrl = config.baseUrl || './assets/catalog';
+    this.#baseUrl = config.baseUrl || './';
     this.#fsm = new NavigationFSM();
     this.#cache = new CacheManager(config.l1Capacity || 100);
     this.#fetcher = new NetworkFetcher(this.#cache, this.#baseUrl);
@@ -32,7 +32,7 @@ export class LibraryNavigationEngine {
     this.#bindEvents();
 
     try {
-      const rootManifest = await this.#fetcher.fetchManifest('root.json');
+      const rootManifest = await this.#fetcher.fetchManifest('assets/catalog/root.json');
       if (rootManifest) {
         this.#rootItems = [
           ...(rootManifest.categories || []).map(c => ({ ...c, type: 'folder' })),
@@ -41,7 +41,7 @@ export class LibraryNavigationEngine {
         this.#drawerElement.resetToRoot(this.#rootItems);
       }
     } catch (err) {
-      console.warn('[LibraryEngine] Aviso: Erro ao carregar o manifesto raiz.', err);
+      console.warn('[LibraryEngine] Erro ao carregar o manifesto raiz:', err);
     }
   }
 
@@ -94,7 +94,7 @@ export class LibraryNavigationEngine {
   toggle() {
     if (this.#fsm.state === 'CLOSED') {
       this.#fsm.transition('OPEN');
-    } else {
+    } else if (this.#fsm.state === 'OPEN') {
       this.#fsm.transition('CLOSE');
     }
   }
