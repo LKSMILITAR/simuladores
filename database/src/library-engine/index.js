@@ -1,127 +1,178 @@
-document.addEventListener('DOMContentLoaded', async () => {
-    // Mapeamento absoluto das URLs em relação ao diretório /database/
-    const CATALOG_URL = './assets/catalog/root.json';
-    const VIEWER_BASE_URL = '../visualizador.html';
+import { NavigationFSM } from './state/fsm.js';
+import { CacheManager } from './services/cache-manager.js';
+import { NetworkFetcher } from './services/network-fetcher.js';
+import './components/sidebar-nav.js';
 
-    const mainViewport = document.querySelector('.main-content') || document.querySelector('main') || document.body;
-    const sidebar = document.querySelector('.sidebar') || document.querySelector('aside') || document.querySelector('.sidebar-nav');
-    const toggleBtn = document.querySelector('.menu-toggle') || document.querySelector('.hamburger') || document.querySelector('header button') || document.querySelector('[data-toggle="sidebar"]');
-    const sidebarLinks = document.querySelectorAll('.sidebar-nav a, nav a, [data-category]');
+document.addEventListener('DOMContentLoaded', async () => {
+    const fsm = new NavigationFSM();
+    const cacheManager = new CacheManager();
+    const fetcher = new NetworkFetcher(cacheManager);
+
+    // Elementos de Layout e Viewport
+    const sidebar = document.getElementById('main-sidebar');
+    const toggleBtn = document.getElementById('sidebar-toggle-btn');
+    const standbyView = document.getElementById('standby-view');
+    const activeDocView = document.getElementById('active-doc-view');
+    const categoryGridView = document.getElementById('category-grid-view');
+    
+    // Elementos de Conteúdo
+    const categoryTitleDisplay = document.getElementById('category-title-display');
+    const categoryCountBadge = document.getElementById('category-count-badge');
+    const categoryCardsContainer = document.getElementById('category-cards-container');
+    const docFilenameDisplay = document.getElementById('doc-filename-display');
+    const docFrameBody = document.getElementById('doc-frame-body');
+    const btnCloseDocument = document.getElementById('btn-close-document');
 
     let catalogData = null;
 
-    // Configura o evento de toque no botão hambúrguer do menu no celular
+    // 1. Controle de Abertura/Fechamento da Gaveta Lateral no Mobile
     if (toggleBtn && sidebar) {
         toggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            sidebar.classList.toggle('collapsed');
             sidebar.classList.toggle('active');
-            sidebar.classList.toggle('open');
         });
 
-        // Oculta a gaveta se o usuário tocar fora do menu
         document.addEventListener('click', (e) => {
-            if (sidebar.classList.contains('active') || sidebar.classList.contains('open')) {
+            if (window.innerWidth <= 768 && (sidebar.classList.contains('active') || sidebar.classList.contains('open'))) {
                 if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
                     sidebar.classList.remove('active', 'open');
+                    sidebar.classList.add('collapsed');
                 }
             }
         });
     }
 
-    // Requisição resiliente do catálogo com invalidação de cache por Timestamp
-    async function loadCatalog() {
-        try {
-            const cacheBuster = `?t=${Date.now()}`;
-            const response = await fetch(`${CATALOG_URL}${cacheBuster}`);
-            
-            if (!response.ok) {
-                throw new Error(`Falha HTTP na requisição: ${response.status}`);
-            }
+    // 2. Assina as Mudanças de Estado da Interface (FSM Observer)
+    fsm.subscribe(({ fromState, toState, event, payload }) => {
+        // Oculta todos os estados do HUD por padrão
+        standbyView.style.display = 'none';
+        activeDocView.style.display = 'none';
+        categoryGridView.style.display = 'none';
 
-            catalogData = await response.json();
-            bindSidebarEvents();
-            
-            // CARREGAMENTO INICIAL: Renderiza a primeira categoria disponível no JSON automaticamente
-            if (catalogData.categories && catalogData.categories.length > 0) {
-                renderCategory(catalogData.categories[0].name);
-            }
-        } catch (error) {
-            console.error('[DATABASE ENGINE] Erro ao carregar catálogo:', error);
-            mainViewport.innerHTML = `
-                <div style="padding: 24px; color: #e50914; font-family: monospace; text-align: center;">
-                    [ERRO DE CONEXÃO] FALHA AO CONSULTAR ASSETS/CATALOG/ROOT.JSON // STANDBY
-                </div>`;
+        switch (toState) {
+            case 'IDLE':
+                standbyView.style.display = 'flex';
+                sidebar.setActive('ROOT');
+                break;
+
+            case 'LOADING_CATEGORY':
+                standbyView.style.display = 'flex';
+                categoryTitleDisplay.textContent = 'CARREGANDO DADOS...';
+                loadCategoryContent(payload);
+                break;
+
+            case 'CATEGORY_ACTIVE':
+                categoryGridView.style.display = 'flex';
+                break;
+
+            case 'VIEWING_DOC':
+                activeDocView.style.display = 'flex';
+                renderDocumentViewer(payload);
+                break;
         }
-    }
+    });
 
-    function bindSidebarEvents() {
-        sidebarLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const categoryName = link.textContent.trim();
-
-                // Recolhe o menu mobile ao selecionar um item
-                if (sidebar) {
-                    sidebar.classList.remove('active', 'open');
-                }
-
-                renderCategory(categoryName);
-            });
-        });
-    }
-
-    function renderCategory(categoryName) {
-        if (!catalogData || !catalogData.categories) return;
-
-        // Normalização flexível para comparação de categorias sem acentos
-        const category = catalogData.categories.find(c => 
-            c.name.toLowerCase() === categoryName.toLowerCase() ||
-            c.id.toLowerCase() === categoryName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").toLowerCase()
-        );
-
-        if (!category) {
-            mainViewport.innerHTML = `
-                <div style="padding: 24px; color: #888888; font-family: monospace;">
-                    [SISTEMA] CATEGORIA "${categoryName}" SEM REGISTRO NO CATALOGO // STANDBY
-                </div>`;
-            return;
-        }
-
-        const filesHtml = (category.items && category.items.length > 0) ? category.items.map(file => {
-            // Tratamento de dados para suportar listas de strings ou objetos estruturados
-            const isObject = typeof file === 'object' && file !== null;
-            const fileName = isObject ? file.title : file;
-            const rawRelPath = isObject ? file.path : `documents/${category.name}/${file}`;
-            const encodedRelPath = isObject ? file.encodedPath : `documents/${encodeURIComponent(category.name)}/${encodeURIComponent(file)}`;
-
-            // Rota ajustada para o visualizador (/simuladores/visualizador.html) acessar a subpasta database
-            const viewerTarget = `${VIEWER_BASE_URL}?file=${encodeURIComponent('database/' + rawRelPath)}`;
-            const downloadTarget = `./${encodedRelPath}`;
-
-            return `
-                <div style="background: #141414; border: 1px solid #2a2a2a; border-left: 3px solid #e50914; padding: 14px; margin-bottom: 12px; border-radius: 4px; display: flex; flex-direction: column; gap: 10px;">
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <span style="color: #ffffff; font-size: 14px; font-weight: 500; word-break: break-all;">${fileName}</span>
-                        <span style="color: #666666; font-size: 11px; font-family: monospace;">URI: ${encodedRelPath}</span>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <a href="${viewerTarget}" target="_blank" style="background: #e50914; color: #ffffff; padding: 8px 14px; text-decoration: none; font-size: 12px; font-weight: bold; border-radius: 3px; text-align: center; flex: 1;">VISUALIZAR</a>
-                        <a href="${downloadTarget}" download style="background: #222222; color: #aaaaaa; border: 1px solid #333333; padding: 8px 14px; text-decoration: none; font-size: 12px; border-radius: 3px; text-align: center;">BAIXAR</a>
-                    </div>
-                </div>
-            `;
-        }).join('') : `<div style="padding: 20px; color: #555555; font-style: italic;">NENHUM DOCUMENTO CADASTRADO NESTA CATEGORIA</div>`;
-
-        mainViewport.innerHTML = `
-            <div style="padding: 20px;">
-                <div style="border-bottom: 1px solid #333333; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
-                    <h2 style="color: #ffffff; font-size: 18px; text-transform: uppercase; letter-spacing: 1px;">${category.name}</h2>
-                    <span style="color: #e50914; font-size: 12px; font-family: monospace; font-weight: bold;">[${category.itemCount || category.items.length} DOCS]</span>
-                </div>
-                <div>${filesHtml}</div>
+    // 3. Carregamento Inicial do Catálogo Central
+    try {
+        catalogData = await fetcher.fetchCatalog();
+    } catch (error) {
+        console.error('[Engine] Erro crítico ao carregar catálogo:', error);
+        standbyView.innerHTML = `
+            <div style="color: var(--accent-red); font-family: var(--font-mono); font-size: 0.85rem; text-align: center; padding: 20px;">
+                [ERRO CRÍTICO] FALHA AO CONECTAR COM ASSETS/CATALOG/ROOT.JSON // VERIFIQUE O DEPLOY
             </div>
         `;
     }
 
-    loadCatalog();
+    // 4. Ouvinte de Seleção Emitido pelo Web Component SidebarNav
+    document.addEventListener('sidebar:select', (e) => {
+        const path = e.detail.path;
+
+        if (path === 'ROOT') {
+            fsm.transition('RESET');
+        } else {
+            fsm.transition('SELECT_CATEGORY', path);
+        }
+
+        // Recolhe o menu automaticamente no mobile após o clique
+        if (window.innerWidth <= 768 && sidebar) {
+            sidebar.classList.remove('active', 'open');
+            sidebar.classList.add('collapsed');
+        }
+    });
+
+    // 5. Tratamento do Botão de Fechar Documento
+    if (btnCloseDocument) {
+        btnCloseDocument.addEventListener('click', () => {
+            docFrameBody.innerHTML = '';
+            fsm.transition('CLOSE_DOC');
+        });
+    }
+
+    // 6. Funções de Renderização de Conteúdo
+    function loadCategoryContent(categoryPath) {
+        if (!catalogData || !catalogData.categories) {
+            fsm.transition('LOAD_ERROR');
+            return;
+        }
+
+        const category = catalogData.categories.find(c => 
+            c.name.toLowerCase() === categoryPath.toLowerCase() ||
+            c.id.toLowerCase() === categoryPath.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").toLowerCase()
+        );
+
+        if (!category) {
+            categoryTitleDisplay.textContent = categoryPath.toUpperCase();
+            categoryCountBadge.textContent = '0 DOCUMENTOS';
+            categoryCardsContainer.innerHTML = '<div style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; padding: 20px;">NENHUM REGISTRO LOCALIZADO NESTA CATEGORIA.</div>';
+            fsm.transition('LOAD_SUCCESS');
+            return;
+        }
+
+        categoryTitleDisplay.textContent = category.name.toUpperCase();
+        categoryCountBadge.textContent = `${category.itemCount || category.items.length} DOCUMENTOS`;
+
+        if (!category.items || category.items.length === 0) {
+            categoryCardsContainer.innerHTML = '<div style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; padding: 20px;">DIRETÓRIO VAZIO // STANDBY</div>';
+        } else {
+            categoryCardsContainer.innerHTML = category.items.map(file => {
+                const isObject = typeof file === 'object' && file !== null;
+                const fileName = isObject ? file.title : file;
+                const rawPath = isObject ? file.path : `documents/${category.name}/${file}`;
+
+                return `
+                    <div class="doc-card" data-filepath="${rawPath}" data-filename="${fileName}">
+                        <div class="doc-card-title">${fileName}</div>
+                        <div class="doc-card-meta">
+                            <span>FORMATO: PDF / DOC</span>
+                            <span style="color: var(--accent-red);">ACESSAR &rarr;</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Adiciona evento de clique em cada cartão de documento da grade
+            categoryCardsContainer.querySelectorAll('.doc-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const filePath = card.getAttribute('data-filepath');
+                    const fileName = card.getAttribute('data-filename');
+                    fsm.transition('OPEN_DOC', { filePath, fileName });
+                });
+            });
+        }
+
+        fsm.transition('LOAD_SUCCESS', categoryPath);
+    }
+
+    function renderDocumentViewer({ filePath, fileName }) {
+        docFilenameDisplay.textContent = fileName;
+        
+        // Rota relativa para o visualizador localizado na raiz de /simuladores/
+        const viewerTarget = `../visualizador.html?file=${encodeURIComponent('database/' + filePath)}`;
+
+        docFrameBody.innerHTML = `
+            <iframe src="${viewerTarget}" title="${fileName}" style="width: 100%; height: 100%; border: none; background: #000;"></iframe>
+        `;
+    }
 });
