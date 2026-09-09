@@ -18,7 +18,6 @@ export class LibraryDrawer extends HTMLElement {
     this.className = 'lib-drawer lib-drawer--closed';
     this.setAttribute('aria-hidden', 'true');
 
-    // Blindagem de estilos essenciais caso o CSS externo falhe no carregamento
     this.style.cssText = 'position: fixed !important; top: 0 !important; left: 0 !important; width: 100vw !important; height: 100vh !important; z-index: 99999 !important; pointer-events: none; display: block;';
 
     this.innerHTML = `
@@ -58,6 +57,13 @@ export class LibraryDrawer extends HTMLElement {
       if (e.key === 'Escape' && this.#fsm?.state === 'OPEN') {
         this.#fsm.transition('CLOSE');
       }
+    });
+
+    // OUVINTE CRÍTICO: destrava o estado da FSM ao fim da animação
+    this.#panelElement.addEventListener('transitionend', (e) => {
+      if (e.propertyName !== 'transform') return;
+      if (this.#fsm?.state === 'OPENING') this.#fsm.transition('ANIMATION_END');
+      if (this.#fsm?.state === 'CLOSING') this.#fsm.transition('ANIMATION_END');
     });
 
     this.#searchInput.addEventListener('input', (e) => {
@@ -128,7 +134,7 @@ export class LibraryDrawer extends HTMLElement {
       case 'CLOSED':
         this.style.pointerEvents = 'none';
         this.classList.add('lib-drawer--closed');
-        this.classList.remove('lib-drawer--closing', 'lib-drawer--open');
+        this.classList.remove('lib-drawer--closing', 'lib-drawer--open', 'lib-drawer--opening');
         this.setAttribute('aria-hidden', 'true');
         break;
     }
