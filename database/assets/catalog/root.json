@@ -1,0 +1,22 @@
+{
+  "generatedAt": "2026-09-09T12:00:00.000Z",
+  "totalRootCategories": 15,
+  "categories": [
+    { "name": "Termodinâmica", "path": "Termodinâmica", "chunk": "assets/catalog/chunks/chunk-termo.json", "itemCount": 0 },
+    { "name": "Eletrodinâmica", "path": "Eletrodinâmica", "chunk": "assets/catalog/chunks/chunk-eletro.json", "itemCount": 0 },
+    { "name": "Aerodinâmica", "path": "Aerodinâmica", "chunk": "assets/catalog/chunks/chunk-aero.json", "itemCount": 0 },
+    { "name": "Propulsão", "path": "Propulsão", "chunk": "assets/catalog/chunks/chunk-prop.json", "itemCount": 0 },
+    { "name": "Estruturas", "path": "Estruturas", "chunk": "assets/catalog/chunks/chunk-est.json", "itemCount": 0 },
+    { "name": "Materiais", "path": "Materiais", "chunk": "assets/catalog/chunks/chunk-mat.json", "itemCount": 0 },
+    { "name": "Eletrônica", "path": "Eletrônica", "chunk": "assets/catalog/chunks/chunk-elet.json", "itemCount": 0 },
+    { "name": "Sistemas de Armas", "path": "Sistemas de Armas", "chunk": "assets/catalog/chunks/chunk-arm.json", "itemCount": 0 },
+    { "name": "Radar e Guerra Eletrônica", "path": "Radar e Guerra Eletrônica", "chunk": "assets/catalog/chunks/chunk-rad.json", "itemCount": 0 },
+    { "name": "Inteligência e Vigilância", "path": "Inteligência e Vigilância", "chunk": "assets/catalog/chunks/chunk-intel.json", "itemCount": 0 },
+    { "name": "Logística e Suprimento", "path": "Logística e Suprimento", "chunk": "assets/catalog/chunks/chunk-log.json", "itemCount": 0 },
+    { "name": "História Militar", "path": "História Militar", "chunk": "assets/catalog/chunks/chunk-hist.json", "itemCount": 0 },
+    { "name": "Manuais Técnicos", "path": "Manuais Técnicos", "chunk": "assets/catalog/chunks/chunk-man.json", "itemCount": 0 },
+    { "name": "Documentos Oficiais", "path": "Documentos Oficiais", "chunk": "assets/catalog/chunks/chunk-doc.json", "itemCount": 0 },
+    { "name": "Projetos e Simuladores", "path": "Projetos e Simuladores", "chunk": "assets/catalog/chunks/chunk-proj.json", "itemCount": 0 }
+  ],
+  "files": []
+}
