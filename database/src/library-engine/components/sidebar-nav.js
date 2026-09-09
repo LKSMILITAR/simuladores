@@ -44,8 +44,19 @@ export class SidebarNav extends HTMLElement {
   }
 
   setActive(path) {
+    if (this.#activePath === path) return;
     this.#activePath = path;
-    this.render();
+
+    // Atualiza apenas as classes no DOM sem redesenhar todo o HTML
+    this.querySelectorAll('.sidebar__item').forEach(el => {
+      if (el.dataset.path === path) {
+        el.classList.add('active');
+        el.setAttribute('aria-current', 'page');
+      } else {
+        el.classList.remove('active');
+        el.removeAttribute('aria-current');
+      }
+    });
   }
 
   toggleCollapse() {
@@ -54,9 +65,12 @@ export class SidebarNav extends HTMLElement {
 
   render() {
     this.innerHTML = `
-      <nav class="sidebar__nav">
+      <nav class="sidebar__nav" aria-label="Navegação Disciplinar Tática">
         ${DISCIPLINE_ITEMS.map(item => `
-          <a href="#" class="sidebar__item ${this.#activePath === item.path ? 'active' : ''}" data-path="${item.path}">
+          <a href="#" 
+             class="sidebar__item ${this.#activePath === item.path ? 'active' : ''}" 
+             data-path="${item.path}"
+             ${this.#activePath === item.path ? 'aria-current="page"' : ''}>
             ${ICONS[item.key] || ICONS.manuais}
             <span>${item.name}</span>
           </a>
@@ -72,10 +86,12 @@ export class SidebarNav extends HTMLElement {
       </div>
     `;
 
+    // Registra os eventos de clique uma única vez durante a montagem inicial
     this.querySelectorAll('.sidebar__item').forEach(el => {
       el.addEventListener('click', (e) => {
         e.preventDefault();
         const targetPath = el.dataset.path;
+        
         this.setActive(targetPath);
 
         this.dispatchEvent(new CustomEvent('sidebar:select', {
