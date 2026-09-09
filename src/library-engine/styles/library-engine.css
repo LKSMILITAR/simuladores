@@ -1,0 +1,161 @@
+:host, .lib-drawer-host, library-drawer {
+  --lib-bg-primary: #050811;
+  --lib-bg-secondary: #0b1220;
+  --lib-bg-hover: #152238;
+  --lib-border-color: #1e2d4a;
+  --lib-text-primary: #e2e8f0;
+  --lib-text-muted: #64748b;
+  --lib-accent: #00f0ff;
+  --lib-accent-hover: #00c8d6;
+  --lib-accent-glow: rgba(0, 240, 255, 0.15);
+  --lib-font: "JetBrains Mono", "Fira Code", monospace;
+  --lib-width: 380px;
+}
+
+library-drawer {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 99999 !important;
+  pointer-events: none;
+  contain: layout paint style;
+  display: block;
+}
+
+library-drawer.lib-drawer--open,
+library-drawer.lib-drawer--opening,
+library-drawer.lib-drawer--closing {
+  pointer-events: auto;
+}
+
+.lib-drawer__backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(2, 6, 23, 0.85);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity;
+}
+
+library-drawer.lib-drawer--open .lib-drawer__backdrop,
+library-drawer.lib-drawer--opening .lib-drawer__backdrop {
+  opacity: 1;
+}
+
+.lib-drawer__panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: var(--lib-width);
+  max-width: 100vw;
+  height: 100%;
+  background-color: var(--lib-bg-primary);
+  border-left: 1px solid var(--lib-border-color);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--lib-font);
+  color: var(--lib-text-primary);
+  transform: translate3d(100%, 0, 0);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+library-drawer.lib-drawer--open .lib-drawer__panel,
+library-drawer.lib-drawer--opening .lib-drawer__panel {
+  transform: translate3d(0, 0, 0);
+}
+
+library-drawer.lib-drawer--closed .lib-drawer__panel {
+  transform: translate3d(100%, 0, 0);
+}
+
+.lib-drawer__header {
+  padding: 18px 20px;
+  background-color: var(--lib-bg-secondary);
+  border-bottom: 1px solid var(--lib-border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lib-drawer__header h2 {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--lib-accent);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lib-drawer__header h2::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background-color: var(--lib-accent);
+  box-shadow: 0 0 8px var(--lib-accent);
+  border-radius: 50%;
+}
+
+.lib-drawer__close-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--lib-text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 16px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.lib-drawer__close-btn:hover {
+  color: var(--lib-accent);
+  border-color: var(--lib-border-color);
+  background-color: var(--lib-bg-hover);
+}
+
+.lib-drawer__search-box {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--lib-border-color);
+  background-color: var(--lib-bg-primary);
+}
+
+.lib-drawer__search-input {
+  width: 100%;
+  padding: 10px 14px;
+  background-color: var(--lib-bg-secondary);
+  border: 1px solid var(--lib-border-color);
+  border-radius: 4px;
+  color: var(--lib-text-primary);
+  font-size: 12px;
+  font-family: var(--lib-font);
+  box-sizing: border-box;
+  outline: none;
+}
+
+.lib-drawer__search-input:focus {
+  border-color: var(--lib-accent);
+  box-shadow: 0 0 10px var(--lib-accent-glow);
+}
+
+.lib-drawer__body {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  :host, .lib-drawer-host, library-drawer {
+    --lib-width: 100vw;
+  }
+}
