@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LKSMILITAR | Database & Simulações</title>
+  <title>LKSMILITAR | Portal Técnico & Simulação</title>
   <link rel="stylesheet" href="./src/library-engine/styles/library-engine.css">
   <style>
     :root {
-      --bg-main: #020617;
-      --bg-panel: #0b1220;
-      --border-color: #1e2d4a;
-      --text-main: #f8fafc;
-      --text-muted: #64748b;
-      --accent-cyan: #00f0ff;
+      --bg-main: #0a0e17;
+      --bg-panel: #121824;
+      --border-color: #222f43;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-red: #dc2626;
     }
 
     body {
@@ -20,7 +20,7 @@
       padding: 0;
       background-color: var(--bg-main);
       color: var(--text-main);
-      font-family: "JetBrains Mono", -apple-system, monospace;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       display: flex;
       flex-direction: column;
       height: 100vh;
@@ -28,7 +28,7 @@
     }
 
     header {
-      padding: 1rem 2rem;
+      padding: 0.8rem 1.8rem;
       background-color: var(--bg-panel);
       display: flex;
       justify-content: space-between;
@@ -37,34 +37,28 @@
       z-index: 10;
     }
 
-    .brand-title {
-      font-size: 1.1rem;
-      font-weight: 800;
-      letter-spacing: 0.15em;
-      color: var(--text-main);
-      margin: 0;
+    .brand-container {
       display: flex;
       align-items: center;
       gap: 12px;
     }
 
-    .brand-title::before {
-      content: "";
-      width: 8px;
-      height: 8px;
-      background: var(--accent-cyan);
-      box-shadow: 0 0 10px var(--accent-cyan);
-      border-radius: 2px;
+    .brand-title {
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      color: var(--text-main);
+      margin: 0;
     }
 
-    button.btn-stealth {
-      background: rgba(0, 240, 255, 0.05);
-      color: var(--accent-cyan);
+    button.btn-acervo {
+      background: rgba(220, 38, 38, 0.08);
+      color: var(--text-main);
       border: 1px solid var(--border-color);
-      padding: 0.6rem 1.2rem;
+      padding: 0.5rem 1rem;
       border-radius: 4px;
       font-family: inherit;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       cursor: pointer;
@@ -74,10 +68,10 @@
       gap: 8px;
     }
 
-    button.btn-stealth:hover {
-      background: rgba(0, 240, 255, 0.15);
-      border-color: var(--accent-cyan);
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+    button.btn-acervo:hover {
+      background: var(--accent-red);
+      border-color: var(--accent-red);
+      color: #ffffff;
     }
 
     main {
@@ -98,14 +92,14 @@
       text-align: center;
       max-width: 550px;
       width: 100%;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4);
     }
 
     .viewer-card h2 {
       margin-top: 0;
-      font-size: 1.1rem;
-      letter-spacing: 0.08em;
-      color: var(--accent-cyan);
+      font-size: 1rem;
+      letter-spacing: 0.1em;
+      color: var(--accent-red);
       text-transform: uppercase;
     }
 
@@ -136,15 +130,19 @@
 <body>
 
   <header>
-    <h1 class="brand-title">LKSMILITAR DATABASE</h1>
-    <button id="open-library-btn" class="btn-stealth">
-      <span>📁</span> INTELIGÊNCIA TÁTICA
+    <div class="brand-container">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 22l10-4 10 4L12 2z"/></svg>
+      <h1 class="brand-title">LKSMILITAR DATABASE</h1>
+    </div>
+    <button id="open-library-btn" class="btn-acervo">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+      <span>ACERVO TÁTICO</span>
     </button>
   </header>
 
   <main id="main-viewport">
     <div class="viewer-card" id="default-card">
-      <h2>Visualizador Stealth</h2>
+      <h2>Visualizador Técnico</h2>
       <p id="selected-document-display">Nenhum documento selecionado no sistema.</p>
     </div>
   </main>
@@ -154,7 +152,7 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       const engine = new LibraryNavigationEngine({ 
-        baseUrl: './assets/catalog' 
+        baseUrl: './' 
       });
 
       await engine.init();
