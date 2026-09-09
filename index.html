@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador + Navegador de Biblioteca</title>
+  <link rel="stylesheet" href="./src/library-engine/styles/library-engine.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0f172a;
+      color: #f8fafc;
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      padding: 1rem 2rem;
+      background-color: #1e293b;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #334155;
+    }
+
+    button.btn-primary {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button.btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .viewer-card {
+      background-color: #1e293b;
+      padding: 2rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      text-align: center;
+      max-width: 500px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Simulador do Sistema</h1>
+    <button id="open-library-btn" class="btn-primary">Abrir Biblioteca</button>
+  </header>
+
+  <main>
+    <div class="viewer-card">
+      <h2>Visualizador do Simulador</h2>
+      <p id="selected-document-display">Nenhum documento selecionado.</p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { LibraryNavigationEngine } from './src/library-engine/index.js';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const engine = new LibraryNavigationEngine({ baseUrl: './' });
+      await engine.init();
+
+      const openBtn = document.getElementById('open-library-btn');
+      openBtn.addEventListener('click', () => engine.toggle());
+
+      window.addEventListener('library:document-selected', (e) => {
+        const docPath = e.detail.path;
+        document.getElementById('selected-document-display').innerText = `Documento ativo: ${docPath}`;
+        engine.close();
+      });
+    });
+  </script>
+</body>
+</html>
