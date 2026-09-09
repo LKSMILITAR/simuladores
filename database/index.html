@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LKSMILITAR DATABASE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Orbitron:wght@600;800&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./src/library-engine/styles/library-engine.css?v=4.0">
+</head>
+<body>
+
+    <!-- Bar de Navegação Superior Tática -->
+    <header class="top-bar">
+        <div class="brand-container">
+            <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" aria-label="Alternar Menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+            <div class="brand-title">
+                <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polygon points="12 2 2 22 12 17 22 22 12 2"></polygon>
+                </svg>
+                LKSMILITAR <span>DATABASE</span>
+            </div>
+        </div>
+
+        <div class="top-bar__tagline">
+            BIBLIOTECA TÉCNICA &nbsp;//&nbsp; CONHECIMENTO &nbsp;//&nbsp; ANÁLISE &nbsp;//&nbsp; SUPERIORIDADE
+        </div>
+
+        <div class="nav-actions">
+            <button class="btn-icon-tactical" id="btn-search-trigger" title="Buscar no Repositório">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </button>
+            <div class="user-avatar-badge" title="Operador Autorizado">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#ff3b30" stroke-width="2">
+                    <path d="M12 2L2 22l10-4 10 4L12 2z"/>
+                </svg>
+            </div>
+        </div>
+    </header>
+
+    <!-- Layout Principal com Sidebar Fixa e Viewport Central -->
+    <div class="app-layout">
+        <!-- Sidebar Recolhível -->
+        <sidebar-nav id="main-sidebar"></sidebar-nav>
+
+        <!-- Área Principal de Conteúdo e Visualização HUD -->
+        <main class="main-workspace">
+            <div class="viewer-viewport" id="viewer-viewport">
+                <!-- Colchetes de Mira Tática HUD -->
+                <div class="hud-corner hud-tl"></div>
+                <div class="hud-corner hud-tr"></div>
+                <div class="hud-corner hud-bl"></div>
+                <div class="hud-corner hud-br"></div>
+
+                <!-- ESTADO 1: Radar em Standby -->
+                <div class="standby-state" id="standby-view">
+                    <div class="radar-spinner">
+                        <div class="radar-ring"></div>
+                        <div class="radar-pulse"></div>
+                        <svg class="radar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="2" x2="12" y2="6"></line>
+                            <line x1="12" y1="18" x2="12" y2="22"></line>
+                            <line x1="2" y1="12" x2="6" y2="12"></line>
+                            <line x1="18" y1="12" x2="22" y2="12"></line>
+                        </svg>
+                    </div>
+
+                    <div class="viewer-title">VISUALIZADOR TÉCNICO</div>
+                    <div class="viewer-subtitle">Nenhum documento selecionado no sistema.</div>
+
+                    <div class="status-badge">
+                        <div class="status-dot"></div>
+                        SYS_STATUS: STANDBY // IDLE
+                    </div>
+                </div>
+
+                <!-- ESTADO 2: Leitor de Documento Ativo -->
+                <div class="active-doc-state" id="active-doc-view">
+                    <div class="doc-action-bar">
+                        <div class="doc-info">
+                            <span class="doc-info-tag" id="doc-type-tag">PDF</span>
+                            <span id="doc-filename-display">documento.pdf</span>
+                        </div>
+                        <button class="btn-close-doc" id="btn-close-document">FECHAR DOCUMENTO [X]</button>
+                    </div>
+                    <div class="doc-frame-container" id="doc-frame-body"></div>
+                </div>
+
+                <!-- ESTADO 3: Grade de Documentos da Categoria Selecionada -->
+                <div class="category-grid-state" id="category-grid-view">
+                    <div class="category-header-bar">
+                        <h2 id="category-title-display">CATEGORIA TÁTICA</h2>
+                        <span id="category-count-badge">0 DOCUMENTOS</span>
+                    </div>
+                    <div class="category-grid-container" id="category-cards-container"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="./src/library-engine/index.js?v=4.0"></script>
+</body>
+</html>
