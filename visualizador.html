@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizador de Documentos - LKS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            background-color: #242424;
+            border-bottom: 1px solid #333333;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            z-index: 10;
+            user-select: none;
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button, a.btn-download {
+            background-color: #333333;
+            color: #ffffff;
+            border: 1px solid #444444;
+            padding: 6px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.1s ease, border-color 0.1s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:hover, a.btn-download:hover {
+            background-color: #444444;
+            border-color: #555555;
+        }
+
+        button:disabled {
+            background-color: #222222;
+            border-color: #2a2a2a;
+            color: #666666;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            font-size: 13px;
+            font-weight: 500;
+            color: #cccccc;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .page-info input {
+            background-color: #1a1a1a;
+            border: 1px solid #444444;
+            color: #ffffff;
+            text-align: center;
+            width: 45px;
+            padding: 4px;
+            font-size: 13px;
+            border-radius: 3px;
+        }
+
+        .page-info input:focus {
+            outline: 1px solid #0088ff;
+            border-color: #0088ff;
+        }
+
+        .viewport-container {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            background-color: #121212;
+            position: relative;
+        }
+
+        .canvas-wrapper {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+            background-color: #ffffff;
+            line-height: 0;
+            border-radius: 2px;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(18, 18, 18, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            z-index: 5;
+            font-size: 14px;
+            color: #cccccc;
+        }
+
+        .spinner {
+            width: 28px;
+            height: 28px;
+            border: 3px solid #333333;
+            border-top: 3px solid #0088ff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div class="toolbar-group">
+            <button id="prev-page" title="Página Anterior">Anterior</button>
+            <div class="page-info">
+                <span>Pág.</span>
+                <input type="number" id="page-num" value="1" min="1">
+                <span>de <span id="page-count">--</span></span>
+            </div>
+            <button id="next-page" title="Próxima Página">Próxima</button>
+        </div>
+
+        <div class="toolbar-group">
+            <button id="zoom-out" title="Reduzir Zoom">-</button>
+            <span id="zoom-percent" class="page-info">100%</span>
+            <button id="zoom-in" title="Aumentar Zoom">+</button>
+            <button id="zoom-fit" title="Ajustar à Largura">Ajustar Largura</button>
+        </div>
+
+        <div class="toolbar-group">
+            <a id="download-btn" class="btn-download" href="#" download target="_blank">Baixar PDF</a>
+        </div>
+    </div>
+
+    <div class="viewport-container" id="viewport">
+        <div id="loading" class="loading-overlay">
+            <div class="spinner"></div>
+            <span>Processando arquivo...</span>
+        </div>
+        <div class="canvas-wrapper">
+            <canvas id="pdf-canvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // Defina o caminho correto do documento PDF hospedado no servidor
+        const url = 'PCUSERS - HTML5 (1).pdf';
+
+        let pdfDoc = null,
+            pageNum = 1,
+            pageRendering = false,
+            pageNumPending = null,
+            scale = 1.25,
+            canvas = document.getElementById('pdf-canvas'),
+            ctx = canvas.getContext('2d'),
+            loadingEl = document.getElementById('loading'),
+            pageNumInput = document.getElementById('page-num'),
+            pageCountEl = document.getElementById('page-count'),
+            zoomPercentEl = document.getElementById('zoom-percent'),
+            downloadBtn = document.getElementById('download-btn');
+
+        downloadBtn.href = url;
+
+        function renderPage(num) {
+            pageRendering = true;
+
+            pdfDoc.getPage(num).then(function(page) {
+                const pixelRatio = window.devicePixelRatio || 1;
+                const viewport = page.getViewport({ scale: scale });
+
+                canvas.height = viewport.height * pixelRatio;
+                canvas.width = viewport.width * pixelRatio;
+                canvas.style.width = viewport.width + 'px';
+                canvas.style.height = viewport.height + 'px';
+
+                ctx.scale(pixelRatio, pixelRatio);
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+
+                const renderTask = page.render(renderContext);
+
+                renderTask.promise.then(function() {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+            });
+
+            pageNumInput.value = num;
+            zoomPercentEl.textContent = Math.round(scale * 100) + '%';
+        }
+
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        function onPrevPage() {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+
+        function onNextPage() {
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+
+        function onZoomIn() {
+            if (scale >= 3.0) return;
+            scale += 0.25;
+            queueRenderPage(pageNum);
+        }
+
+        function onZoomOut() {
+            if (scale <= 0.5) return;
+            scale -= 0.25;
+            queueRenderPage(pageNum);
+        }
+
+        function onZoomFit() {
+            if (!pdfDoc) return;
+            pdfDoc.getPage(pageNum).then(function(page) {
+                const containerWidth = document.getElementById('viewport').clientWidth - 40;
+                const unscaledViewport = page.getViewport({ scale: 1.0 });
+                scale = containerWidth / unscaledViewport.width;
+                queueRenderPage(pageNum);
+            });
+        }
+
+        document.getElementById('prev-page').addEventListener('click', onPrevPage);
+        document.getElementById('next-page').addEventListener('click', onNextPage);
+        document.getElementById('zoom-in').addEventListener('click', onZoomIn);
+        document.getElementById('zoom-out').addEventListener('click', onZoomOut);
+        document.getElementById('zoom-fit').addEventListener('click', onZoomFit);
+
+        pageNumInput.addEventListener('change', function() {
+            let val = parseInt(this.value);
+            if (val >= 1 && val <= pdfDoc.numPages) {
+                pageNum = val;
+                queueRenderPage(pageNum);
+            } else {
+                this.value = pageNum;
+            }
+        });
+
+        window.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+                onNextPage();
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                onPrevPage();
+            }
+        });
+
+        pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
+            pdfDoc = pdfDoc_;
+            pageCountEl.textContent = pdfDoc.numPages;
+            pageNumInput.max = pdfDoc.numPages;
+            loadingEl.style.display = 'none';
+            renderPage(pageNum);
+        }).catch(function(error) {
+            loadingEl.innerHTML = '<span style="color: #ff5555;">Erro ao carregar o arquivo PDF. Verifique o caminho indicado.</span>';
+            console.error('Falha no PDF.js:', error);
+        });
+    </script>
+</body>
+</html>
