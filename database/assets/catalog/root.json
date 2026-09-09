@@ -1,0 +1,22 @@
+{
+  "updatedAt": "2026-09-09T14:00:00.000Z",
+  "totalCategories": 1,
+  "categories": [
+    {
+      "id": "Termodinamica",
+      "name": "Termodinâmica",
+      "itemCount": 6,
+      "items": [
+        {
+          "title": "NOME EXATO DO PRIMEIRO PDF.pdf",
+          "path": "documents/Termodinâmica/NOME EXATO DO PRIMEIRO PDF.pdf"
+        },
+        {
+          "title": "NOME EXATO DO SEGUNDO PDF.pdf",
+          "path": "documents/Termodinâmica/NOME EXATO DO SEGUNDO PDF.pdf"
+        }
+      ]
+    }
+  ]
+}
+
