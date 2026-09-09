@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LKS MILITAR | Biblioteca Técnica</title>
+  <link rel="stylesheet" href="./src/library-engine/styles/library-engine.css?v=3.0">
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- BARRA LATERAL FIXA -->
+    <sidebar-nav id="main-sidebar"></sidebar-nav>
+
+    <!-- PAINEL CENTRAL DE CONTEÚDO -->
+    <main class="main-viewport">
+      <div class="top-bar">
+        <div class="top-bar__tagline">
+          BIBLIOTECA TÉCNICA &nbsp;|&nbsp; CONHECIMENTO &bull; ANÁLISE &bull; SUPERIORIDADE
+        </div>
+        <div class="top-bar__actions">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8493a8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+      </div>
+
+      <div class="content-body">
+        <div class="content-header">
+          <div class="content-header__title">
+            <h1 id="view-title">Biblioteca Técnica</h1>
+            <p id="view-subtitle">Documentos, manuais e publicações técnicas sobre aviação militar, tecnologia e engenharia de sistemas.</p>
+          </div>
+          <div class="search-field">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="search" placeholder="Buscar na biblioteca..." id="search-input">
+          </div>
+        </div>
+
+        <div id="catalog-display-area">
+          <!-- Aqui entra a grade de cartões ou visualizador de PDF -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import './src/library-engine/components/sidebar-nav.js?v=3.0';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const sidebar = document.getElementById('main-sidebar');
+
+      try {
+        const response = await fetch('./assets/catalog/root.json');
+        if (response.ok) {
+          const rootData = await response.json();
+          sidebar.setCategories(rootData.categories || []);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar manifesto raiz:', err);
+      }
+
+      sidebar.addEventListener('sidebar:select', (e) => {
+        const { path, chunk } = e.detail;
+        const titleEl = document.getElementById('view-title');
+        
+        if (path === 'ROOT') {
+          titleEl.innerText = 'Biblioteca Técnica';
+        } else {
+          titleEl.innerText = path;
+        }
+      });
+    });
+  </script>
+</body>
+</html>
