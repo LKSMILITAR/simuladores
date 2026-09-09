@@ -1,0 +1,19 @@
+{
+  "generatedAt": "2026-09-09T00:00:00.000Z",
+  "totalRootCategories": 2,
+  "categories": [
+    {
+      "name": "physics",
+      "path": "physics",
+      "chunk": "assets/catalog/chunks/cat-physics.json",
+      "itemCount": 1
+    },
+    {
+      "name": "math",
+      "path": "math",
+      "chunk": "assets/catalog/chunks/cat-math.json",
+      "itemCount": 1
+    }
+  ],
+  "files": []
+}
