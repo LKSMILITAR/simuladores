@@ -6,7 +6,7 @@ export class NetworkFetcher {
     #timeoutMs;
 
     constructor(cacheManager = new CacheManager(), timeoutMs = 8000) {
-        this.#catalogUrl = './assets/catalog/root.json';
+        this.#catalogUrl = '.database/assets/catalog/root.json';
         this.#cacheManager = cacheManager;
         this.#timeoutMs = timeoutMs;
     }
