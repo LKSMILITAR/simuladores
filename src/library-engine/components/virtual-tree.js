@@ -1,11 +1,16 @@
+const SVG_FOLDER = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
+const SVG_FILE = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`;
+const SVG_BACK = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>`;
+const SVG_CHEVRON = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+
 export class VirtualTree extends HTMLElement {
   #items = [];
-  #itemHeight = 38;
+  #itemHeight = 36;
   #viewportContainer;
   #phantomElement;
   #contentElement;
   #breadcrumbsElement;
-  #folderStack = []; // Pilha para armazenar o histórico de navegação
+  #folderStack = [];
 
   constructor() {
     super();
@@ -18,8 +23,8 @@ export class VirtualTree extends HTMLElement {
     this.style.overflow = 'hidden';
 
     this.innerHTML = `
-      <div class="lib-breadcrumbs" style="padding: 10px 16px; background: rgba(0,240,255,0.03); border-bottom: 1px solid var(--lib-border-color, #1e2d4a); display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: var(--lib-font); color: var(--lib-text-muted, #64748b); overflow-x: auto; white-space: nowrap;">
-        <span class="lib-crumb-item lib-crumb-root" style="color: var(--lib-accent, #00f0ff); cursor: pointer; font-weight: 700;">RAIZ</span>
+      <div class="lib-breadcrumbs" style="padding: 10px 16px; background: var(--lib-bg-secondary, #121824); border-bottom: 1px solid var(--lib-border-color, #222f43); display: flex; align-items: center; gap: 8px; font-size: 11px; font-family: var(--lib-font); color: var(--lib-text-muted, #94a3b8); overflow-x: auto; white-space: nowrap;">
+        <span class="lib-crumb-item lib-crumb-root" data-index="-1" style="color: var(--lib-accent-red, #dc2626); cursor: pointer; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">ACERVO CENTRAL</span>
       </div>
       <div class="virtual-viewport" style="flex: 1; overflow-y: auto; position: relative;">
         <div class="virtual-phantom" style="position: relative; width: 100%; pointer-events: none;"></div>
@@ -39,14 +44,16 @@ export class VirtualTree extends HTMLElement {
   setData(items, currentFolderInfo = null) {
     this.#items = items || [];
     
-    // Atualiza a pilha de navegação se for uma nova pasta
-    if (currentFolderInfo && (this.#folderStack.length === 0 || this.#folderStack[this.#folderStack.length - 1].path !== currentFolderInfo.path)) {
-      this.#folderStack.push(currentFolderInfo);
+    if (currentFolderInfo) {
+      const lastFolder = this.#folderStack[this.#folderStack.length - 1];
+      if (!lastFolder || lastFolder.path !== currentFolderInfo.path) {
+        this.#folderStack.push(currentFolderInfo);
+      }
     }
 
     this.#renderBreadcrumbs();
     this.#phantomElement.style.height = `${this.#items.length * this.#itemHeight}px`;
-    this.#viewportContainer.scrollTop = 0; // Reseta a rolagem para o topo
+    this.#viewportContainer.scrollTop = 0;
     this.#onScroll();
   }
 
@@ -56,14 +63,14 @@ export class VirtualTree extends HTMLElement {
   }
 
   #renderBreadcrumbs() {
-    let html = `<span class="lib-crumb-item lib-crumb-root" data-index="-1" style="color: var(--lib-accent, #00f0ff); cursor: pointer; font-weight: 700;">RAIZ</span>`;
+    let html = `<span class="lib-crumb-item lib-crumb-root" data-index="-1" style="color: var(--lib-accent-red, #dc2626); cursor: pointer; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">ACERVO CENTRAL</span>`;
     
     this.#folderStack.forEach((folder, idx) => {
-      html += ` <span style="color: var(--lib-border-color, #1e2d4a);">/</span> `;
+      html += ` <span style="color: var(--lib-border-color, #222f43); display: inline-flex; align-items: center;">${SVG_CHEVRON}</span> `;
       const isLast = idx === this.#folderStack.length - 1;
       const style = isLast 
-        ? `color: var(--lib-text-primary, #e2e8f0); font-weight: 600; cursor: default;` 
-        : `color: var(--lib-accent, #00f0ff); cursor: pointer;`;
+        ? `color: var(--lib-text-primary, #f1f5f9); font-weight: 600; cursor: default;` 
+        : `color: var(--lib-text-muted, #94a3b8); cursor: pointer;`;
       
       html += `<span class="lib-crumb-item" data-index="${idx}" style="${style}">${folder.name}</span>`;
     });
@@ -79,11 +86,9 @@ export class VirtualTree extends HTMLElement {
       const idx = parseInt(crumb.dataset.index, 10);
       
       if (idx === -1) {
-        // Voltar para a Raiz
         this.#folderStack = [];
         this.dispatchEvent(new CustomEvent('library:navigate-root', { bubbles: true, composed: true }));
       } else if (idx < this.#folderStack.length - 1) {
-        // Voltar para um nível intermediário
         const targetFolder = this.#folderStack[idx];
         this.#folderStack = this.#folderStack.slice(0, idx + 1);
         this.dispatchEvent(new CustomEvent('library:folder-selected', {
@@ -113,14 +118,13 @@ export class VirtualTree extends HTMLElement {
 
     let html = '';
     
-    // Adiciona botão visual de "Voltar" no topo da lista se estiver dentro de uma subpasta
     if (startIndex === 0 && this.#folderStack.length > 0) {
       html += `
         <div class="lib-tree-item lib-back-item" 
              data-action="back"
-             style="height: ${this.#itemHeight}px; display: flex; align-items: center; padding: 0 16px; cursor: pointer; color: var(--lib-accent, #00f0ff); background: rgba(0,240,255,0.02); border-bottom: 1px solid var(--lib-border-color, #1e2d4a);">
-          <span style="margin-right: 10px; font-weight: 700;">⮌</span>
-          <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">VOLTAR PARA NÍVEL ANTERIOR</span>
+             style="height: ${this.#itemHeight}px; display: flex; align-items: center; padding: 0 16px; cursor: pointer; color: var(--lib-accent-red, #dc2626); background: rgba(220, 38, 38, 0.04); border-bottom: 1px solid var(--lib-border-color, #222f43); font-size: 11px; font-weight: 700; letter-spacing: 0.05em;">
+          <span style="margin-right: 8px; display: inline-flex; align-items: center;">${SVG_BACK}</span>
+          <span>RETORNAR AO NÍVEL ANTERIOR</span>
         </div>
       `;
     }
@@ -128,7 +132,7 @@ export class VirtualTree extends HTMLElement {
     for (let i = 0; i < visibleItems.length; i++) {
       const item = visibleItems[i];
       const isFolder = item.type === 'folder' || item.chunk;
-      const icon = isFolder ? '📁' : '📄';
+      const icon = isFolder ? SVG_FOLDER : SVG_FILE;
 
       html += `
         <div class="lib-tree-item" 
@@ -136,10 +140,10 @@ export class VirtualTree extends HTMLElement {
              data-name="${item.name}"
              data-type="${isFolder ? 'folder' : 'file'}"
              data-chunk="${item.chunk || ''}"
-             style="height: ${this.#itemHeight}px; display: flex; align-items: center; padding: 0 16px; cursor: pointer; border-bottom: 1px solid rgba(255, 255, 255, 0.03);">
-          <span style="margin-right: 10px; color: var(--lib-accent, #00f0ff);">${icon}</span>
-          <span class="lib-tree-item-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; font-size: 12px;">${item.name}</span>
-          ${item.itemCount ? `<span class="lib-badge" style="font-size: 10px; color: var(--lib-accent, #00f0ff); background: rgba(0, 240, 255, 0.08); padding: 2px 6px; border-radius: 3px;">${item.itemCount}</span>` : ''}
+             style="height: ${this.#itemHeight}px; display: flex; align-items: center; padding: 0 16px; cursor: pointer; border-bottom: 1px solid rgba(255, 255, 255, 0.02); transition: background 0.15s ease;">
+          <span style="margin-right: 10px; color: ${isFolder ? 'var(--lib-accent-red, #dc2626)' : 'var(--lib-text-muted, #94a3b8)'}; display: inline-flex; align-items: center;">${icon}</span>
+          <span class="lib-tree-item-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; font-size: 12px; color: var(--lib-text-primary, #f1f5f9);">${item.name}</span>
+          ${item.itemCount ? `<span class="lib-badge" style="font-size: 10px; color: var(--lib-text-muted, #94a3b8); background: var(--lib-bg-secondary, #121824); border: 1px solid var(--lib-border-color, #222f43); padding: 1px 6px; border-radius: 3px;">${item.itemCount}</span>` : ''}
         </div>
       `;
     }
