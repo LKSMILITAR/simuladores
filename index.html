@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LKSMILITAR | Database & Simulações</title>
+  <link rel="stylesheet" href="./src/library-engine/styles/library-engine.css">
+  <style>
+    :root {
+      --bg-main: #020617;
+      --bg-panel: #0b1220;
+      --border-color: #1e2d4a;
+      --text-main: #f8fafc;
+      --text-muted: #64748b;
+      --accent-cyan: #00f0ff;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: "JetBrains Mono", -apple-system, monospace;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      padding: 1rem 2rem;
+      background-color: var(--bg-panel);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      z-index: 10;
+    }
+
+    .brand-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      letter-spacing: 0.15em;
+      color: var(--text-main);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-title::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      background: var(--accent-cyan);
+      box-shadow: 0 0 10px var(--accent-cyan);
+      border-radius: 2px;
+    }
+
+    button.btn-stealth {
+      background: rgba(0, 240, 255, 0.05);
+      color: var(--accent-cyan);
+      border: 1px solid var(--border-color);
+      padding: 0.6rem 1.2rem;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    button.btn-stealth:hover {
+      background: rgba(0, 240, 255, 0.15);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.5rem;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .viewer-card {
+      background-color: var(--bg-panel);
+      padding: 2.5rem;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      text-align: center;
+      max-width: 550px;
+      width: 100%;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    .viewer-card h2 {
+      margin-top: 0;
+      font-size: 1.1rem;
+      letter-spacing: 0.08em;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+    }
+
+    .viewer-card p {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 0;
+    }
+
+    .document-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg-panel);
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+    }
+
+    .document-container iframe {
+      width: 100%;
+      flex: 1;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 class="brand-title">LKSMILITAR DATABASE</h1>
+    <button id="open-library-btn" class="btn-stealth">
+      <span>📁</span> INTELIGÊNCIA TÁTICA
+    </button>
+  </header>
+
+  <main id="main-viewport">
+    <div class="viewer-card" id="default-card">
+      <h2>Visualizador Stealth</h2>
+      <p id="selected-document-display">Nenhum documento selecionado no sistema.</p>
+    </div>
+  </main>
+
+  <script type="module">
+    import { LibraryNavigationEngine } from './src/library-engine/index.js';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const engine = new LibraryNavigationEngine({ 
+        baseUrl: './assets/catalog' 
+      });
+
+      await engine.init();
+
+      const openBtn = document.getElementById('open-library-btn');
+      if (openBtn) {
+        openBtn.addEventListener('click', () => {
+          engine.toggle();
+        });
+      }
+
+      window.addEventListener('library:document-selected', (e) => {
+        const doc = e.detail;
+        const mainViewport = document.getElementById('main-viewport');
+        const documentPath = `./documents/${encodeURIComponent(doc.path)}`;
+
+        if (doc.path && doc.path.endsWith('.pdf')) {
+          mainViewport.innerHTML = `
+            <div class="document-container">
+              <iframe src="${documentPath}" title="${doc.path}"></iframe>
+            </div>
+          `;
+        } else {
+          document.getElementById('selected-document-display').innerText = `Documento ativo: ${doc.path}`;
+        }
+
+        engine.close();
+      });
+    });
+  </script>
+</body>
+</html>
