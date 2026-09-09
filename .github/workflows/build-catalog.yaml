@@ -7,6 +7,10 @@ on:
     paths:
       - 'documents/**'
       - 'scripts/build-catalog.js'
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
