@@ -1,5 +1,6 @@
 export class NavigationFSM {
   #state = 'IDLE';
+  #previousCategoryState = null;
   #listeners = new Set();
 
   constructor() {
@@ -26,29 +27,44 @@ export class NavigationFSM {
         break;
 
       case 'LOADING_CATEGORY':
-        if (event === 'LOAD_SUCCESS') nextState = 'CATEGORY_ACTIVE';
+        if (event === 'LOAD_SUCCESS') {
+          nextState = 'CATEGORY_ACTIVE';
+          this.#previousCategoryState = payload; // Preserva contexto da categoria
+        }
         if (event === 'LOAD_ERROR') nextState = 'IDLE';
+        if (event === 'SELECT_CATEGORY') nextState = 'LOADING_CATEGORY'; // Reinicia para nova carga
         break;
 
       case 'CATEGORY_ACTIVE':
         if (event === 'SELECT_CATEGORY') nextState = 'LOADING_CATEGORY';
         if (event === 'OPEN_DOC') nextState = 'VIEWING_DOC';
-        if (event === 'RESET') nextState = 'IDLE';
+        if (event === 'RESET') {
+          nextState = 'IDLE';
+          this.#previousCategoryState = null;
+        }
         break;
 
       case 'VIEWING_DOC':
-        if (event === 'CLOSE_DOC') nextState = 'IDLE';
+        if (event === 'CLOSE_DOC') {
+          // Retorna à categoria anterior se ela existia, senão vai para IDLE
+          nextState = this.#previousCategoryState ? 'CATEGORY_ACTIVE' : 'IDLE';
+        }
+        if (event === 'OPEN_DOC') nextState = 'VIEWING_DOC'; // Permite re-entrada direta para outro PDF
         if (event === 'SELECT_CATEGORY') nextState = 'LOADING_CATEGORY';
+        if (event === 'RESET') {
+          nextState = 'IDLE';
+          this.#previousCategoryState = null;
+        }
         break;
     }
 
-    if (nextState !== prevState) {
+    if (nextState !== prevState || event === 'OPEN_DOC' || event === 'SELECT_CATEGORY') {
       this.#state = nextState;
-      this.#notify(prevState, nextState, payload);
+      this.#notify(prevState, nextState, event, payload);
     }
   }
 
-  #notify(fromState, toState, payload) {
-    this.#listeners.forEach(fn => fn({ fromState, toState, payload }));
+  #notify(fromState, toState, event, payload) {
+    this.#listeners.forEach(fn => fn({ fromState, toState, event, payload }));
   }
 }
