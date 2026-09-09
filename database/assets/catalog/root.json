@@ -1,89 +1,16 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const DATA_SOURCE = '../root.json';
-    const VIEWER_PATH = '../visualizador.html';
-    
-    // Elemento da área central da sua tela onde os documentos serão exibidos
-    const mainContentArea = document.querySelector('.main-content') || document.querySelector('main') || document.body;
-
-    let databaseData = null;
-
-    // Carrega a base de dados central assim que a página abre
-    async function initDatabase() {
-        try {
-            const response = await fetch(DATA_SOURCE);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            databaseData = await response.json();
-            bindSidebarEvents();
-        } catch (error) {
-            console.error('Erro ao conectar com a base de dados:', error);
+{
+  "updatedAt": "2026-09-09T14:00:00.000Z",
+  "totalCategories": 1,
+  "categories": [
+    {
+      "id": "Termodinamica",
+      "name": "Termodinâmica",
+      "itemCount": 4,
+      "items": [
+        {
+          "title": "Kittel, C. Thermal Physics - 2nd Ed C. Kittle.pdf",
+          "path": "documents/Termodinâmica/Kittel, C. Thermal Physics - 2nd Ed C. Kittle.pdf",
+          "encodedPath": "documents/Termodin%C3%A2mica/Kittel%2C%20C.%20Thermal%20Physics%20-%202nd%20Ed%20C.%20Kittle.pdf"
         }
+      ]
     }
-
-    // Mapeia os cliques no seu menu lateral existente
-    function bindSidebarEvents() {
-        const menuItems = document.querySelectorAll('.sidebar nav a, .sidebar ul li, [data-category]');
-
-        menuItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                
-                // Obtém o nome da categoria clicada e normaliza para buscar no JSON sem acentos
-                const categoryRaw = item.textContent.trim();
-                const categoryNormalized = categoryRaw
-                    .normalize("NFD")
-                    .replace(/[\u0300-\u036f]/g, "")
-                    .replace(/\s+/g, "");
-
-                renderCategoryContent(categoryRaw, categoryNormalized);
-            });
-        });
-    }
-
-    // Injeta a lista de arquivos no painel central mantendo o estilo do LKSMILITAR
-    function renderCategoryContent(displayTitle, categoryKey) {
-        if (!databaseData || !databaseData.categories) return;
-
-        // Procura a categoria no JSON
-        const categoryData = databaseData.categories.find(c => 
-            c.id.toLowerCase() === categoryKey.toLowerCase() || 
-            c.name.toLowerCase() === displayTitle.toLowerCase()
-        );
-
-        const items = categoryData ? categoryData.items : [];
-        const count = categoryData ? categoryData.itemCount : 0;
-
-        let filesListHtml = '';
-
-        if (count > 0 && items.length > 0) {
-            filesListHtml = items.map(fileName => {
-                const viewerPdfPath = `documents/${encodeURIComponent(categoryKey)}/${encodeURIComponent(fileName)}`;
-                const downloadPdfPath = `../documents/${encodeURIComponent(categoryKey)}/${encodeURIComponent(fileName)}`;
-                const viewerUrl = `${VIEWER_PATH}?file=${encodeURIComponent(viewerPdfPath)}`;
-
-                return `
-                    <div style="background: #181818; border: 1px solid #333; padding: 12px; margin-bottom: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
-                        <span style="color: #e0e0e0; font-size: 14px;">${fileName}</span>
-                        <div style="display: flex; gap: 8px;">
-                            <a href="${viewerUrl}" target="_blank" style="background: #e50914; color: #fff; padding: 6px 12px; text-decoration: none; font-size: 12px; border-radius: 3px; font-weight: bold;">VISUALIZAR</a>
-                            <a href="${downloadPdfPath}" download style="background: #2b2b2b; color: #ccc; padding: 6px 12px; text-decoration: none; font-size: 12px; border-radius: 3px; border: 1px solid #444;">BAIXAR</a>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        } else {
-            filesListHtml = `<div style="color: #666; font-style: italic; padding: 20px;">NENHUM DOCUMENTO CADASTRADO NESTA CATEGORIA // STANDBY</div>`;
-        }
-
-        // Renderiza o cabeçalho e os arquivos na área principal do seu painel
-        mainContentArea.innerHTML = `
-            <div style="padding: 20px;">
-                <h2 style="color: #fff; font-size: 20px; border-bottom: 2px solid #e50914; padding-bottom: 8px; margin-bottom: 16px; text-transform: uppercase;">
-                    ${displayTitle} <span style="font-size: 12px; color: #888;">[${count} DOCS]</span>
-                </h2>
-                <div>${filesListHtml}</div>
-            </div>
-        `;
-    }
-
-    initDatabase();
-});
