@@ -27,7 +27,6 @@
       overflow: hidden;
     }
 
-    /* Header Stealth */
     header {
       padding: 1rem 2rem;
       background-color: var(--bg-panel);
@@ -57,7 +56,6 @@
       border-radius: 2px;
     }
 
-    /* Botão Stealth Principal */
     button.btn-stealth {
       background: rgba(0, 240, 255, 0.05);
       color: var(--accent-cyan);
@@ -81,7 +79,6 @@
       box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
     }
 
-    /* Área Central de Visualização */
     main {
       flex: 1;
       display: flex;
@@ -133,23 +130,13 @@
       flex: 1;
       border: none;
     }
-
-    .document-text-content {
-      padding: 2rem;
-      color: var(--text-main);
-      font-family: inherit;
-      white-space: pre-wrap;
-      overflow-y: auto;
-      text-align: left;
-      height: 100%;
-      box-sizing: border-box;
-    }
   </style>
 </head>
 <body>
 
   <header>
     <h1 class="brand-title">LKSMILITAR DATABASE</h1>
+    <!-- ID alterado para bater com o ouvinte de eventos do script -->
     <button id="open-library-btn" class="btn-stealth">
       <span>📁</span> INTELIGÊNCIA TÁTICA
     </button>
@@ -165,47 +152,35 @@
   <script type="module">
     import { LibraryNavigationEngine } from './src/library-engine/index.js';
 
-    document.addEventListener('DOMContentLoaded', () => {
-      // Inicialização da biblioteca
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Instancia com a rota para a pasta assets/catalog
       const engine = new LibraryNavigationEngine({ 
         baseUrl: './assets/catalog' 
       });
 
+      // 2. Executa a inicialização do DOM e montagem dos Web Components
+      await engine.init();
+
+      // 3. Conecta o evento de clique do botão superior direito
       const openBtn = document.getElementById('open-library-btn');
       if (openBtn) {
-        openBtn.addEventListener('click', () => engine.toggle());
+        openBtn.addEventListener('click', () => {
+          engine.toggle();
+        });
       }
 
-      // Renderizador no container central
+      // 4. Manipula a seleção de documentos
       window.addEventListener('library:document-selected', (e) => {
         const doc = e.detail;
         const mainViewport = document.getElementById('main-viewport');
         const documentPath = `./documents/${encodeURIComponent(doc.path)}`;
 
-        if (doc.extension === 'pdf') {
+        if (doc.path && doc.path.endsWith('.pdf')) {
           mainViewport.innerHTML = `
             <div class="document-container">
-              <iframe src="${documentPath}" title="${doc.name}"></iframe>
+              <iframe src="${documentPath}" title="${doc.path}"></iframe>
             </div>
           `;
-        } else if (['txt', 'md'].includes(doc.extension)) {
-          fetch(documentPath)
-            .then(res => {
-              if (!res.ok) throw new Error(`HTTP ${res.status}`);
-              return res.text();
-            })
-            .then(text => {
-              mainViewport.innerHTML = `
-                <div class="document-container">
-                  <div class="document-text-content">
-                    <h3 style="margin-top:0; color:#00f0ff; letter-spacing:0.05em;">${doc.name}</h3>
-                    <hr style="border: 0; border-top: 1px solid #1e2d4a; margin-bottom: 1.5rem;" />
-                    <div>${text}</div>
-                  </div>
-                </div>
-              `;
-            })
-            .catch(err => console.error('Erro ao abrir texto:', err));
         } else {
           document.getElementById('selected-document-display').innerText = `Documento ativo: ${doc.path}`;
         }
