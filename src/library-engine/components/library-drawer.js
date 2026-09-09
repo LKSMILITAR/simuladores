@@ -1,3 +1,6 @@
+const SVG_CHEVRON_DOUBLE_RIGHT = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>`;
+const SVG_JET_LOGO = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 22l10-4 10 4L12 2z"/></svg>`;
+
 export class LibraryDrawer extends HTMLElement {
   #fsm;
   #panelElement;
@@ -22,13 +25,19 @@ export class LibraryDrawer extends HTMLElement {
 
     this.innerHTML = `
       <div class="lib-drawer__backdrop"></div>
-      <aside class="lib-drawer__panel" role="dialog" aria-label="Navegador de Biblioteca">
+      <aside class="lib-drawer__panel" role="dialog" aria-label="Navegador da Biblioteca">
         <header class="lib-drawer__header">
-          <h2>DATABASE TÁTICO</h2>
-          <button class="lib-drawer__close-btn" aria-label="Fechar gaveta">&times;</button>
+          <div class="lib-drawer__header-title">
+            <span style="display:inline-flex; align-items:center;">${SVG_JET_LOGO}</span>
+            <h2>DOCUMENTAÇÃO TÁTICA</h2>
+          </div>
+          <button class="lib-drawer__collapse-btn" aria-label="Recolher Painel">
+            <span>RECOLHER</span>
+            <span style="display:inline-flex; align-items:center;">${SVG_CHEVRON_DOUBLE_RIGHT}</span>
+          </button>
         </header>
         <div class="lib-drawer__search-box">
-          <input type="search" class="lib-drawer__search-input" placeholder="Buscar no repositório..." />
+          <input type="search" class="lib-drawer__search-input" placeholder="Pesquisar acervo técnico..." />
         </div>
         <main class="lib-drawer__body">
           <virtual-tree class="lib-drawer__tree"></virtual-tree>
@@ -45,7 +54,7 @@ export class LibraryDrawer extends HTMLElement {
   }
 
   #bindEvents() {
-    this.querySelector('.lib-drawer__close-btn').addEventListener('click', () => {
+    this.querySelector('.lib-drawer__collapse-btn').addEventListener('click', () => {
       this.#fsm?.transition('CLOSE');
     });
 
@@ -59,7 +68,6 @@ export class LibraryDrawer extends HTMLElement {
       }
     });
 
-    // OUVINTE CRÍTICO: destrava o estado da FSM ao fim da animação
     this.#panelElement.addEventListener('transitionend', (e) => {
       if (e.propertyName !== 'transform') return;
       if (this.#fsm?.state === 'OPENING') this.#fsm.transition('ANIMATION_END');
