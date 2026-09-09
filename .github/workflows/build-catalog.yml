@@ -1,0 +1,33 @@
+name: Build Static Catalog Manifests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'documents/**'
+      - 'scripts/build-catalog.js'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate Chunked Catalog JSONs
+        run: node scripts/build-catalog.js
+
+      - name: Commit and Push Generated Catalog
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add assets/catalog/
+          git status
+          git diff-index --quiet HEAD || git commit -m "chore: auto-generate chunked catalog manifests"
+          git push
