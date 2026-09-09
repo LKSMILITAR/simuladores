@@ -42,7 +42,6 @@
         body {
             font-family: 'Rajdhani', sans-serif;
             background-color: var(--bg-dark-obsidian);
-            /* IMERSÃO COM F-35 EM VOO - BLEND ESCURO */
             background-image: 
                 linear-gradient(135deg, rgba(3, 5, 8, 0.92) 0%, rgba(3, 5, 8, 0.80) 100%),
                 url('1000250627.jpg');
@@ -73,7 +72,6 @@
             box-shadow: 10px 0 30px rgba(0,0,0,0.5);
         }
 
-        /* CABEÇALHO LATERAL (TEXTURA RAM DO F-35) */
         .sidebar-brand {
             height: 80px; display: flex; align-items: center; padding: 0 24px;
             background-image: 
@@ -138,7 +136,6 @@
         .badge-count { font-size: 9px; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 2px; }
         .sub-menu-item.active .badge-count { background: var(--hud-cyan); color: #000; box-shadow: 0 0 8px var(--hud-cyan); }
 
-        /* ---------------- BARRA INFERIOR DE CANAIS / REDES SOCIAIS ---------------- */
         .sidebar-social-footer {
             padding: 15px 20px;
             background: rgba(3, 5, 8, 0.9);
@@ -233,56 +230,69 @@
         .slot-container {
             position: relative; background: var(--panel-glass);
             border: 1px solid var(--border-stealth);
-            aspect-ratio: 1 / 1.4; padding: 20px;
+            aspect-ratio: 1 / 1.4; padding: 15px;
             display: flex; flex-direction: column; justify-content: space-between;
-            /* CORTES GEOMÉTRICOS STEALTH (F-35 STYLE) */
             clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
             backdrop-filter: var(--glass-blur);
-            /* EFEITO MOTOR 3D HOLOGRÁFICO */
             transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease, border-color 0.4s ease;
             transform-style: preserve-3d;
             cursor: pointer;
+            overflow: hidden;
         }
 
         .slot-container::before {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%); z-index: 1; pointer-events: none;
+            background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 50%); z-index: 2; pointer-events: none;
         }
 
         .slot-container:hover {
-            /* TILT 3D AO PASSAR O MOUSE */
             transform: translateY(-8px) rotateX(4deg) rotateY(-4deg);
             border-color: var(--hud-cyan);
             box-shadow: -10px 20px 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 240, 255, 0.1);
         }
 
-        /* ÍCONE DE FUNDO ESTILO RADAR */
-        .slot-cover-icon {
-            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 60px; color: rgba(255, 255, 255, 0.03); z-index: 0;
-            transition: color 0.4s ease, transform 0.4s ease;
+        .slot-cover-wrapper {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1; opacity: 0.35; transition: opacity 0.4s ease, transform 0.4s ease;
+            background: rgba(0, 0, 0, 0.4);
         }
-        .slot-container:hover .slot-cover-icon { color: rgba(0, 240, 255, 0.1); transform: translate(-50%, -50%) scale(1.1) translateZ(20px); }
+
+        .slot-container:hover .slot-cover-wrapper {
+            opacity: 0.75;
+            transform: scale(1.05);
+        }
+
+        .thumb-canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: contrast(1.1) brightness(0.9);
+        }
+
+        .slot-cover-icon {
+            font-size: 60px; color: rgba(255, 255, 255, 0.1);
+        }
 
         .slot-meta { position: relative; z-index: 3; display: flex; justify-content: space-between; align-items: center; }
         
         .slot-index {
             font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 800;
-            color: var(--hud-cyan); background: rgba(0,0,0,0.6);
+            color: var(--hud-cyan); background: rgba(0,0,0,0.85);
             padding: 4px 8px; border: 1px solid var(--border-stealth);
             box-shadow: 0 2px 5px rgba(0,0,0,0.5); letter-spacing: 1px;
+            backdrop-filter: blur(5px);
         }
 
         .slot-status-dot { width: 8px; height: 8px; background: var(--hud-cyan); box-shadow: 0 0 10px var(--hud-cyan); clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
 
-        .slot-footer { position: relative; z-index: 3; transform: translateZ(30px); }
+        .slot-footer { position: relative; z-index: 3; transform: translateZ(30px); background: rgba(5, 7, 10, 0.85); padding: 10px; border-radius: 2px; backdrop-filter: blur(5px); }
         .slot-title {
-            font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 700;
-            color: #fff; line-height: 1.4; word-break: break-word; letter-spacing: 1px;
-            text-transform: uppercase; border-top: 1px solid var(--border-stealth);
-            padding-top: 10px; transition: color 0.3s ease;
+            font-family: 'Orbitron', sans-serif; font-size: 11px; font-weight: 700;
+            color: #fff; line-height: 1.3; word-break: break-word; letter-spacing: 1px;
+            text-transform: uppercase; transition: color 0.3s ease;
         }
-        .slot-container:hover .slot-title { color: var(--hud-cyan); border-top-color: var(--hud-cyan-dim); }
+        .slot-container:hover .slot-title { color: var(--hud-cyan); }
 
         /* ---------------- MODAL / LEITOR DE DOCUMENTOS ---------------- */
         #modal-overlay {
@@ -334,7 +344,6 @@
 
         #pdf-canvas { box-shadow: 0 20px 50px rgba(0,0,0,0.8); background: #fff; transition: opacity 0.2s ease; }
 
-        /* ---------------- E-READER DIGITAL TÁTICO (DARK MODE) ---------------- */
         .reader-book-container {
             width: 100%; max-width: 900px; height: 100%; margin: 0 auto;
             padding: 50px 70px; background: rgba(5, 7, 10, 0.85); color: #cbd5e1;
@@ -350,14 +359,39 @@
         .math-rendered { display: block; text-align: center; margin: 25px 0; padding: 15px; background: rgba(0, 0, 0, 0.6); border: 1px solid var(--border-stealth); border-radius: 4px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         .math-inline { padding: 2px 6px; background: rgba(0, 0, 0, 0.5); color: var(--hud-cyan); font-family: 'JetBrains Mono', monospace; }
 
+        /* ---------------- BOTÕES CIRCULARES DE NAVEGAÇÃO HUD ---------------- */
         .nav-side-btn {
-            position: absolute; top: 0; height: 100%; width: 80px;
-            background: linear-gradient(90deg, rgba(0,0,0,0.8) 0%, transparent 100%);
-            border: none; color: var(--border-stealth); font-size: 30px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; z-index: 10;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(5, 7, 10, 0.85);
+            border: 1px solid var(--border-active);
+            color: var(--hud-cyan);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 50;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), inset 0 0 10px rgba(0, 240, 255, 0.15);
+            backdrop-filter: blur(8px);
         }
-        .nav-side-btn.next { right: 0; background: linear-gradient(-90deg, rgba(0,0,0,0.8) 0%, transparent 100%); }
-        .nav-side-btn:hover { color: var(--hud-cyan); background: rgba(0, 240, 255, 0.05); text-shadow: 0 0 10px var(--hud-cyan); }
+        .nav-side-btn.prev { left: 20px; }
+        .nav-side-btn.next { right: 20px; }
+        .nav-side-btn:hover {
+            background: rgba(0, 240, 255, 0.2);
+            border-color: var(--hud-cyan);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+            transform: translateY(-50%) scale(1.1);
+        }
+        .nav-side-btn:active {
+            transform: translateY(-50%) scale(0.95);
+        }
 
         .modal-footer {
             height: 50px; background: rgba(0,0,0,0.7); border-top: 1px solid var(--border-stealth);
@@ -380,7 +414,6 @@
         #pdf-loader i { font-size: 40px; animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        /* RESPONSIVIDADE MOBILE HUD */
         @media (max-width: 768px) {
             #sidebar { position: fixed; top: 0; left: 0; height: 100vh; transform: translateX(-100%); width: 280px; }
             #sidebar.mobile-open { transform: translateX(0); }
@@ -390,7 +423,9 @@
             .grid-acervo { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
             .reader-book-container { padding: 20px 15px; font-size: 16px; }
             .modal-container { width: 100%; height: 100vh; clip-path: none; border: none; }
-            .nav-side-btn { width: 50px; background: transparent; }
+            .nav-side-btn { width: 40px; height: 40px; font-size: 14px; }
+            .nav-side-btn.prev { left: 10px; }
+            .nav-side-btn.next { right: 10px; }
         }
     </style>
 </head>
@@ -409,7 +444,6 @@
         
         <div class="menu-section" id="container-menu"></div>
 
-        <!-- BARRA INFERIOR DE REDES SOCIAIS E CANAIS -->
         <div class="sidebar-social-footer">
             <span class="social-footer-title">Canais Oficiais</span>
             <div class="social-links-grid">
@@ -463,14 +497,14 @@
                 </div>
             </div>
             <div class="modal-body">
-                <button class="nav-side-btn prev pdf-only-ctrl" id="prev-page-btn"><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="nav-side-btn prev pdf-only-ctrl" id="prev-page-btn" title="Página Anterior"><i class="fa-solid fa-chevron-left"></i></button>
                 <div id="pdf-loader">
                     <i class="fa-solid fa-radar"></i>
                     <span id="loader-status-text">PROCESSANDO MATRIZ...</span>
                 </div>
                 <canvas id="pdf-canvas"></canvas>
                 <div id="digital-reader-body" style="width: 100%; height: 100%; display: none;"></div>
-                <button class="nav-side-btn next pdf-only-ctrl" id="next-page-btn"><i class="fa-solid fa-chevron-right"></i></button>
+                <button class="nav-side-btn next pdf-only-ctrl" id="next-page-btn" title="Próxima Página"><i class="fa-solid fa-chevron-right"></i></button>
             </div>
             <div class="modal-footer">
                 <div class="page-jumper pdf-only-ctrl">
@@ -651,11 +685,13 @@
             documentos.forEach((doc, index) => {
                 const eTxt = doc.name.toLowerCase().endsWith('.txt');
                 const nomeExibicao = formatarTituloDocumento(doc.name);
-                const iconBg = eTxt ? 'fa-file-lines' : 'fa-file-pdf';
+                const slotCanvasId = `thumb-canvas-${index}`;
 
                 painel.append(`
                     <div class="slot-container" onclick="abrirDocumento('${doc.download_url}', '${nomeExibicao}', ${eTxt})">
-                        <i class="fa-solid ${iconBg} slot-cover-icon"></i>
+                        <div class="slot-cover-wrapper" id="wrapper-${slotCanvasId}">
+                            ${eTxt ? '<i class="fa-solid fa-file-lines slot-cover-icon"></i>' : `<canvas id="${slotCanvasId}" class="thumb-canvas"></canvas>`}
+                        </div>
                         <div class="slot-meta">
                             <div class="slot-index">${eTxt ? 'TXT' : 'PDF'}-${String(index + 1).padStart(3, '0')}</div>
                             <div class="slot-status-dot" style="${eTxt ? 'background: var(--hud-orange); box-shadow: 0 0 10px var(--hud-orange);' : ''}"></div>
@@ -665,7 +701,29 @@
                         </div>
                     </div>
                 `);
+
+                if (!eTxt) {
+                    renderizarCapaPDF(doc.download_url, slotCanvasId);
+                }
             });
+        }
+
+        async function renderizarCapaPDF(url, canvasId) {
+            try {
+                const pdf = await pdfjsLib.getDocument(url).promise;
+                const page = await pdf.getPage(1);
+                const canvasThumb = document.getElementById(canvasId);
+                if (!canvasThumb) return;
+                
+                const context = canvasThumb.getContext('2d');
+                const viewport = page.getViewport({ scale: 0.3 });
+                canvasThumb.width = viewport.width;
+                canvasThumb.height = viewport.height;
+
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+            } catch (e) {
+                $(`#wrapper-${canvasId}`).html('<i class="fa-solid fa-file-pdf slot-cover-icon"></i>');
+            }
         }
 
         async function abrirDocumento(urlArquivo, tituloDoc, ehTxt) {
@@ -770,3 +828,4 @@
     </script>
 </body>
 </html>
+
