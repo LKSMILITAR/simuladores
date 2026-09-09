@@ -27,10 +27,10 @@ jobs:
       - name: Run Catalog Builder
         run: node scripts/build-catalog.js
 
-      - name: Commit and Push Manifests
+      - name: Commit and Push Cleaned Manifests
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add assets/catalog/
-          git diff-index --quiet HEAD || git commit -m "chore: auto-generate catalog manifests"
+          git add -A assets/catalog/
+          git diff-index --quiet HEAD || git commit -m "chore: purge ghost catalog files and update manifests"
           git push
