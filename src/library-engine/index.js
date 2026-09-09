@@ -9,19 +9,17 @@ export class LibraryNavigationEngine {
   #cache;
   #fetcher;
   #drawerElement;
-  #searchWorker;
   #baseUrl;
 
   constructor(config = {}) {
-    this.#baseUrl = config.baseUrl || './';
+    this.#baseUrl = config.baseUrl || './assets/catalog';
     this.#fsm = new NavigationFSM();
     this.#cache = new CacheManager(config.l1Capacity || 100);
     this.#fetcher = new NetworkFetcher(this.#cache, this.#baseUrl);
-
-    this.#initWorker();
   }
 
   async init() {
+    // Garante a montagem do elemento no DOM
     this.#drawerElement = document.querySelector('library-drawer');
     if (!this.#drawerElement) {
       this.#drawerElement = document.createElement('library-drawer');
@@ -29,38 +27,23 @@ export class LibraryNavigationEngine {
     }
 
     this.#drawerElement.init(this.#fsm);
-
-    this.#bindCustomEvents();
+    this.#bindEvents();
 
     try {
-      const rootManifest = await this.#fetcher.fetchManifest('assets/catalog/root.json');
-      
-      const initialItems = [
-        ...rootManifest.categories.map(c => ({ ...c, type: 'folder' })),
-        ...rootManifest.files.map(f => ({ ...f, type: 'file' }))
-      ];
-
-      this.#drawerElement.setTreeData(initialItems);
-
-      this.#searchWorker.postMessage({ type: 'INDEX_DATA', payload: rootManifest });
+      const rootManifest = await this.#fetcher.fetchManifest('root.json');
+      if (rootManifest) {
+        const initialItems = [
+          ...(rootManifest.categories || []).map(c => ({ ...c, type: 'folder' })),
+          ...(rootManifest.files || []).map(f => ({ ...f, type: 'file' }))
+        ];
+        this.#drawerElement.setTreeData(initialItems);
+      }
     } catch (err) {
-      console.error('[LibraryEngine] Erro na inicialização:', err);
+      console.warn('[LibraryEngine] Aviso: Não foi possível carregar o manifesto raiz inicial.', err);
     }
   }
 
-  #initWorker() {
-    const workerPath = new URL('./workers/index-search.worker.js', import.meta.url);
-    this.#searchWorker = new Worker(workerPath, { type: 'module' });
-
-    this.#searchWorker.onmessage = (e) => {
-      const { type, payload } = e.data;
-      if (type === 'SEARCH_RESULTS') {
-        this.#drawerElement.setTreeData(payload.results);
-      }
-    };
-  }
-
-  #bindCustomEvents() {
+  #bindEvents() {
     this.#drawerElement.addEventListener('library:folder-selected', async (e) => {
       const { chunk } = e.detail;
       if (!chunk) return;
@@ -68,26 +51,15 @@ export class LibraryNavigationEngine {
       this.#fsm.transition('FETCH_START');
       try {
         const chunkData = await this.#fetcher.fetchManifest(chunk);
-        
         const folderItems = [
           ...(chunkData.folders || []).map(f => ({ ...f, type: 'folder' })),
           ...(chunkData.files || []).map(f => ({ ...f, type: 'file' }))
         ];
-
         this.#drawerElement.setTreeData(folderItems);
         this.#fsm.transition('FETCH_SUCCESS');
       } catch (err) {
         this.#fsm.transition('FETCH_ERROR', err);
       }
-    });
-
-    this.#drawerElement.addEventListener('library:search-input', (e) => {
-      const term = e.detail.term;
-      if (!term) {
-        this.refresh();
-        return;
-      }
-      this.#searchWorker.postMessage({ type: 'SEARCH', payload: { term } });
     });
   }
 
@@ -100,17 +72,13 @@ export class LibraryNavigationEngine {
   }
 
   toggle() {
-    this.#fsm.transition('TOGGLE');
-  }
-
-  async refresh() {
-    const rootData = await this.#cache.get('assets/catalog/root.json');
-    if (rootData) {
-      const items = [
-        ...rootData.categories.map(c => ({ ...c, type: 'folder' })),
-        ...rootData.files.map(f => ({ ...f, type: 'file' }))
-      ];
-      this.#drawerElement.setTreeData(items);
+    if (this.#fsm.state === 'CLOSED') {
+      this.#fsm.transition('TOGGLE');
+    } else if (this.#fsm.state === 'OPEN') {
+      this.#fsm.transition('TOGGLE');
+    } else {
+      // Caso esteja no meio do processo de abertura
+      this.#fsm.transition('OPEN');
     }
   }
 }
