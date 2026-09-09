@@ -1,13 +1,10 @@
-name: Build Static Catalog Manifests
+name: Build Catalog Database
 
 on:
   push:
-    branches:
-      - main
     paths:
       - 'documents/**'
       - 'scripts/**'
-  workflow_dispatch:
 
 permissions:
   contents: write
@@ -24,13 +21,12 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run Catalog Builder
+      - name: Generate Catalog JSON
         run: node scripts/build-catalog.js
 
-      - name: Commit and Push Cleaned Manifests
+      - name: Commit and Push Changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add -A assets/catalog/
-          git diff-index --quiet HEAD || git commit -m "chore: purge ghost files and build updated catalog"
-          git push
+          git add assets/catalog/root.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-build: Atualização do catálogo assets/catalog/root.json" && git push)
