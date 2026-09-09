@@ -8,14 +8,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cacheManager = new CacheManager();
     const fetcher = new NetworkFetcher(cacheManager);
 
-    // Elementos de Layout e Viewport
     const sidebar = document.getElementById('main-sidebar');
     const toggleBtn = document.getElementById('sidebar-toggle-btn');
     const standbyView = document.getElementById('standby-view');
     const activeDocView = document.getElementById('active-doc-view');
     const categoryGridView = document.getElementById('category-grid-view');
     
-    // Elementos de Conteúdo
     const categoryTitleDisplay = document.getElementById('category-title-display');
     const categoryCountBadge = document.getElementById('category-count-badge');
     const categoryCardsContainer = document.getElementById('category-cards-container');
@@ -25,7 +23,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let catalogData = null;
 
-    // 1. Controle de Abertura/Fechamento da Gaveta Lateral no Mobile
     if (toggleBtn && sidebar) {
         toggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -43,9 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // 2. Assina as Mudanças de Estado da Interface (FSM Observer)
     fsm.subscribe(({ fromState, toState, event, payload }) => {
-        // Oculta todos os estados do HUD por padrão
         standbyView.style.display = 'none';
         activeDocView.style.display = 'none';
         categoryGridView.style.display = 'none';
@@ -53,7 +48,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         switch (toState) {
             case 'IDLE':
                 standbyView.style.display = 'flex';
-                sidebar.setActive('ROOT');
+                if (sidebar && typeof sidebar.setActive === 'function') {
+                    sidebar.setActive('ROOT');
+                }
                 break;
 
             case 'LOADING_CATEGORY':
@@ -73,19 +70,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // 3. Carregamento Inicial do Catálogo Central
     try {
         catalogData = await fetcher.fetchCatalog();
+        if (catalogData && catalogData.categories && catalogData.categories.length > 0) {
+            fsm.transition('SELECT_CATEGORY', 'Termodinâmica');
+        }
     } catch (error) {
-        console.error('[Engine] Erro crítico ao carregar catálogo:', error);
-        standbyView.innerHTML = `
-            <div style="color: var(--accent-red); font-family: var(--font-mono); font-size: 0.85rem; text-align: center; padding: 20px;">
-                [ERRO CRÍTICO] FALHA AO CONECTAR COM ASSETS/CATALOG/ROOT.JSON // VERIFIQUE O DEPLOY
-            </div>
-        `;
+        console.error('[Engine] Erro na inicialização:', error);
     }
 
-    // 4. Ouvinte de Seleção Emitido pelo Web Component SidebarNav
     document.addEventListener('sidebar:select', (e) => {
         const path = e.detail.path;
 
@@ -95,14 +88,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             fsm.transition('SELECT_CATEGORY', path);
         }
 
-        // Recolhe o menu automaticamente no mobile após o clique
         if (window.innerWidth <= 768 && sidebar) {
             sidebar.classList.remove('active', 'open');
             sidebar.classList.add('collapsed');
         }
     });
 
-    // 5. Tratamento do Botão de Fechar Documento
     if (btnCloseDocument) {
         btnCloseDocument.addEventListener('click', () => {
             docFrameBody.innerHTML = '';
@@ -110,7 +101,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // 6. Funções de Renderização de Conteúdo
     function loadCategoryContent(categoryPath) {
         if (!catalogData || !catalogData.categories) {
             fsm.transition('LOAD_ERROR');
@@ -126,7 +116,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             categoryTitleDisplay.textContent = categoryPath.toUpperCase();
             categoryCountBadge.textContent = '0 DOCUMENTOS';
             categoryCardsContainer.innerHTML = '<div style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; padding: 20px;">NENHUM REGISTRO LOCALIZADO NESTA CATEGORIA.</div>';
-            fsm.transition('LOAD_SUCCESS');
+            fsm.transition('LOAD_SUCCESS', categoryPath);
             return;
         }
 
@@ -134,7 +124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         categoryCountBadge.textContent = `${category.itemCount || category.items.length} DOCUMENTOS`;
 
         if (!category.items || category.items.length === 0) {
-            categoryCardsContainer.innerHTML = '<div style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; padding: 20px;">DIRETÓRIO VAZIO // STANDBY</div>';
+            categoryCardsContainer.innerHTML = '<div style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; padding: 20px;">CATEGORIA SEM DOCUMENTOS CADASTRADOS // STANDBY</div>';
         } else {
             categoryCardsContainer.innerHTML = category.items.map(file => {
                 const isObject = typeof file === 'object' && file !== null;
@@ -145,14 +135,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div class="doc-card" data-filepath="${rawPath}" data-filename="${fileName}">
                         <div class="doc-card-title">${fileName}</div>
                         <div class="doc-card-meta">
-                            <span>FORMATO: PDF / DOC</span>
-                            <span style="color: var(--accent-red);">ACESSAR &rarr;</span>
+                            <span>FORMATO: PDF / TXT</span>
+                            <span style="color: var(--accent-red);">ABRIR &rarr;</span>
                         </div>
                     </div>
                 `;
             }).join('');
 
-            // Adiciona evento de clique em cada cartão de documento da grade
             categoryCardsContainer.querySelectorAll('.doc-card').forEach(card => {
                 card.addEventListener('click', () => {
                     const filePath = card.getAttribute('data-filepath');
@@ -167,10 +156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderDocumentViewer({ filePath, fileName }) {
         docFilenameDisplay.textContent = fileName;
-        
-        // Rota relativa para o visualizador localizado na raiz de /simuladores/
         const viewerTarget = `../visualizador.html?file=${encodeURIComponent('database/' + filePath)}`;
-
         docFrameBody.innerHTML = `
             <iframe src="${viewerTarget}" title="${fileName}" style="width: 100%; height: 100%; border: none; background: #000;"></iframe>
         `;
