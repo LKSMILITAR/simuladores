@@ -1,158 +1,73 @@
-import { NavigationFSM } from './state/fsm.js';
-import { CacheManager } from './services/cache-manager.js';
 import { NetworkFetcher } from './services/network-fetcher.js';
-import './components/sidebar-nav.js';
-
-export class LibraryNavigationEngine {
-  #fsm;
-  #cache;
-  #fetcher;
-  #sidebarElement;
-  #baseUrl;
-  #rootData = null;
-
-  constructor(config = {}) {
-    this.#baseUrl = config.baseUrl || './';
-    this.#fsm = new NavigationFSM();
-    this.#cache = new CacheManager(100);
-    this.#fetcher = new NetworkFetcher(this.#cache, this.#baseUrl);
-  }
-
-  async init() {
-    this.#sidebarElement = document.getElementById('main-sidebar');
-    this.#bindEvents();
-
-    try {
-      this.#rootData = await this.#fetcher.fetchManifest('assets/catalog/root.json');
-    } catch (err) {
-      console.warn('[LibraryEngine] Manifesto raiz ainda não compilado na nuvem.', err);
-    }
-  }
-
-  #bindEvents() {
-    const toggleBtn = document.getElementById('sidebar-toggle-btn');
-    if (toggleBtn) {
-      toggleBtn.addEventListener('click', () => {
-        this.#sidebarElement?.toggleCollapse();
-      });
-    }
-
-    const btnCloseDoc = document.getElementById('btn-close-document');
-    if (btnCloseDoc) {
-      btnCloseDoc.addEventListener('click', () => {
-        this.#fsm.transition('CLOSE_DOC');
-        this.#renderState('IDLE');
-      });
-    }
-
-    this.#sidebarElement?.addEventListener('sidebar:select', async (e) => {
-      const { path } = e.detail;
-
-      if (path === 'ROOT') {
-        this.#fsm.transition('CLOSE_DOC');
-        this.#renderState('IDLE');
-        return;
-      }
-
-      this.#fsm.transition('SELECT_CATEGORY', { path });
-      this.#renderState('LOADING');
-
-      try {
-        const categoryData = await this.#loadCategoryData(path);
-        this.#fsm.transition('LOAD_SUCCESS');
-        this.#renderCategoryGrid(path, categoryData);
-      } catch (err) {
-        this.#fsm.transition('LOAD_ERROR');
-        this.#renderState('IDLE');
-      }
-    });
-  }
-
-  async #loadCategoryData(categoryName) {
-    if (!this.#rootData || !this.#rootData.categories) return { files: [] };
-    
-    const catObj = this.#rootData.categories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
-    if (catObj && catObj.chunk) {
-      return await this.#fetcher.fetchManifest(catObj.chunk);
-    }
-    return { files: [] };
-  }
-
-  #renderState(state) {
-    const standbyView = document.getElementById('standby-view');
-    const activeDocView = document.getElementById('active-doc-view');
-    const categoryGridView = document.getElementById('category-grid-view');
-
-    standbyView.style.display = state === 'IDLE' ? 'flex' : 'none';
-    activeDocView.style.display = state === 'DOC' ? 'flex' : 'none';
-    categoryGridView.style.display = state === 'GRID' ? 'flex' : 'none';
-  }
-
-  #renderCategoryGrid(categoryTitle, data) {
-    this.#renderState('GRID');
-
-    const titleEl = document.getElementById('category-title-display');
-    const badgeEl = document.getElementById('category-count-badge');
-    const container = document.getElementById('category-cards-container');
-
-    titleEl.innerText = categoryTitle.toUpperCase();
-    const files = data.files || [];
-    badgeEl.innerText = `${files.length} DOCUMENTOS`;
-
-    if (files.length === 0) {
-      container.innerHTML = `<div style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.8rem; grid-column: 1/-1;">Nenhum documento encontrado para esta disciplina no repositório local.</div>`;
-      return;
-    }
-
-    container.innerHTML = files.map(f => `
-      <div class="doc-card" data-path="${f.path}" data-name="${f.name}">
-        <div class="doc-card-title">${f.name}</div>
-        <div class="doc-card-meta">
-          <span>EXT: ${f.extension.toUpperCase()}</span>
-          <span>${(f.size / 1024).toFixed(1)} KB</span>
-        </div>
-      </div>
-    `).join('');
-
-    container.querySelectorAll('.doc-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const docPath = card.dataset.path;
-        const docName = card.dataset.name;
-        this.openDocument(docPath, docName);
-      });
-    });
-  }
-
-  openDocument(docPath, docName) {
-    this.#fsm.transition('OPEN_DOC');
-    this.#renderState('DOC');
-
-    const docFrameBody = document.getElementById('doc-frame-body');
-    const docFilenameDisplay = document.getElementById('doc-filename-display');
-    const docTypeTag = document.getElementById('doc-type-tag');
-
-    const encodedPath = `./documents/${encodeURIComponent(docPath)}`;
-    const ext = docPath.split('.').pop().toLowerCase();
-
-    docFilenameDisplay.innerText = docName;
-    docTypeTag.innerText = ext.toUpperCase();
-
-    if (ext === 'pdf') {
-      docFrameBody.innerHTML = `<iframe src="${encodedPath}" title="${docName}"></iframe>`;
-    } else {
-      fetch(encodedPath)
-        .then(res => res.text())
-        .then(text => {
-          docFrameBody.innerHTML = `<div style="padding: 24px; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.6; color: var(--text-primary); overflow-y: auto; height: 100%; white-space: pre-wrap;">${text}</div>`;
-        })
-        .catch(() => {
-          docFrameBody.innerHTML = `<div style="padding: 24px; color: var(--accent-red); font-family: var(--font-mono);">Erro ao carregar o conteúdo do documento local.</div>`;
-        });
-    }
-  }
-}
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const engine = new LibraryNavigationEngine({ baseUrl: './' });
-  await engine.init();
+    const fetcher = new NetworkFetcher();
+    const mainViewport = document.querySelector('.main-content') || document.querySelector('main') || document.body;
+    const sidebarLinks = document.querySelectorAll('.sidebar-nav a, nav a, [data-category]');
+
+    let catalogData = null;
+
+    try {
+        catalogData = await fetcher.fetchCatalog();
+        initSidebarEvents();
+    } catch (err) {
+        console.error('[LibraryEngine] Falha ao inicializar a base de dados:', err);
+    }
+
+    function initSidebarEvents() {
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const selectedCategoryName = link.textContent.trim();
+                renderCategory(selectedCategoryName);
+            });
+        });
+    }
+
+    function renderCategory(categoryName) {
+        if (!catalogData || !catalogData.categories) return;
+
+        // Localiza a categoria correspondente no objeto retornado
+        const category = catalogData.categories.find(c => 
+            c.name.toLowerCase() === categoryName.toLowerCase() || 
+            c.id.toLowerCase() === categoryName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+        );
+
+        if (!category) {
+            mainViewport.innerHTML = `
+                <div style="padding: 24px; color: #888; font-family: monospace;">
+                    [SISTEMA] CATEGORIA "${categoryName}" NÃO ENCONTRADA // STANDBY
+                </div>`;
+            return;
+        }
+
+        const filesHtml = category.items.length > 0 ? category.items.map(file => {
+            // Rota apontando diretamente para o seu visualizador na pasta superior
+            const viewerUrl = `../visualizador.html?file=${encodeURIComponent('../' + file.path)}`;
+            const downloadUrl = `../${file.encodedPath}`;
+
+            return `
+                <div style="background: #141414; border: 1px solid #2a2a2a; border-left: 3px solid #e50914; padding: 14px; margin-bottom: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <span style="color: #ffffff; font-size: 14px; font-weight: 500;">${file.title}</span>
+                        <span style="color: #666666; font-size: 11px; font-family: monospace;">URI: ${file.encodedPath}</span>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <a href="${viewerUrl}" target="_blank" style="background: #e50914; color: #ffffff; padding: 6px 14px; text-decoration: none; font-size: 12px; font-weight: bold; border-radius: 3px;">VISUALIZAR</a>
+                        <a href="${downloadUrl}" download style="background: #222222; color: #aaaaaa; border: 1px solid #333333; padding: 6px 14px; text-decoration: none; font-size: 12px; border-radius: 3px;">BAIXAR</a>
+                    </div>
+                </div>
+            `;
+        }).join('') : `<div style="padding: 20px; color: #555555; font-style: italic;">NENHUM DOCUMENTO CADASTRADO NESTA CATEGORIA</div>`;
+
+        mainViewport.innerHTML = `
+            <div style="padding: 24px;">
+                <div style="border-bottom: 1px solid #333333; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
+                    <h2 style="color: #ffffff; font-size: 20px; text-transform: uppercase; letter-spacing: 1px;">${category.name}</h2>
+                    <span style="color: #e50914; font-size: 12px; font-family: monospace; font-weight: bold;">[${category.itemCount} DOCUMENTOS]</span>
+                </div>
+                <div>${filesHtml}</div>
+            </div>
+        `;
+    }
 });
