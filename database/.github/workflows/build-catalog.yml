@@ -22,7 +22,7 @@ jobs:
           node-version: '20'
 
       - name: Generate Catalog JSON
-        run: node/database/scripts/build-catalog.js
+        run: node database/scripts/build-catalog.js
 
       - name: Commit and Push Changes
         run: |
