@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Cinética de Míssil Ar-Ar - Simulação 3-DOF</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --accent-color: #38bdf8;
+            --accent-hover: #0284c7;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --danger-color: #f43f5e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .main-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            flex: 1;
+        }
+
+        @media (max-width: 900px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--accent-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .input-group input {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--accent-color);
+        }
+
+        button.btn-calculate {
+            background-color: var(--accent-color);
+            color: var(--bg-color);
+            border: none;
+            padding: 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+        }
+
+        button.btn-calculate:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .dashboard {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .metric-card {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .metric-card .title {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .metric-card .value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .metric-card .unit {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .canvas-container {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            min-height: 350px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Simulador Cinético de Engajamento BVR</h1>
+        <p>Integração numérica de trajetória 3-DOF com arrasto aerodinâmico quadrático [D = 0.5 · ρ · v² · S · Cd]</p>
+    </header>
+
+    <div class="main-container">
+        <!-- Painel de Entradas -->
+        <div class="panel">
+            <div class="panel-title">Parâmetros de Lançamento</div>
+            
+            <div class="input-group">
+                <label for="distance">Distância do Alvo (km):</label>
+                <input type="number" id="distance" value="40" step="1">
+            </div>
+
+            <div class="input-group">
+                <label for="v0">Velocidade Inicial do Lançador (m/s):</label>
+                <input type="number" id="v0" value="300" step="10">
+            </div>
+
+            <div class="input-group">
+                <label for="targetV">Velocidade do Alvo (m/s):</label>
+                <input type="number" id="targetV" value="250" step="10">
+            </div>
+
+            <div class="input-group">
+                <label for="altitude">Altitude de Engajamento (m):</label>
+                <input type="number" id="altitude" value="8000" step="500">
+            </div>
+
+            <div class="panel-title" style="margin-top: 10px;">Especificações do Armamento</div>
+
+            <div class="input-group">
+                <label for="m0">Massa Total Inicial (kg):</label>
+                <input type="number" id="m0" value="150" step="5">
+            </div>
+
+            <div class="input-group">
+                <label for="mProp">Massa de Propelente (kg):</label>
+                <input type="number" id="mProp" value="60" step="5">
+            </div>
+
+            <div class="input-group">
+                <label for="thrust">Empuxo do Motor (N):</label>
+                <input type="number" id="thrust" value="35000" step="1000">
+            </div>
+
+            <div class="input-group">
+                <label for="tBurn">Tempo de Queima do Motor (s):</label>
+                <input type="number" id="tBurn" value="7.0" step="0.5">
+            </div>
+
+            <div class="input-group">
+                <label for="cd">Coeficiente de Arrasto (Cd):</label>
+                <input type="number" id="cd" value="0.25" step="0.01">
+            </div>
+
+            <div class="input-group">
+                <label for="area">Área Seccional Frontal (m²):</label>
+                <input type="number" id="area" value="0.0314" step="0.001">
+            </div>
+
+            <button class="btn-calculate" onclick="runSimulation()">Executar Simulação</button>
+        </div>
+
+        <!-- Painel de Resultados e Gráfico -->
+        <div class="dashboard">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <span class="title">Tempo de Voo</span>
+                    <span class="value" id="resTime">0.0</span>
+                    <span class="unit">segundos</span>
+                </div>
+                <div class="metric-card">
+                    <span class="title">Velocidade Máxima</span>
+                    <span class="value" id="resMaxV">0.0</span>
+                    <span class="unit">m/s (Mach <span id="resMaxMach">0.0</span>)</span>
+                </div>
+                <div class="metric-card">
+                    <span class="title">Velocidade Terminal</span>
+                    <span class="value" id="resTermV">0.0</span>
+                    <span class="unit">m/s no impacto</span>
+                </div>
+                <div class="metric-card">
+                    <span class="title">Resultado do Engajamento</span>
+                    <span class="value" id="resStatus" style="font-size: 1.1rem;">-</span>
+                    <span class="unit" id="resDetail">Aguardando execução</span>
+                </div>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="telemetryChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Motor de Simulação Numérica e Integração de Trajetória
+         */
+        function runSimulation() {
+            // Coleta de parâmetros da interface
+            const R_target_init = parseFloat(document.getElementById('distance').value) * 1000; // km para m
+            const v_launch = parseFloat(document.getElementById('v0').value);
+            const v_target = parseFloat(document.getElementById('targetV').value);
+            const altitude = parseFloat(document.getElementById('altitude').value);
+
+            const m0 = parseFloat(document.getElementById('m0').value);
+            const mProp = parseFloat(document.getElementById('mProp').value);
+            const Thrust = parseFloat(document.getElementById('thrust').value);
+            const tBurn = parseFloat(document.getElementById('tBurn').value);
+            const Cd = parseFloat(document.getElementById('cd').value);
+            const Area = parseFloat(document.getElementById('area').value);
+
+            // Constantes atmosféricas e físicas
+            const rho0 = 1.225; // kg/m³ no nível do mar
+            const H0 = 8500; // Altura de escala atmosférica em metros
+            const rho = rho0 * Math.exp(-altitude / H0); // Densidade local do ar
+            const speedOfSound = 340.29 * Math.sqrt(Math.max(0.5, 1 - (altitude * 0.000022557))); // Estimativa do Mach local
+
+            // Taxa de consumo de massa do motor (kg/s)
+            const mDot = mProp / tBurn;
+
+            // Variáveis de estado da simulação
+            let t = 0;
+            let dt = 0.01; // Passo de tempo de integração (10 milissegundos)
+            let x_missile = 0;
+            let x_target = R_target_init;
+            let v_missile = v_launch;
+            let m_current = m0;
+
+            let max_v = v_launch;
+            let history = []; // Armazena a telemetria para renderização visual
+
+            let intercepted = false;
+            let outOfEnergy = false;
+
+            // Loop de integração numérica (Método de Euler)
+            while (t < 180) { // Limite máximo de 3 minutos de voo
+                // 1. Cálculo da Massa Instantânea
+                if (t <= tBurn) {
+                    m_current = m0 - (mDot * t);
+                } else {
+                    m_current = m0 - mProp;
+                }
+
+                // 2. Cálculo da Força Propulsiva Instantânea
+                const currentThrust = (t <= tBurn) ? Thrust : 0;
+
+                // 3. Cálculo da Resistência Aerodinâmica Quadrática: D = 0.5 * rho * v² * S * Cd
+                const Drag = 0.5 * rho * Math.pow(v_missile, 2) * Area * Cd;
+
+                // 4. Aceleração Instantânea segundo a Segunda Lei de Newton: a = (T - D) / m
+                const accel = (currentThrust - Drag) / m_current;
+
+                // 5. Atualização dos Estados Cinemáticos
+                v_missile += accel * dt;
+                x_missile += v_missile * dt;
+                x_target -= v_target * dt; // Alvo aproximando-se em rota de colisão frontal
+
+                if (v_missile > max_v) {
+                    max_v = v_missile;
+                }
+
+                t += dt;
+
+                // Registro de telemetria
+                history.push({
+                    time: t,
+                    velocity: v_missile,
+                    distanceToTarget: x_target - x_missile,
+                    dragForce: Drag,
+                    thrustForce: currentThrust
+                });
+
+                // Condição de Interpelação (Interceptação efetuada)
+                if (x_missile >= x_target) {
+                    intercepted = true;
+                    break;
+                }
+
+                // Condição de Esgotamento Cinético (Míssil perdeu sustentação/velocidade útil)
+                if (v_missile < 120 && t > tBurn) {
+                    outOfEnergy = true;
+                    break;
+                }
+            }
+
+            // Atualização dos Painéis de Resultado
+            document.getElementById('resTime').innerText = t.toFixed(1);
+            document.getElementById('resMaxV').innerText = max_v.toFixed(0);
+            document.getElementById('resMaxMach').innerText = (max_v / speedOfSound).toFixed(2);
+            document.getElementById('resTermV').innerText = v_missile.toFixed(0);
+
+            const statusElem = document.getElementById('resStatus');
+            const detailElem = document.getElementById('resDetail');
+
+            if (intercepted) {
+                statusElem.innerText = "INTERCEPTAÇÃO";
+                statusElem.style.color = "#4ade80";
+                detailElem.innerText = "Alvo atingido no envelope de energia.";
+            } else if (outOfEnergy) {
+                statusElem.innerText = "SEM ENERGIA";
+                statusElem.style.color = "#f43f5e";
+                detailElem.innerText = "Míssil desacelerou abaixo do limite funcional.";
+            } else {
+                statusElem.innerText = "TEMPO EXCEDIDO";
+                statusElem.style.color = "#fbbf24";
+                detailElem.innerText = "Míssil não alcançou a posição do alvo.";
+            }
+
+            // Renderização do Gráfico no Canvas
+            drawTelemetryChart(history);
+        }
+
+        /**
+         * Renderização Gráfica da Telemetria no HTML5 Canvas
+         */
+        function drawTelemetryChart(data) {
+            const canvas = document.getElementById('telemetryChart');
+            const ctx = canvas.getContext('2d');
+
+            // Ajuste de resolução do Canvas
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 50;
+
+            ctx.clearRect(0, 0, width, height);
+
+            if (data.length === 0) return;
+
+            const maxTime = data[data.length - 1].time;
+            let maxVel = 0;
+            for (let p of data) {
+                if (p.velocity > maxVel) maxVel = p.velocity;
+            }
+            maxVel = Math.ceil(maxVel / 100) * 100;
+
+            // Desenho dos Eixos
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1;
+
+            ctx.beginPath();
+            ctx.moveTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            ctx.lineTo(width - padding, padding);
+            ctx.moveTo(padding, height - padding);
+            ctx.lineTo(padding, padding);
+            ctx.stroke();
+
+            // Rótulos e Grade Escalar
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '11px sans-serif';
+
+            // Marcadores do Eixo Y (Velocidade)
+            const ySteps = 5;
+            for (let i = 0; i <= ySteps; i++) {
+                const yVal = (maxVel / ySteps) * i;
+                const yPos = (height - padding) - ((yVal / maxVel) * (height - 2 * padding));
+                
+                ctx.fillText(yVal.toFixed(0) + ' m/s', 5, yPos + 4);
+
+                ctx.beginPath();
+                ctx.strokeStyle = '#1e293b';
+                ctx.moveTo(padding, yPos);
+                ctx.lineTo(width - padding, yPos);
+                ctx.stroke();
+            }
+
+            // Marcadores do Eixo X (Tempo)
+            const xSteps = 6;
+            for (let i = 0; i <= xSteps; i++) {
+                const xVal = (maxTime / xSteps) * i;
+                const xPos = padding + ((xVal / maxTime) * (width - 2 * padding));
+
+                ctx.fillText(xVal.toFixed(1) + 's', xPos - 10, height - padding + 20);
+            }
+
+            // Traçado da Curva de Velocidade
+            ctx.beginPath();
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 2.5;
+
+            for (let i = 0; i < data.length; i++) {
+                const xPos = padding + ((data[i].time / maxTime) * (width - 2 * padding));
+                const yPos = (height - padding) - ((data[i].velocity / maxVel) * (height - 2 * padding));
+
+                if (i === 0) {
+                    ctx.moveTo(xPos, yPos);
+                } else {
+                    ctx.lineTo(xPos, yPos);
+                }
+            }
+            ctx.stroke();
+
+            // Título do Gráfico
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText('Perfil Cinético: Velocidade (m/s) vs Tempo (s)', padding, padding - 15);
+        }
+
+        // Executa a simulação automaticamente ao carregar a página
+        window.onload = runSimulation;
+        window.onresize = runSimulation;
+    </script>
+</body>
+</html>
