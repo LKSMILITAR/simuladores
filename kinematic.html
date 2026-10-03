@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelo 6-DOF/3D RK4 Míssil Ar-Ar (Padrão MDPI)</title>
+    <!-- Imports de bibliotecas gráficas 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg-primary: #060913;
+            --bg-panel: #0d1527;
+            --border-color: #1b2a4a;
+            --accent-cyan: #00f0ff;
+            --accent-green: #00ff88;
+            --accent-red: #ff3366;
+            --text-primary: #e2e8f0;
+            --text-muted: #64748b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Consolas', 'Fira Code', monospace; }
+        body { background: var(--bg-primary); color: var(--text-primary); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar de Parâmetros */
+        .sidebar {
+            width: 380px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            gap: 12px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .sidebar h2 { font-size: 1rem; color: var(--accent-cyan); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+        .section-title { font-size: 0.8rem; color: var(--accent-green); margin-top: 5px; text-transform: uppercase; }
+
+        .param-group { display: flex; flex-direction: column; gap: 4px; }
+        .param-group label { font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between; }
+        .param-group label span { color: var(--text-primary); font-weight: bold; }
+        .param-group input[type="range"], .param-group input[type="number"] {
+            background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--accent-cyan); padding: 4px 8px; border-radius: 4px; font-size: 0.8rem;
+        }
+
+        button.btn-run {
+            background: linear-gradient(135deg, #00f0ff, #0077ff);
+            color: #000; border: none; padding: 10px; font-weight: bold; cursor: pointer; border-radius: 4px;
+            text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; transition: 0.2s;
+        }
+        button.btn-run:hover { filter: brightness(1.2); }
+
+        /* Viewport Principal */
+        .viewport-container { flex: 1; display: flex; flex-direction: column; position: relative; }
+        #webgl-container { flex: 2; width: 100%; height: 100%; position: relative; }
+        
+        /* Dashboard Telemetria */
+        .telemetry-bar {
+            height: 180px; background: var(--bg-panel); border-top: 1px solid var(--border-color);
+            display: grid; grid-template-columns: repeat(4, 1fr) 250px; padding: 10px; gap: 10px;
+        }
+
+        .card { background: var(--bg-primary); border: 1px solid var(--border-color); padding: 8px; border-radius: 4px; display: flex; flex-direction: column; justify-content: space-between; }
+        .card-title { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+        .card-value { font-size: 1.2rem; font-weight: bold; color: var(--accent-cyan); }
+        .card-sub { font-size: 0.65rem; color: var(--accent-green); }
+
+        canvas.graph-canvas { width: 100%; height: 100px; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>Condições do Engajamento (WEZ)</h2>
+        
+        <div class="section-title">Lançador & Alvo</div>
+        <div class="param-group">
+            <label>Distância Inicial Alvo (km): <span id="val-r0">50</span></label>
+            <input type="range" id="r0" min="10" max="120" value="50" oninput="document.getElementById('val-r0').innerText=this.value">
+        </div>
+        <div class="param-group">
+            <label>Altitude de Lançamento (m): <span id="val-h0">9000</span></label>
+            <input type="range" id="h0" min="1000" max="18000" step="500" value="9000" oninput="document.getElementById('val-h0').innerText=this.value">
+        </div>
+        <div class="param-group">
+            <label>Velocidade Lançador (Mach): <span id="val-m0">1.2</span></label>
+            <input type="range" id="m0" min="0.7" max="2.2" step="0.1" value="1.2" oninput="document.getElementById('val-m0').innerText=this.value">
+        </div>
+        <div class="param-group">
+            <label>Manobra Evasiva Alvo (G): <span id="val-g-tgt">3.0</span></label>
+            <input type="range" id="gtgt" min="0" max="9" step="0.5" value="3.0" oninput="document.getElementById('val-g-tgt').innerText=this.value">
+        </div>
+
+        <div class="section-title">Parâmetros do Míssil & Trajetória</div>
+        <div class="param-group">
+            <label>Ângulo de Lofting (graus): <span id="val-loft">25</span></label>
+            <input type="range" id="loft" min="0" max="45" value="25" oninput="document.getElementById('val-loft').innerText=this.value">
+        </div>
+        <div class="param-group">
+            <label>Constante de Guiamento PN (N): <span id="val-pn">4.0</span></label>
+            <input type="range" id="pn" min="3.0" max="5.5" step="0.1" value="4.0" oninput="document.getElementById('val-pn').innerText=this.value">
+        </div>
+        <div class="param-group">
+            <label>Empuxo Motor (kN):</label>
+            <input type="number" id="thrust" value="45" step="1">
+        </div>
+        <div class="param-group">
+            <label>Tempo de Queima (s):</label>
+            <input type="number" id="tburn" value="8.0" step="0.5">
+        </div>
+        <div class="param-group">
+            <label>Massa Inicial / Seca (kg):</label>
+            <div style="display:flex; gap:5px;">
+                <input type="number" id="m0_m" value="175" style="width:50%">
+                <input type="number" id="m1_m" value="90" style="width:50%">
+            </div>
+        </div>
+
+        <button class="btn-run" onclick="executeSimulation()">Integrar Trajetória (RK4)</button>
+    </div>
+
+    <div class="viewport-container">
+        <div id="webgl-container"></div>
+
+        <div class="telemetry-bar">
+            <div class="card">
+                <span class="card-title">Tempo de Voo / Estado</span>
+                <span class="card-value" id="tele-time">0.0 s</span>
+                <span class="card-sub" id="tele-status">AGUARDANDO INTEGRADOR</span>
+            </div>
+            <div class="card">
+                <span class="card-title">Mach Máximo / Apogeu</span>
+                <span class="card-value" id="tele-mach">M 0.00</span>
+                <span class="card-sub" id="tele-alt">Alt. Máx: 0 m</span>
+            </div>
+            <div class="card">
+                <span class="card-title">Miss Distance (Cálculo Terminal)</span>
+                <span class="card-value" id="tele-miss">0.0 m</span>
+                <span class="card-sub" id="tele-energy">Energia Cinética: 0 MJ</span>
+            </div>
+            <div class="card">
+                <span class="card-title">Arrasto / Ângulo Ataque (α)</span>
+                <span class="card-value" id="tele-drag">0 kN</span>
+                <span class="card-sub" id="tele-alpha">α: 0.0°</span>
+            </div>
+            <div class="card">
+                <span class="card-title">Perfil Cinético v(t)</span>
+                <canvas id="graphCanvas" class="graph-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ------------------------------------------------------------------
+           MODELO ATMOSFÉRICO ISA 1976 (US Standard Atmosphere)
+           ------------------------------------------------------------------ */
+        function getISA(h) {
+            const g0 = 9.80665;
+            const R = 287.05;
+            const gamma = 1.4;
+            let T, P;
+
+            if (h <= 11000) { // Troposfera
+                T = 288.15 - 0.0065 * h;
+                P = 101325 * Math.pow(T / 288.15, 5.25588);
+            } else { // Estratosfera inferior
+                T = 216.65;
+                P = 22632 * Math.exp(-g0 * (h - 11000) / (R * T));
+            }
+
+            const rho = P / (R * T);
+            const a = Math.sqrt(gamma * R * T);
+            return { rho, a, P, T };
+        }
+
+        /* ------------------------------------------------------------------
+           AERODINÂMICA COMPRESSÍVEL NÃO LINEAR & ARRASTO INDUZIDO
+           ------------------------------------------------------------------ */
+        function getAerodynamics(Mach, alpha_deg) {
+            const alpha = alpha_deg * Math.PI / 180;
+            // Arraste Parasita CD0 com crista compressível transônica (Sears-Haack)
+            let Cd0 = 0.022;
+            if (Mach > 0.8 && Mach <= 1.2) {
+                Cd0 += 0.025 * Math.pow(Math.sin((Mach - 0.8) * Math.PI / 0.8), 2);
+            } else if (Mach > 1.2) {
+                Cd0 += 0.025 / Math.sqrt(Math.pow(Mach, 2) - 1);
+            }
+
+            // Gradiente de Sustentação CLa ajustado por Mach (Regra de Prandtl-Glauert)
+            let CLa0 = 3.5; // per rad
+            let CLa = (Mach < 0.9) ? CLa0 / Math.sqrt(1 - Mach*Mach) : CLa0 / Math.sqrt(Math.abs(Mach*Mach - 1) + 0.1);
+            CLa = Math.min(CLa, 6.0); // Saturação aerodinâmica
+
+            const CL = CLa * alpha;
+            const K = 0.18; // Fator de indução aerodinâmica
+            const Cd = Cd0 + K * Math.pow(CL, 2); // Arrasto Induzido CD = CD0 + K*CL^2
+
+            return { Cd, CL, Cd0 };
+        }
+
+        /* ------------------------------------------------------------------
+           SISTEMA DE EQUAÇÕES DIFERENCIAIS ORDINÁRIAS 3D (EOM)
+           Vetor de Estado: Y = [x, y, z, V, gamma, chi, m]
+           ------------------------------------------------------------------ */
+        function derivatives(t, Y, params) {
+            const [x, y, z, V, gamma, chi, m] = Y;
+            const isa = getISA(Math.max(0, z));
+            const Mach = V / isa.a;
+
+            // Lógica do Guiamento e Controle (Lofting + Proportional Navigation)
+            let gamma_cmd = gamma;
+            let chi_cmd = chi;
+            let alpha_deg = 0;
+
+            const distToTarget = Math.hypot(params.targetPos.x - x, params.targetPos.y - y, params.targetPos.z - z);
+            
+            // Fase de Lofting vs Fase Terminal PN
+            if (t <= params.tBurn && params.loftAngle > 0 && distToTarget > 15000) {
+                gamma_cmd = params.loftAngle * Math.PI / 180;
+            } else {
+                // Proportional Navigation Guidance (PNG) em 3D
+                const dx = params.targetPos.x - x;
+                const dy = params.targetPos.y - y;
+                const dz = params.targetPos.z - z;
+                
+                const R_los = Math.hypot(dx, dy, dz);
+                const elevation_los = Math.asin(dz / R_los);
+                const azimuth_los = Math.atan2(dy, dx);
+
+                gamma_cmd = elevation_los;
+                chi_cmd = azimuth_los;
+            }
+
+            // Ângulo de ataque induzido pelas manobras de correção
+            const dGamma = gamma_cmd - gamma;
+            alpha_deg = Math.max(-5, Math.min(20, dGamma * 180 / Math.PI * 2.0));
+
+            const aero = getAerodynamics(Mach, alpha_deg);
+            const S = 0.0314; // Área de referência (m²)
+            const q = 0.5 * isa.rho * V * V;
+            const Drag = q * S * aero.Cd;
+            const Lift = q * S * aero.CL;
+
+            // Empuxo com correção de pressão atmosférica no bocal
+            let Thrust = 0;
+            let mDot = 0;
+            if (t <= params.tBurn) {
+                Thrust = params.Thrust0 + (101325 - isa.P) * 0.005; // Ajuste de ganho por vácuo
+                mDot = (params.m0 - params.m1) / params.tBurn;
+            }
+
+            const g = 9.80665 / Math.pow(1 + z / 6371000, 2);
+
+            // Equações de Movimento Translacional
+            const dxdt = V * Math.cos(gamma) * Math.cos(chi);
+            const dydt = V * Math.cos(gamma) * Math.sin(chi);
+            const dzdt = V * Math.sin(gamma);
+
+            const dVdt = (Thrust * Math.cos(alpha_deg * Math.PI / 180) - Drag) / m - g * Math.sin(gamma);
+            const dGammadt = ((Thrust * Math.sin(alpha_deg * Math.PI / 180) + Lift) / m - g * Math.cos(gamma)) / V;
+            const dChidt = (Lift * Math.sin(0)) / (m * V * Math.cos(gamma)); // Assumindo bank=0
+            const dmdt = -mDot;
+
+            return [dxdt, dydt, dzdt, dVdt, dGammadt, dChidt, dmdt, Drag, alpha_deg, Mach];
+        }
+
+        /* ------------------------------------------------------------------
+           INTEGRADOR NUMÉRICO RUNGE-KUTTA DE 4ª ORDEM (RK4)
+           ------------------------------------------------------------------ */
+        function rk4Step(t, Y, dt, params) {
+            const k1 = derivatives(t, Y, params);
+            
+            const Y_k2 = Y.map((val, i) => val + 0.5 * dt * k1[i]);
+            const k2 = derivatives(t + 0.5 * dt, Y_k2, params);
+
+            const Y_k3 = Y.map((val, i) => val + 0.5 * dt * k2[i]);
+            const k3 = derivatives(t + 0.5 * dt, Y_k3, params);
+
+            const Y_k4 = Y.map((val, i) => val + dt * k3[i]);
+            const k4 = derivatives(t + dt, Y_k4, params);
+
+            const Y_next = Y.map((val, i) => val + (dt / 6.0) * (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]));
+            
+            // Retorna novo estado e telemetria instantânea do passo k1
+            return {
+                state: Y_next,
+                drag: k1[7],
+                alpha: k1[8],
+                mach: k1[9]
+            };
+        }
+
+        /* ------------------------------------------------------------------
+           CONFIGURAÇÃO DA CENA THREE.JS (VISUALIZAÇÃO WEBGL 3D)
+           ------------------------------------------------------------------ */
+        let scene, camera, renderer, controls;
+        let missileMesh, targetMesh, trajectoryLine;
+
+        function initThreeJS() {
+            const container = document.getElementById('webgl-container');
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x060913);
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 100, 200000);
+            camera.position.set(-20000, 15000, 30000);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+
+            // Iluminação e Grade Terrestre
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(10000, 50000, 20000);
+            scene.add(light);
+            scene.add(new THREE.AmbientLight(0x334155));
+
+            const grid = new THREE.GridHelper(150000, 30, 0x00f0ff, 0x1b2a4a);
+            grid.position.y = 0;
+            scene.add(grid);
+
+            // Representação do Míssil e do Alvo
+            const mGeo = new THREE.ConeGeometry(80, 400, 8);
+            mGeo.rotateX(Math.PI / 2);
+            missileMesh = new THREE.Mesh(mGeo, new THREE.MeshBasicMaterial({ color: 0x00f0ff }));
+            scene.add(missileMesh);
+
+            const tGeo = new THREE.SphereGeometry(250, 16, 16);
+            targetMesh = new THREE.Mesh(tGeo, new THREE.MeshBasicMaterial({ color: 0xff3366 }));
+            scene.add(targetMesh);
+
+            window.addEventListener('resize', () => {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            });
+
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        /* ------------------------------------------------------------------
+           EXECUÇÃO PRINCIPAL DA SIMULAÇÃO E RENDERING DE TELEMETRIA
+           ------------------------------------------------------------------ */
+        function executeSimulation() {
+            // Leitura de parâmetros da UI
+            const R0 = parseFloat(document.getElementById('r0').value) * 1000;
+            const h0 = parseFloat(document.getElementById('h0').value);
+            const M0 = parseFloat(document.getElementById('m0').value);
+            const gTgt = parseFloat(document.getElementById('gtgt').value);
+            const loftAngle = parseFloat(document.getElementById('loft').value);
+            const Thrust0 = parseFloat(document.getElementById('thrust').value) * 1000;
+            const tBurn = parseFloat(document.getElementById('tburn').value);
+            const m0 = parseFloat(document.getElementById('m0_m').value);
+            const m1 = parseFloat(document.getElementById('m1_m').value);
+
+            const isa0 = getISA(h0);
+            const V0 = M0 * isa0.a;
+
+            // Estado Inicial: [x, y, z, V, gamma, chi, m]
+            let Y = [0, 0, h0, V0, 0, 0, m0];
+            let t = 0;
+            const dt = 0.02; // Passo de integração RK4 (20ms)
+
+            let targetPos = { x: R0, y: 0, z: h0 };
+            const targetVel = 280; // m/s (~Mach 0.9)
+
+            const params = { loftAngle, Thrust0, tBurn, m0, m1, targetPos };
+
+            let points = [];
+            let maxMach = 0;
+            let maxAlt = h0;
+            let historyV = [];
+
+            // Limpeza de linha de trajetória anterior
+            if (trajectoryLine) scene.remove(trajectoryLine);
+            const lineGeometry = new THREE.BufferGeometry();
+            const linePositions = [];
+
+            let intercepted = false;
+            let minMissDistance = Infinity;
+
+            // Loop de Integração Numérica RK4
+            while (t < 180) {
+                // Movimento Evasivo do Alvo (Curva de sustentação em G)
+                targetPos.x -= targetVel * dt;
+                targetPos.z += (gTgt * 9.81 * dt * Math.sin(t * 0.5));
+
+                const step = rk4Step(t, Y, dt, params);
+                Y = step.state;
+
+                const [x, y, z, V] = Y;
+                const dist = Math.hypot(targetPos.x - x, targetPos.y - y, targetPos.z - z);
+                
+                if (dist < minMissDistance) minMissDistance = dist;
+                if (step.mach > maxMach) maxMach = step.mach;
+                if (z > maxAlt) maxAlt = z;
+
+                linePositions.push(x, z, y); // Transposição para eixos do Three.js (Y é altitude)
+                historyV.push({ t, v: V, mach: step.mach });
+
+                if (dist < 25) { intercepted = true; break; } // Raio do espoleta de proximidade
+                if (V < 130 && t > tBurn) break; // Esgotamento cinético
+                if (z < 0) break; // Impacto no solo
+
+                t += dt;
+            }
+
+            // Atualização da Trajetória 3D no Canvas WebGL
+            lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3));
+            trajectoryLine = new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({ color: 0x00ff88 }));
+            scene.add(trajectoryLine);
+
+            // Atualização das posições dos modelos 3D
+            missileMesh.position.set(Y[0], Y[2], Y[1]);
+            targetMesh.position.set(targetPos.x, targetPos.z, targetPos.y);
+
+            // Atualização do Painel de Telemetria
+            document.getElementById('tele-time').innerText = t.toFixed(1) + ' s';
+            document.getElementById('tele-status').innerText = intercepted ? "INTERCEPTAÇÃO DIRETA (PK High)" : "ENERGIA EXAURIDA";
+            document.getElementById('tele-status').style.color = intercepted ? "#00ff88" : "#ff3366";
+            document.getElementById('tele-mach').innerText = 'M ' + maxMach.toFixed(2);
+            document.getElementById('tele-alt').innerText = 'Apogeu: ' + maxAlt.toFixed(0) + ' m';
+            document.getElementById('tele-miss').innerText = minMissDistance.toFixed(1) + ' m';
+            document.getElementById('tele-drag').innerText = (historyV.length ? historyV[historyV.length-1].v.toFixed(0) : 0) + ' m/s (Final)';
+
+            drawGraph(historyV);
+        }
+
+        /* ------------------------------------------------------------------
+           RENDERIZAÇÃO DO GRÁFICO DE TELEMETRIA CINÉTICA (2D CANVAS)
+           ------------------------------------------------------------------ */
+        function drawGraph(data) {
+            const canvas = document.getElementById('graphCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = 100;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!data.length) return;
+
+            const maxTime = data[data.length - 1].t;
+            let maxV = 0;
+            data.forEach(d => { if (d.v > maxV) maxV = d.v; });
+
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+
+            data.forEach((pt, i) => {
+                const x = (pt.t / maxTime) * canvas.width;
+                const y = canvas.height - (pt.v / maxV) * (canvas.height - 10);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+        }
+
+        window.onload = () => {
+            initThreeJS();
+            executeSimulation();
+        };
+    </script>
+</body>
+</html>
